@@ -1,0 +1,10 @@
+backups/
+fixes/
+releases/*.bundle
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.tmp
+

@@ -1,0 +1,165 @@
+Encontrados 24 arquivos de teste.
+
+[OK ] test_7_dwarves.py: 6/6
+[OK ] test_actions.py: 6/6
+[OK ] test_artifact_effects_f3a.py: 9/9
+[FAIL] test_artifact_effects_f3b.py: 12/13
+  --- output completo ---
+  | === Testes F3b ===
+  | 
+  | OK  - Ks jogado sem alvo
+  | OK  - Ks: Heroi atacou Cidade (2 -> 1)
+  | OK  - Sem Ks: Heroi vs Cidade bloqueado: Heroi nao pode atacar Cidade (CMB-002).
+  | OK  - Ks: tropa perto de Heroi ganha 2 ataques
+  | OK  - Ks: tropa longe de Heroi mantem 1 ataque
+  | OK  - Ks: 2 ataques funcionaram (2 dano a Cidade)
+  | OK  - Ks volta a Loja ao fim do turno
+  | OK  - Ks buffs limpam no fim do turno
+  | FALHOU - test_k_c_requires_target: UnicodeEncodeError: 'charmap' codec can't encode character '\u2663' in position 30: character maps to <undefined>
+  | OK  - Kc: alvo ganhou dobro e resistencia
+  | OK  - Kc: dobro + resistencia (t1 com 1)
+  | OK  - Kc: volta a Loja quando alvo morre
+  | OK  - Resistencia 1 stack: 5 -> 2 (t2 com 3)
+  | 
+  | === 12 passaram, 1 falharam ===
+  -----------------------
+[FAIL] test_artifact_effects_f3c.py: 9/11
+  --- output completo ---
+  | === Testes artifact_effects F3c ===
+  | 
+  | FALHOU - test_j_h_requires_hero_id: UnicodeEncodeError: 'charmap' codec can't encode character '\u2665' in position 38: character maps to <undefined>
+  | OK  - J-heart bloqueia heroi do setup: Jh nao pode invocar o heroi do setup.
+  | OK  - J-heart invocou Iuna (heroi extra)
+  | OK  - J-heart volta a Loja quando o heroi morre
+  | OK  - J-heart coexiste com o heroi principal
+  | FALHOU - test_j_s_requires_house: UnicodeEncodeError: 'charmap' codec can't encode character '\u2660' in position 39: character maps to <undefined>
+  | OK  - J-spades invocou tropa 5 no Centro
+  | OK  - J-spades invocou tropa na Cidade do J2
+  | OK  - J-spades casa invalida bloqueada: Casa invalida: marte
+  | OK  - J-spades volta a Loja quando a tropa morre
+  | OK  - J-spades so 1 tropa special viva: Ja existe tropa do Chamado da Lua.
+  | 
+  | === 9 passaram, 2 falharam ===
+  -----------------------
+[FAIL] test_artifact_effects_f3d.py: 12/13
+  --- output completo ---
+  | === Testes F3d ===
+  | 
+  | OK  - Jd agendado para turno 4
+  | OK  - Jd dispara escolha: ['K_C', 'K_H', 'Q_C']
+  | OK  - Jd resolveu: 2 pra mao, 1 + Jd pra Loja
+  | OK  - Jd exige 2: Escolher 2.
+  | OK  - Jd pendente sobrevive a serializacao
+  | FALHOU - test_q_d_requires_unit: UnicodeEncodeError: 'charmap' codec can't encode character '\u2666' in position 33: character maps to <undefined>
+  | OK  - Qd marcou alvo (sem recurso)
+  | OK  - Qd gera escolha pendente na morte
+  | OK  - Qd: +6 Ouro pro dono e matador
+  | OK  - Qd: +6 Magia pro dono e matador
+  | OK  - Qd: owner ganha 1 vez
+  | OK  - Qd volta a Loja apos resolucao
+  | OK  - Qd sem recompensa se alvo sobrevive
+  | 
+  | === 12 passaram, 1 falharam ===
+  -----------------------
+[FAIL] test_artifact_effects_f3e.py: 9/11
+  --- output completo ---
+  | === Testes F3e ===
+  | 
+  | FALHOU - test_j_c_requires_target_player: UnicodeEncodeError: 'charmap' codec can't encode character '\u2663' in position 30: character maps to <undefined>
+  | OK  - Jc nao pode ter voce mesmo: Jc nao pode ter voce como alvo.
+  | OK  - Jc: J2 (nao jogou) pula Dia e Noite do turno 1
+  | OK  - Jc: J2 (ja jogou) pula Noite atual + Dia 2
+  | OK  - day_order omite J2 (pulado): [1, 4, 3]
+  | FALHOU - test_q_c_requires_target: UnicodeEncodeError: 'charmap' codec can't encode character '\u2663' in position 30: character maps to <undefined>
+  | OK  - Qc nao pode controlar unidade propria: Qc so controla unidade inimiga.
+  | OK  - Qc: p2_troop_light_0 passou para J1
+  | OK  - Qc: unidade volta ao dono no fim do turno
+  | OK  - Qc: controlada pode atacar unidade do dono original
+  | OK  - Qc: se controlada morre, morre
+  | 
+  | === 9 passaram, 2 falharam ===
+  -----------------------
+[FAIL] test_artifacts.py: 9/10
+  --- output completo ---
+  | === Rodando testes de artifacts (Fase 1) ===
+  | 
+  | FALHOU - test_shop_initial_size: AssertionError: Esperado 26 cartas, veio 24
+  | OK  - Compra sem unidade no Centro bloqueada: Precisa unidade no Centro.
+  | OK  - Compra com Ouro (carta: Q_C)
+  | OK  - Limite diário de compra com Ouro bloqueado: Ja comprou com Ouro hoje.
+  | OK  - Transmutação com Magia (carta: Q_C)
+  | OK  - Limite diário de transmutação bloqueado: Ja transmutou hoje.
+  | OK  - Transmutação funciona sem unidade (na Cidade)
+  | OK  - Venda sem unidade no Centro bloqueada: Precisa unidade no Centro.
+  | OK  - Venda devolve carta à Loja e dá +7 Ouro
+  | OK  - Venda não zera o limite diário de compra
+  | 
+  | === Resultado: 9 passaram, 1 falharam ===
+  -----------------------
+[FAIL] test_artifacts_effects.py: 3/9
+  --- output completo ---
+  | === Rodando testes de artifact_effects (Fase 2) ===
+  | 
+  | FALHOU - test_play_unimplemented_card_blocked: AssertionError: Deveria bloquear carta não implementada
+  | OK  - Carta fora da mão bloqueada: Jogador 1 nao tem K_H.
+  | FALHOU - test_play_k_h_raises_life_max: UnicodeEncodeError: 'charmap' codec can't encode character '\u2665' in position 7: character maps to <undefined>
+  | FALHOU - test_play_k_d: UnicodeEncodeError: 'charmap' codec can't encode character '\u2666' in position 7: character maps to <undefined>
+  | FALHOU - test_morning_k_h_heals: AssertionError: Esperado 3 após manhã, veio 2
+  | FALHOU - test_morning_k_d_gives_resources: AssertionError: Esperado +2 ouro, veio 0
+  | FALHOU - test_morning_k_h_caps_at_life_max: AssertionError: Esperado 7, veio 6
+  | OK  - Campo persiste em roundtrip de serialização
+  | OK  - Descarte de artefato devolve à Loja
+  | 
+  | === Resultado: 3 passaram, 6 falharam ===
+  -----------------------
+[FAIL] test_boin.py: 1/3
+  --- output completo ---
+  | === Testes Boin ===
+  | 
+  | FALHOU - test_boin_buy_draws_2_picks_1: ActionError: Escolheu Os 7 Anoes: nao pode invocar Tropas.
+  | OK  - Boin transmutou com escolha 2-de-1
+  | FALHOU - test_no_boin_buy_direct: ActionError: Escolheu Os 7 Anoes: nao pode invocar Tropas.
+  | 
+  | === 1 passaram, 2 falharam ===
+  -----------------------
+[OK ] test_combat.py: 5/5
+[OK ] test_don_din.py: 3/3
+[FAIL] test_heroes.py: 5/6
+  --- output completo ---
+  | === Testes heroes ===
+  | 
+  | OK  - Heróis com vidas corretas
+  | OK  - Ga'Roche executa alvo sozinho, não perde vida, ganha +1
+  | OK  - Ga'Roche não executa se alvo tem aliados (troca normal)
+  | FALHOU - test_musashi_double_if_strongest: AssertionError: Miyamoto deveria ter 2 ataques, tem 1
+  | OK  - Miyamoto não ganha 2 ataques se não for o mais forte
+  | OK  - Feitiço em recarga: Feitico em recarga (2).
+  | 
+  | === 5 passaram, 1 falharam ===
+  -----------------------
+[OK ] test_iuna.py: 4/4
+[OK ] test_mandinga.py: 4/4
+[FAIL] test_pena.py: 5/6
+  --- output completo ---
+  | === Testes Pena ===
+  | 
+  | OK  - Humano: Pena ativada em campo
+  | OK  - Humano com Pena: Roca rola 2D4
+  | FALHOU - test_non_humano_give_pena_to_iuna: AssertionError: Pena deveria ter sido entregue
+  | OK  - Nao-humano: ficou com a Pena
+  | OK  - Sem Iuna: nao pode dar: Iuna nao esta viva. So pode ficar com a Pena.
+  | OK  - Pena vendida por 7 Ouro
+  | 
+  | === 5 passaram, 1 falharam ===
+  -----------------------
+[OK ] test_peoples_f4a.py: 8/8
+[OK ] test_sanity.py: 6/6
+[OK ] test_serialize.py: 7/7
+[OK ] test_setup_config.py: 4/4
+[OK ] test_seven_dwarves_abilities.py: 6/6
+[OK ] test_sonho_lucido.py: 4/4
+[OK ] test_turn.py: 6/6
+[OK ] test_valendar_luna.py: 8/8
+
+TOTAL: 151 passaram, 17 falharam
+Arquivos com falha: test_artifact_effects_f3b.py, test_artifact_effects_f3c.py, test_artifact_effects_f3d.py, test_artifact_effects_f3e.py, test_artifacts.py, test_artifacts_effects.py, test_boin.py, test_heroes.py, test_pena.py

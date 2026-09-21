@@ -1,0 +1,977 @@
+ROOT: C:\Users\UsuarioPc\Downloads\jessica
+
+==========================================================================
+# 00 — snapshot_night_start (fechado) — sanity
+==========================================================================
+    -- snapshot_night_start (13 linhas) --
+      def snapshot_night_start(state):
+          """Guarda {(pid, unit_id): house} de todas unidades no início da noite."""
+          snap = {}
+          for p in getattr(state, "players", []) or []:
+              pid = getattr(p, "id", None)
+              for u in getattr(p, "units", []) or []:
+                  uid = getattr(u, "id", None)
+                  if uid is None:
+                      uid = id(u)
+                  house = getattr(u, "house", None) or getattr(u, "location", None) or "?"
+                  snap[f"{pid}:{uid}"] = str(house)
+          state.night_start_positions = snap
+      
+    esperado: iterar list, sem .items()
+    status: OK
+
+==========================================================================
+# 01 — Vovó Gamba +1 dano GLOBAL (Orc)
+==========================================================================
+    grep peoples.py: 3 hit(s)
+        371: def has_vovo_bonus(state: GameState, attacker: Unit) -> bool:
+        372:     """Vovo Gamba concede +1 dano GLOBAL a todas as tropas do dono."""
+        377:         if isinstance(u, Hero) and u.is_alive() and u.hero_id == "vovo_gamba":
+    grep combat.py: 4 hit(s)
+        163: def _apply_vovo_bonus(state: GameState, attacker: Unit, dmg: int,
+        167:     if peoples.has_vovo_bonus(state, attacker):
+        339:     raw_atk = _apply_vovo_bonus(state, attacker, raw_atk, target)
+        342:     raw_tgt = _apply_vovo_bonus(state, target, raw_tgt, attacker)
+    grep heroes.py: 2 hit(s)
+         45:     "vovo_gamba": HeroDefinition("vovo_gamba", "orcs", "Vovo Gamba, Protetora dos Espiritos", 3,
+        102:     "Vovó Gamba": "vovo_gamba",
+    grep actions.py: 0 hit(s)
+    grep turn.py: 0 hit(s)
+
+
+    -- combat.resolve_attack (102 linhas) --
+      def resolve_attack(state: GameState, attack: Attack) -> None:
+          attacker = _find_unit(state, attack.attacker_unit_id)
+          if attacker is None:
+              raise CombatError(f"Atacante {attack.attacker_unit_id} nao encontrado.")
+          _check_can_attack(state, attacker)
+          max_atk = _effective_max_attacks(state, attacker)
+          if _attacks_used(attacker) >= max_atk:
+              raise CombatError(f"Unidade {attacker.id} ja atacou o maximo.")
+      
+          attacker_player = get_player(state, attacker.owner_id)
+          attacker_name = attacker_player.name
+      
+          if attack.target_type == "city" and attacker_player.no_city_attacks_until_end_turn:
+              raise CombatError(f"{attacker_name} nao pode atacar Cidades (Qh).")
+      
+          if attack.target_type == "city":
+              can_hero_attack_city = attacker.hero_can_attack_city
+              if isinstance(attacker, Hero) and not can_hero_attack_city:
+                  if _hero_has(attacker, "dwarves_can_attack_cities"):
+                      can_hero_attack_city = True
+                  elif _hero_has(attacker, "veu_da_lua"):
+                      if peoples.is_lua_cheia(state, attacker.owner_id):
+                          can_hero_attack_city = True
+                  else:
+                      owner = get_player(state, attacker.owner_id)
+                      for u in owner.units:
+                          if (isinstance(u, Hero) and u.is_alive()
+                                  and u.hero_id == "din" and u.house == attacker.house):
+                              can_hero_attack_city = True
+                              break
+      ... (+72 linhas)
+    -- combat._resolve_combat_round (90 linhas) --
+      def _resolve_combat_round(state: GameState, attacker: Unit, target: Unit) -> None:
+          attacker_player = get_player(state, attacker.owner_id)
+          target_player = get_player(state, target.owner_id)
+      
+          attacker.statuses.pop("invisivel_until_turn", None)
+      
+          if _try_execute_hero(state, attacker, target):
+              return
+          if target.is_alive() and _try_execute_hero(state, target, attacker):
+              return
+      
+          atk_life = attacker.life
+          tgt_life = target.life
+      
+          raw_atk = _compute_attack_damage(state, attacker, atk_life, target=target)
+          raw_atk = _apply_vovo_bonus(state, attacker, raw_atk, target)
+          raw_atk = _apply_amaldicoado(state, target, raw_atk)
+          raw_tgt = _compute_attack_damage(state, target, tgt_life, target=attacker)
+          raw_tgt = _apply_vovo_bonus(state, target, raw_tgt, attacker)
+          raw_tgt = _apply_amaldicoado(state, attacker, raw_tgt)
+      
+          dmg_to_target, notes_t = _apply_defense(state, target, raw_atk, attacker)
+          dmg_to_attacker, notes_a = _apply_defense(state, attacker, raw_tgt, target)
+      
+          dmg_to_target = _apply_armor(state, target.owner_id, dmg_to_target)
+          dmg_to_attacker = _apply_armor(state, attacker.owner_id, dmg_to_attacker)
+      
+          # Luarado: infecta por dano (antes de aplicar morte)
+          _luarado_infecta(state, attacker, target, dmg_to_target)
+      
+      ... (+60 linhas)
+    [_compute_attack] NÃO ENCONTRADA
+
+==========================================================================
+# 02 — Auto-ataque proibido (espectro / tropa controlada / lobisomem)
+==========================================================================
+    grep combat: 13 hit(s)
+        259: def _apply_vampiro_after_round(state: GameState, self_unit: Unit, other: Unit,
+        260:                                self_life_before: int, other_life_before: int) -> None:
+        261:     sp = get_player(state, self_unit.owner_id)
+        264:     empatou = (self_life_before == other_life_before and self_life_before > 0)
+        268:         self_unit.life = min(2, self_unit.life_max)
+        269:         log(state, f"    {self_unit.id} empata e mata: sobrevive com 2 (Sede de Sangue).")
+        271:     if empatou and not self_unit.is_alive():
+        272:         self_unit.life = min(2, self_unit.life_max)
+        273:         log(state, f"    {self_unit.id} empata: sobrevive com 2 (Sede de Sangue).")
+        276:         before = self_unit.life
+        277:         self_unit.life = min(self_unit.life_max, self_unit.life + 2)
+        278:         if self_unit.life != before:
+        279:             log(state, f"    {self_unit.id} curou +{self_unit.life - before} (Sede de Sangue).")
+    grep actions: 0 hit(s)
+    grep peoples: 4 hit(s)
+        340:     if isinstance(dead_unit, Hero) and "espectro_until_turn" not in dead_unit.statuses:
+        345:                     state.espectros_pendentes.append({
+        351:                     log(state, f"  Espectro agendado: {dead_unit.hero_id} em {dead_unit.house}.")
+        486:             log(state, f"  {u.id} ({other.name}) virou Lobisomem (controlado por {lobisomem.name}).")
+
+    -- combat.resolve_attack (102 linhas) --
+      def resolve_attack(state: GameState, attack: Attack) -> None:
+          attacker = _find_unit(state, attack.attacker_unit_id)
+          if attacker is None:
+              raise CombatError(f"Atacante {attack.attacker_unit_id} nao encontrado.")
+          _check_can_attack(state, attacker)
+          max_atk = _effective_max_attacks(state, attacker)
+          if _attacks_used(attacker) >= max_atk:
+              raise CombatError(f"Unidade {attacker.id} ja atacou o maximo.")
+      
+          attacker_player = get_player(state, attacker.owner_id)
+          attacker_name = attacker_player.name
+      
+          if attack.target_type == "city" and attacker_player.no_city_attacks_until_end_turn:
+              raise CombatError(f"{attacker_name} nao pode atacar Cidades (Qh).")
+      
+          if attack.target_type == "city":
+              can_hero_attack_city = attacker.hero_can_attack_city
+              if isinstance(attacker, Hero) and not can_hero_attack_city:
+                  if _hero_has(attacker, "dwarves_can_attack_cities"):
+                      can_hero_attack_city = True
+                  elif _hero_has(attacker, "veu_da_lua"):
+                      if peoples.is_lua_cheia(state, attacker.owner_id):
+                          can_hero_attack_city = True
+                  else:
+                      owner = get_player(state, attacker.owner_id)
+                      for u in owner.units:
+                          if (isinstance(u, Hero) and u.is_alive()
+                                  and u.hero_id == "din" and u.house == attacker.house):
+                              can_hero_attack_city = True
+                              break
+              if isinstance(attacker, Hero) and not can_hero_attack_city:
+                  raise CombatError("Heroi nao pode atacar Cidade (CMB-002).")
+              if not attack.target_id.isdigit():
+                  raise CombatError("Alvo de cidade deve ser id.")
+              target_pid = int(attack.target_id)
+      ... (+67 linhas)
+    -- combat._resolve_combat_round (90 linhas) --
+      def _resolve_combat_round(state: GameState, attacker: Unit, target: Unit) -> None:
+          attacker_player = get_player(state, attacker.owner_id)
+          target_player = get_player(state, target.owner_id)
+      
+          attacker.statuses.pop("invisivel_until_turn", None)
+      
+          if _try_execute_hero(state, attacker, target):
+              return
+          if target.is_alive() and _try_execute_hero(state, target, attacker):
+              return
+      
+          atk_life = attacker.life
+          tgt_life = target.life
+      
+          raw_atk = _compute_attack_damage(state, attacker, atk_life, target=target)
+          raw_atk = _apply_vovo_bonus(state, attacker, raw_atk, target)
+          raw_atk = _apply_amaldicoado(state, target, raw_atk)
+          raw_tgt = _compute_attack_damage(state, target, tgt_life, target=attacker)
+          raw_tgt = _apply_vovo_bonus(state, target, raw_tgt, attacker)
+          raw_tgt = _apply_amaldicoado(state, attacker, raw_tgt)
+      
+          dmg_to_target, notes_t = _apply_defense(state, target, raw_atk, attacker)
+          dmg_to_attacker, notes_a = _apply_defense(state, attacker, raw_tgt, target)
+      
+          dmg_to_target = _apply_armor(state, target.owner_id, dmg_to_target)
+          dmg_to_attacker = _apply_armor(state, attacker.owner_id, dmg_to_attacker)
+      
+          # Luarado: infecta por dano (antes de aplicar morte)
+          _luarado_infecta(state, attacker, target, dmg_to_target)
+      
+          attacker.life = max(0, atk_life - dmg_to_attacker)
+          target.life = max(0, tgt_life - dmg_to_target)
+      
+          _apply_vampiro_after_round(state, attacker, target, atk_life, tgt_life)
+          _apply_vampiro_after_round(state, target, attacker, tgt_life, atk_life)
+      ... (+55 linhas)
+
+==========================================================================
+# 03 — Feitiço Lobisomem (Licantropo)
+==========================================================================
+    grep spells.py: 3 hit(s)
+         35:     "licantropo": SpellDefinition(
+         36:         "licantropo", "lobisomens", "Licantropo",
+         37:         "1 unidade sua vira Lobisomem ate fim do turno.",
+    grep peoples.py: 27 hit(s)
+         98: def sao_tome_dano_lobisomem(state: GameState, attacker) -> bool:
+        314:         if sig not in killer_player.infectados:
+        315:             killer_player.infectados.append(sig)
+        316:             log(state, f"  {dead_unit.id} infectado pela Maldicao da Lua.")
+        363:             if sig not in killer_player.infectados:
+        364:                 killer_player.infectados.append(sig)
+        365:                 log(state, f"  {dead_unit.id} infectado por Sao Tome (Maldicao da Lua).")
+        406: def is_lua_cheia(state: GameState, lobisomem_player_id: int) -> bool:
+        410:     if lobisomem_player_id not in order:
+        412:     idx = order.index(lobisomem_player_id)
+        417: def is_lobisomem_ativo(state: GameState, unit: Unit) -> bool:
+        418:     if unit.statuses.get("lobisomem_until_turn", -1) >= state.turn:
+        438:         has_lupa = any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "lupa_lider"
+        440:         has_cigana = any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "cigana"
+        446:             if has_lupa:
+        447:                 if u.statuses.get("lupa_resist_until_turn", -1) < state.turn:
+        449:                     u.statuses["lupa_resist_until_turn"] = state.turn
+        450:             if has_cigana:
+        458: def _flip_infected(state: GameState, lobisomem: Player) -> None:
+        459:     if not lobisomem.infectados:
+        461:     sigs_hero = {e["id"] for e in lobisomem.infectados if e["kind"] == "hero"}
+        462:     sigs_troop = {e["id"] for e in lobisomem.infectados if e["kind"] == "troop"}
+        465:         if other.id == lobisomem.id:
+        482:             lobisomem.units.append(u)
+        484:             u.owner_id = lobisomem.id
+        485:             u.statuses["lobisomem_until_turn"] = state.turn
+        486:             log(state, f"  {u.id} ({other.name}) virou Lobisomem (controlado por {lobisomem.name}).")
+
+    grep combat.py: 6 hit(s)
+        147:     if peoples.is_lobisomem_ativo(state, attacker):
+        149:     if peoples.sao_tome_dano_lobisomem(state, attacker):
+        287:     if not _p.is_lobisomem_ativo(state, attacker):
+        293:     if sig not in owner.infectados:
+        294:         owner.infectados.append(sig)
+        295:         log(state, f"    {target.id} infectado por Luarado (Maldicao da Lua).")
+  [ERRO no bloco item_03]: 'charmap' codec can't encode character '\u2192' in position 66: character maps to <undefined>
+
+==========================================================================
+# 04 — Aiquara só à noite + #22 menu do especial
+==========================================================================
+    grep heroes.py: 3 hit(s)
+         79:     "aiquara": HeroDefinition("aiquara", "filhos_floresta", "Aiquara, Ninfa da Baia Doce", 2,
+        121:     "Aiquara": "aiquara",
+        138:         return [HERO_CATALOG[h] for h in ("guarari", "aiquara", "baoba_ba")]
+    grep actions.py: 24 hit(s)
+        826: # Filhos: Aiquara
+        829: def aiquara_mover(state: GameState, player_id: int, enemy_unit_id: str,
+        832:     aiquara = next((u for u in player.units
+        833:                     if isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"),
+        835:     if aiquara is None:
+        836:         raise ActionError("Aiquara nao esta viva.")
+        838:         raise ActionError("Aiquara so movimenta durante o Dia.")
+        839:     if aiquara.statuses.get("aiquara_moved_turn") == state.turn:
+        840:         raise ActionError("Aiquara ja movimentou neste turno.")
+        846:             if u.id == enemy_unit_id and u.is_alive() and u.house == aiquara.house:
+        852:         raise ActionError("Inimigo nao encontrado na casa de Aiquara.")
+        865:     aiquara.statuses["aiquara_moved_turn"] = state.turn
+        866:     log(state, f"{player.name}: Aiquara forcou {enemy.id} a mover para {destination}.")
+        869: def aiquara_atacar(state: GameState, player_id: int, enemy_unit_id: str,
+        872:     aiquara = next((u for u in player.units
+        873:                     if isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"),
+        875:     if aiquara is None:
+        876:         raise ActionError("Aiquara nao esta viva.")
+        877:     if aiquara.statuses.get("aiquara_attacked_turn") == state.turn:
+        878:         raise ActionError("Aiquara ja atacou neste turno.")
+        885:             if u.id == enemy_unit_id and u.is_alive() and u.house == aiquara.house:
+        892:         raise ActionError("Inimigo nao encontrado na casa de Aiquara.")
+        903:     aiquara.statuses["aiquara_attacked_turn"] = state.turn
+        906:     log(state, f"{player.name}: Aiquara forcou {enemy.id} a atacar {target_type} {target_id}.")
+    grep peoples.py: 0 hit(s)
+    grep main.py: 18 hit(s)
+         20:     transformar_em_centauro, aiquara_mover, aiquara_atacar,
+         60:     "filhos_floresta": ["Guarari", "Aiquara", "Baoba-bá"],
+        123:     "aiquara": "Ninfa: controla inimigo da casa (mover no Dia, atacar na Noite).",
+        799:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara" for u in player.units):
+        800:         opts.append("Aiquara: controlar inimigo")
+        969: def _aiquara_ui(state, pid):
+        971:     aiquara = next((u for u in player.units
+        973:                     and u.hero_id == "aiquara"), None)
+        974:     if aiquara is None:
+        975:         raise ActionError("Aiquara nao esta viva.")
+        981:             if u.house == aiquara.house and u.is_alive():
+        984:         raise ActionError("Sem inimigos na casa de Aiquara.")
+        991:     acao = pick_index("Aiquara", ["Forcar movimento", "Forcar ataque"])
+       1000:         aiquara_mover(state, pid, tgt_unit.id, dests[idx2 - 1])
+       1025:         aiquara_atacar(state, pid, tgt_unit.id, tt, ti)
+       1401:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"
+       1403:         r.append(("Especiais", "i", "Aiquara: controlar inimigo"))
+       2216:         _aiquara_ui(state, pid)
+
+    [aiquara] NÃO ENCONTRADA
+
+==========================================================================
+# 05 — UI 2x Pé Descalço persiste após expirar
+==========================================================================
+    grep main.py: 14 hit(s)
+         58:     "gigantes": ["João Grandão", "Pé Descalço", "Caroço"],
+         82:     "transformar_morcego": "Transformar em Morcego: 1 aliado anda 2x (ou 1x se recem-invocado).",
+        115:     "luarado": "Luarado: em Lua Cheia/transformado, anda 2x e infecta por dano.",
+        117:     "pe_descalco": "Pe Descalco: +1 ataque sempre. Grito de Guerra: aliados x2 dano.",
+        135:     "morcego": "Vampiro: pode se mover 2x neste turno (ou 1x se recem-invocado).",
+        137:     "Ks (Veu das Cacadoras)": "Aliados perto de Heroi do dono batem 2x. Herois podem atacar Cidades.",
+        138:     "Centauro (Guarari)": "Anda 2x. Volta ao normal no fim da Noite.",
+        256:     "2x": "Dobro de dano (Kc, Qs, Vovo, etc.)",
+        283:         syms.append("2x")
+        391:                     flags.append("2xdano")
+        938:                     and u.hero_id in ("joao_grandao", "pe_descalco", "caroco")]
+       1580:             if u.double_damage: flags.append("2xdano")
+       1880:             if u.double_damage: flags.append("2xdano")
+       2253:                         and u.hero_id in ("joao_grandao", "pe_descalco", "caroco")]
+    grep peoples.py: 0 hit(s)
+    grep combat.py: 4 hit(s)
+        140:     if p.double_damage_until_end_night:
+        142:     if attacker.double_damage:
+        144:     if _hero_has(attacker, "double_damage_and_resist_vs_stronger") and target is not None:
+        202:     if attacker is not None and _hero_has(defender, "double_damage_and_resist_vs_stronger"):
+    grep models.py: 2 hit(s)
+         30:     double_damage: bool = False
+        123:     double_damage_until_end_night: bool = False
+
+==========================================================================
+  [ERRO no bloco item_06]: 'charmap' codec can't encode character '\u2665' in position 22: character maps to <undefined>
+
+==========================================================================
+# 07 — Musashi vida máxima persistente
+==========================================================================
+    grep heroes.py: 2 hit(s)
+         15:     "miyamoto": HeroDefinition("miyamoto", "humanos", "Miyamoto Musashi", 4,
+         94:     "Miyamoto Musashi": "miyamoto",
+    grep peoples.py: 0 hit(s)
+    grep models.py (referência p/ paralelo): 1 hit(s)
+        117:     garoche_life_max_bonus: int = 0
+    grep serialize.py: 2 hit(s)
+        117:         "garoche_life_max_bonus": p.garoche_life_max_bonus,
+        173:         garoche_life_max_bonus=d.get("garoche_life_max_bonus", 0),
+
+
+==========================================================================
+# 08 — Caroço/Zebum não andam no T1 (summon auto)
+==========================================================================
+    grep peoples.py: 0 hit(s)
+    grep actions.py: 56 hit(s)
+         24: ZEBUM_FIRST_COST = 4
+         25: ZEBUM_COST_STEP = 2
+         26: ZEBUM_RESUMMON_COST = 3
+        128:     if peoples.has_7_dwarves_chosen(player) or player.zebum_seven_dwarves:
+        129:         raise ActionError("Os 7 Anoes (ou Zebum que os obteve): sem Tropas.")
+        235:     if player.chosen_hero_id == "caroco" and force_hero_id is None:
+        236:         sig = {"kind": "hero", "id": "caroco"}
+        238:             raise ActionError("Caroco empalado.")
+        239:         carocos_vivos = [u for u in player.units
+        240:                          if isinstance(u, Hero) and u.is_alive() and u.hero_id == "caroco"]
+        241:         carocos_ja_gerados = 1 + player.carocos_gerados
+        242:         if len(carocos_vivos) < carocos_ja_gerados:
+        247:             falta = carocos_ja_gerados - len(carocos_vivos)
+        251:                 unit_id = f"p{player_id}_caroco_ret_{n}"
+        253:                             life=2, life_max=2, hero_id="caroco",
+        256:             log(state, f"{player.name}: {falta} Carocos reinvocados.")
+        260:             raise ActionError("Todos os Carocos ja estao vivos.")
+        668:     elif hid == "caroco":
+        993: # Gnomos: Zebum
+        996: def _zebum_custo_atual(player) -> int:
+        997:     return ZEBUM_FIRST_COST + ZEBUM_COST_STEP * len(player.zebum_herois)
+       1000: def _zebum_heroi_em_uso_por_outro(state, my_pid, hero_id: str) -> bool:
+       1004:         if hero_id in p.zebum_herois:
+       1009: def zebum_invocar_heroi(state: GameState, player_id: int, hero_id: str) -> None:
+       1011:     zebum = next((u for u in player.units
+       1012:                   if isinstance(u, Hero) and u.is_alive() and u.hero_id == "zebum"),
+       1014:     if zebum is None:
+       1015:         raise ActionError("Zebum nao esta vivo.")
+       1016:     if hero_id == "zebum":
+       1017:         raise ActionError("Nao pode invocar Zebum via Zebum.")
+      ... (+26)
+    grep main.py: 32 hit(s)
+         22:     zebum_invocar_heroi, zebum_reinvocar, zebum_invocar_proximo_anao,
+         58:     "gigantes": ["João Grandão", "Pé Descalço", "Caroço"],
+         61:     "gnomos_duendes": ["Bimbo do Mal", "São Tomé", "Zebum"],
+        118:     "caroco": "Caroco: gratis no turno 1. Multiplos Carocos gerados. Cabaca Cheia.",
+        127:     "zebum": "Mistico: apostas corretas compram herois estrangeiros.",
+        810:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "zebum" for u in player.units):
+        811:         opts.append("Zebum: invocar/reinvocar heroi")
+        938:                     and u.hero_id in ("joao_grandao", "pe_descalco", "caroco")]
+       1047: def _zebum_obter_novo(state, player):
+       1056:                 if hid == "zebum":
+       1058:                 if hid in player.zebum_herois:
+       1069:                     if other.id != player.id and hid in other.zebum_herois:
+       1081:     zebum_invocar_heroi(state, player.id, candidatos[idx])
+       1082:     console.print("[green]Zebum obteve o heroi.[/green]")
+       1085: def _zebum_ui(state, pid):
+       1087:     zebum = next((u for u in player.units
+       1089:                   and u.hero_id == "zebum"), None)
+       1090:     if zebum is None:
+       1091:         raise ActionError("Zebum nao esta vivo.")
+       1093:     custo = 4 + 2 * len(player.zebum_herois)
+       1095:     outros = [h for h in player.zebum_herois if h != "seven_dwarves"]
+       1098:     if player.zebum_seven_dwarves:
+       1099:         opts.append("Zebum + Anoes: invocar proximo (2 Magia)")
+       1100:     idx = pick_index("Zebum", opts)
+       1102:         _zebum_obter_novo(state, player)
+       1106:         zebum_reinvocar(state, pid, outros[idx2])
+       1108:     elif player.zebum_seven_dwarves:
+       1109:         zebum_invocar_proximo_anao(state, pid)
+       1411:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "zebum"
+       1413:         r.append(("Especiais", "g", "Zebum: invocar/reinvocar heroi"))
+      ... (+2)
+    grep models.py: 3 hit(s)
+         95:     carocos_gerados: int = 0
+        110:     zebum_herois: list[str] = field(default_factory=list)
+        114:     zebum_seven_dwarves: bool = False
+
+==========================================================================
+# 09 — Caroço — feitiço Cabaca Cheia (sem recarga, todos, log)
+==========================================================================
+    grep spells.py: 0 hit(s)
+    grep peoples.py: 0 hit(s)
+
+==========================================================================
+# 10 — Baoba-bá — invocar por magia só se foi escolhido
+==========================================================================
+    grep peoples.py: 4 hit(s)
+        335:     if isinstance(dead_unit, Hero) and dead_unit.hero_id == "baoba_ba":
+        336:         victim_owner.baoba_pagamentos = 0
+        337:         victim_owner.baoba_invocado = False
+        338:         log(state, f"  {victim_owner.name}: Baoba-ba morreu. Pagamentos zerados.")
+    grep actions.py: 32 hit(s)
+         21: BAOBA_COST_PER_PAYMENT = 1
+         22: BAOBA_PAYMENTS_NEEDED = 3
+        119: def _baoba_alive(player) -> Hero | None:
+        121:                  if isinstance(u, Hero) and u.is_alive() and u.hero_id == "baoba_ba"),
+        152:         baoba = _baoba_alive(player)
+        153:         if baoba is None or baoba.house != house:
+        154:             raise ActionError("So pode invocar na Cidade ou na casa do Baoba-ba.")
+        322:     if isinstance(unit, Hero) and unit.hero_id == "baoba_ba":
+        323:         last_move = unit.statuses.get("baoba_moved_at_turn", -100)
+        325:             raise ActionError("Baoba-ba nao pode se mover no turno seguinte ao movimento.")
+        332:     if isinstance(unit, Hero) and unit.hero_id == "baoba_ba":
+        333:         unit.statuses["baoba_moved_at_turn"] = state.turn
+        729:         if h.hero_id == "baoba_ba":
+        730:             player.baoba_pagamentos = 0
+        731:             player.baoba_invocado = False
+        910: # Filhos: Baoba-ba
+        913: def baoba_pagar_magia(state: GameState, player_id: int) -> None:
+        916:         raise ActionError("So Filhos da Floresta pagam Baoba-ba.")
+        917:     alive = _baoba_alive(player)
+        919:         raise ActionError("Baoba-ba ja esta vivo.")
+        920:     if player.city.magic < BAOBA_COST_PER_PAYMENT:
+        921:         raise ActionError(f"Precisa {BAOBA_COST_PER_PAYMENT} Magia.")
+        922:     player.city.magic -= BAOBA_COST_PER_PAYMENT
+        923:     player.baoba_pagamentos += 1
+        924:     log(state, f"{player.name}: pagou Baoba-ba ({player.baoba_pagamentos}/{BAOBA_PAYMENTS_NEEDED}).")
+        925:     if player.baoba_pagamentos >= BAOBA_PAYMENTS_NEEDED:
+        926:         hdef = heroes.get_hero("baoba_ba")
+        927:         unit_id = f"p{player_id}_hero_baoba_ba"
+        930:                     hero_id="baoba_ba", has_moved_this_turn=True, moves_this_turn=1)
+        932:         player.baoba_pagamentos = 0
+      ... (+2)
+    grep main.py: 9 hit(s)
+         21:     baoba_pagar_magia, bimbo_invisibilidade, bimbo_gastar_5,
+         60:     "filhos_floresta": ["Guarari", "Aiquara", "Baoba-bá"],
+        124:     "baoba_ba": "Anciao: 1 Magia x 3 turnos para invocar. Tropas aliadas na casa dele.",
+        803:             and not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "baoba_ba"
+        805:         opts.append(f"Baoba-ba: pagar Magia ({player.baoba_pagamentos}/3)")
+       1405:             and not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "baoba_ba"
+       1407:         r.append(("Especiais", "b", f"Baoba-ba: pagar Magia ({player.baoba_pagamentos}/3)"))
+       2218:         baoba_pagar_magia(state, pid)
+       2219:         console.print(f"[green]Baoba-ba: {player.baoba_pagamentos}/3.[/green]")
+    grep models.py: 2 hit(s)
+        101:     baoba_pagamentos: int = 0
+        102:     baoba_invocado: bool = False
+
+==========================================================================
+# 11 — Mortos-Vivos — remover 'extra' do feitiço
+==========================================================================
+    grep spells.py: 2 hit(s)
+         43:     "levantar_mortos": SpellDefinition(
+         44:         "levantar_mortos", "mortos_vivos", "Levantar os Mortos",
+    grep main.py: 19 hit(s)
+         67:     "orcs": "Berco de Guerreiros: -1 Magia em invocacoes. Arquetipo extra.",
+         85:     "levantar_mortos": "Levantar os Mortos: escolha 2 tropas e invoque com 1 de vida.",
+        102:     "don": "Zangado: 1 ataque extra por Anao proximo.",
+        120:     "zoia": "Zoia: 2 tropas extras (Ghoul e Esqueleto com 1 vida).",
+        201:     "extra": "extra",
+        473:             extra = ""
+        482:                             extra = f" em {tipo} de {_pname(state, p.id)}"
+        485:                 extra = f" em {_pname(state, choice['target_player_id'])}"
+        487:                 extra = f" (invocou {_hero_short(choice['hero_id'])})"
+        488:             buckets["ART"].append(f"{pname}: jogou {card}{extra}")
+        943:     elif spell_id == "levantar_mortos":
+        944:         labels = ["light", "medium", "heavy", "extra", "ghoul", "esqueleto"]
+       1755:             extra = ", ".join(f"{k}={v}" for k, v in a.extra.items()) if a.extra else "-"
+       1756:             table.add_row(p.name, card_display(a.card_id), extra)
+       1839:             extras = sorted(p for p in effective if p != "gnomos_duendes")
+       1840:             if extras:
+       1842:                 for povo in extras:
+       2258:         elif sp.spell_id == "levantar_mortos":
+       2259:             labels = ["light", "medium", "heavy", "extra", "ghoul", "esqueleto"]
+    grep peoples.py: 13 hit(s)
+        187:         _sao_tome_extra_passives(state, player)
+        190: def _sao_tome_extra_passives(state: GameState, player: Player) -> None:
+        572: def extra_troop_slots(player: Player, state: GameState | None = None) -> dict[str, int]:
+        574:         return {"extra": 1}
+        576:         # MV: 3 tropas base + 2 (ghoul/esqueleto) SO com Zoia viva. Sem "extra".
+        584:             result["extra"] = 1
+        591:     extras = extra_troop_slots(player, state)
+        592:     return base + extras.get(archetype.value, 0)
+        597:     extras = extra_troop_slots(player, state)
+        598:     if "extra" in extras:
+        599:         result.append(TroopArchetype.EXTRA)
+        600:     if "ghoul" in extras:
+        602:     if "esqueleto" in extras:
+
+==========================================================================
+# 12 — Luide Vampa — janela noturna (opções)
+==========================================================================
+    grep main.py: 21 hit(s)
+         19:     dandara_invisibilidade, luide_vampa_mover, ActionError,
+         56:     "vampiros": ["Dracula", "Dandara", "Luide Vampa"],
+        112:     "luide_vampa": "Luide Vampa: ativa movimento noturno para aliados.",
+        792:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "luide_vampa" for u in player.units) \
+        794:         opts.append("Luide Vampa: movimento noturno")
+       1390:     luide = next((u for u in player.units
+       1391:                   if isinstance(u, Hero) and u.is_alive() and u.hero_id == "luide_vampa"), None)
+       1392:     if luide is not None and not player.has_cast_spell_this_turn:
+       1393:         r.append(("Especiais", "z", "Luide Vampa: ativar movimento noturno"))
+       2196:         luide_vampa_mover(state, pid)
+       2197:         console.print("[green]Luide Vampa: movimento noturno ativo.[/green]")
+       2588: def _luide_janela_noturna(state, all_pids, processed_houses=None) -> None:
+       2589:     """Oferece mover/usar feitico para vampiros com Luide vivo.
+       2597:         luide = next((u for u in player.units
+       2599:                       and u.hero_id == "luide_vampa"), None)
+       2600:         if luide is None:
+       2613:             idx = pick_index(f"{player.name} (Luide Vampa)", opts)
+       2682:     _luide_janela_noturna(state, all_pids, set())
+       2706:         # Luide entre casas
+       2707:         _luide_janela_noturna(state, all_pids, processed_houses)
+       2711:     _luide_janela_noturna(state, all_pids, processed_houses)
+    grep peoples.py: 0 hit(s)
+    grep turn.py: 0 hit(s)
+
+    -- _luide_janela_noturna (65 linhas) --
+      def _luide_janela_noturna(state, all_pids, processed_houses=None) -> None:
+          """Oferece mover/usar feitico para vampiros com Luide vivo.
+             processed_houses: casas ja declaradas (para reabrir se vampiro voltar)."""
+          if processed_houses is None:
+              processed_houses = set()
+          for pid in all_pids:
+              player = get_player(state, pid)
+              if player.people != "vampiros":
+                  continue
+              luide = next((u for u in player.units
+                            if isinstance(u, Hero) and u.is_alive()
+                            and u.hero_id == "luide_vampa"), None)
+              if luide is None:
+                  continue
+              while True:
+                  disponiveis = [u for u in player.units
+                                 if u.is_alive() and u.moves_this_turn < u.max_moves_this_turn]
+                  opts = []
+                  if disponiveis:
+                      opts.append("Mover unidade")
+                  if not player.has_cast_spell_this_turn:
+                      opts.append("Lancar feitico")
+                  opts.append("(continuar)")
+                  if len(opts) == 1:
+                      break
+                  idx = pick_index(f"{player.name} (Luide Vampa)", opts)
+                  escolha = opts[idx]
+                  if escolha == "(continuar)":
+                      break
+                  if escolha == "Mover unidade":
+                      labels = [f"{u.id} ({house_short(state, u.house)}, {u.life})"
+                                for u in disponiveis]
+                      u = disponiveis[pick_index("Unidade", labels)]
+                      dests = valid_destinations(state, u)
+                      if not dests:
+                          console.print("[red]Sem destinos.[/red]")
+                          continue
+                      labels2 = [house_short(state, d) for d in dests] + ["Cancelar"]
+                      idx2 = pick_index("Destino", labels2)
+                      if idx2 == len(dests):
+                          continue
+                      destino = dests[idx2]
+                      try:
+                          move_unit(state, pid, u.id, destino)
+                          console.print("[green]Movido.[/green]")
+                      except ActionError as e:
+                          console.print(f"[red]{e}[/red]")
+                          continue
+                      # Se destino ja foi processado, vampiro declara agora
+                      if destino in processed_houses:
+                          console.print(f"[cyan]{u.id} entrou em casa ja processada. Declara agora.[/cyan]")
+                          _declarar_casa(state, destino, [pid])
+                  elif escolha == "Lancar feitico":
+                      try:
+                          choice_data = {}
+                          if not player.units:
+                              raise ActionError("Sem unidades.")
+                          labels = [f"{u.id} ({u.life}/{u.life_max})" for u in player.units]
+                          choice_data["unit_id"] = player.units[pick_index("Alvo", labels)].id
+                          cast_spell(state, pid, choice_data)
+                          console.print("[green]Feitico lancado.[/green]")
+                      except (ActionError, ValueError) as e:
+                          console.print(f"[red]{e}[/red]")
+      
+      
+
+==========================================================================
+# 13 — Luna — prompt sim/não no início da noite
+==========================================================================
+    -- _luna_return (11 linhas) --
+      def _luna_return(state: GameState) -> None:
+          for player in state.players:
+              for u in player.units:
+                  if (isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"
+                          and "luna_origin_house" in u.statuses):
+                      origin = u.statuses.pop("luna_origin_house")
+                      if origin != u.house:
+                          log(state, f"  Luna retorna de {u.house} para {origin}.")
+                          u.house = origin
+      
+      
+    grep turn.py: 6 hit(s)
+        164: def _luna_return(state: GameState) -> None:
+        167:             if (isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"
+        168:                     and "luna_origin_house" in u.statuses):
+        169:                 origin = u.statuses.pop("luna_origin_house")
+        171:                     log(state, f"  Luna retorna de {u.house} para {origin}.")
+        180:     _luna_return(state)
+    grep peoples.py: 2 hit(s)
+        386: def luna_is_alive(player: Player) -> bool:
+        387:     return any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"
+    grep main.py: 16 hit(s)
+         55:     "fadas": ["Ainai", "Valendar", "Luna"],
+        109:     "luna": "Sonhadora: Sonho Lucido multi. Retorna ao local de origem.",
+       2270:             elif peoples.luna_is_alive(player):
+       2466: def _try_luna_return(state, player) -> None:
+       2467:     luna = next((u for u in player.units
+       2468:                  if isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"), None)
+       2469:     if luna is None:
+       2471:     if "luna_origin_house" not in luna.statuses:
+       2472:         console.print(f"[dim]{player.name}: Luna nao moveu este turno, nao pode teletransportar.[/dim]")
+       2474:     origin = luna.statuses["luna_origin_house"]
+       2475:     console.print(f"[yellow]{player.name}: Luna andou neste turno. Teletransportar de volta para {house_short(state, origin)}?[/yellow]")
+       2477:     idx = pick_index("Luna:", opts)
+       2479:         luna.house = origin
+       2480:         luna.statuses.pop("luna_origin_house", None)
+       2481:         console.print(f"[green]Luna retornou para {house_short(state, origin)}.[/green]")
+       2679:         _try_luna_return(state, player)
+
+==========================================================================
+# 14 — Ainai — entra na fila de ataque após teleporte
+==========================================================================
+    grep turn.py: 0 hit(s)
+    grep peoples.py: 0 hit(s)
+    grep main.py: 19 hit(s)
+         55:     "fadas": ["Ainai", "Valendar", "Luna"],
+        107:     "ainai": "Fada da Vinganca: teleporta para onde Fada/Elfo morreu. +1 Magia.",
+       2411: def _try_ainai_teleport(state, player) -> bool:
+       2412:     ainai = next((u for u in player.units
+       2413:                   if isinstance(u, Hero) and u.is_alive() and u.hero_id == "ainai"), None)
+       2414:     if ainai is None:
+       2416:     if ainai.statuses.get("ainai_used_turn") == state.turn:
+       2421:         if oid != ainai.owner_id:
+       2423:         if h == ainai.house:
+       2429:     console.print("[yellow]Ainai pode teletransportar para casa com fada aliada caida neste turno.[/yellow]")
+       2431:     idx = pick_index("Teleporte de Ainai?", ["Nao teleportar"] + labels)
+       2435:     ainai.house = destino
+       2436:     ainai.statuses["ainai_used_turn"] = state.turn
+       2438:     console.print(f"[green]Ainai teleportou para {house_short(state, destino)} (+1 Magia).[/green]")
+       2653: def _ainai_prompt_all(state, all_pids):
+       2657:             _try_ainai_teleport(state, player)
+       2681:     _ainai_prompt_all(state, all_pids)
+       2708:         _ainai_prompt_all(state, all_pids)
+       2712:     _ainai_prompt_all(state, all_pids)
+
+==========================================================================
+# 15 — Sonho Lúcido + Luna — aplicar artefatos múltiplos
+==========================================================================
+    grep spells.py: 2 hit(s)
+         27:     "sonho_lucido": SpellDefinition(
+         28:         "sonho_lucido", "fadas", "Sonho Lucido",
+    grep main.py: 9 hit(s)
+         81:     "sonho_lucido": "Sonho Lucido: troca naipe do proximo artefato.",
+        108:     "valendar": "Rainha Maga: substitui Sonho Lucido por bonus de naipe.",
+        109:     "luna": "Sonhadora: Sonho Lucido multi. Retorna ao local de origem.",
+       1817:         if sp.spell_id == "sonho_lucido" and peoples.valendar_is_alive(player):
+       2228:         if sp.spell_id == "sonho_lucido" and peoples.valendar_is_alive(player):
+       2229:             raise ActionError("Valendar substitui Sonho Lucido.")
+       2267:         elif sp.spell_id == "sonho_lucido":
+       2281:                     console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
+       2290:                     console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
+    grep artifacts_effects.py: 4 hit(s)
+        304:         if player.sonho_lucido_pending_turn == state.turn and                 player.sonho_lucido_multi_turn != state.turn:
+        305:             player.sonho_lucido_pending_turn = -1
+        306:         if player.sonho_lucido_multi_turn == state.turn:
+        307:             player.sonho_lucido_pending_turn = -1
+
+
+==========================================================================
+# 16 — HUD — avisar Lua Cheia se houver lobisomem
+==========================================================================
+    grep main.py: 10 hit(s)
+         70:     "lobisomens": "Maldicao da Lua: em Lua Cheia, dobro de dano. Unidades mortas ficam infectadas.",
+        113:     "lupa_lider": "Lupa Lider: em Lua Cheia, +Resistencia a todos os Lobisomens.",
+        114:     "cigana": "Cigana: em Lua Cheia, ataca Cidades e torna todos invisiveis.",
+        115:     "luarado": "Luarado: em Lua Cheia/transformado, anda 2x e infecta por dano.",
+        136:     "lobisomem": "Em Lua Cheia: dobro de dano, infeccao ao causar dano (Luarado) ou ao matar.",
+        144:     "Envenenado (Infeccao)": "Se o alvo morrer em Lua Cheia do Lobisomem, vira Lobisomem controlado.",
+        263:     "W": "Lobisomem (em Lua Cheia: dobro de dano)",
+        433:             console.print("[bold]Infectados (viram Lobisomem em Lua Cheia)[/bold]")
+        756:     console.print("[bold]Infectados (viram Lobisomem em Lua Cheia)[/bold]")
+       2375:         if (not can_attack_city and peoples.is_lua_cheia(state, owner.id)
+    grep peoples.py: 6 hit(s)
+        114:         if is_lua_cheia(state, other.id):
+        406: def is_lua_cheia(state: GameState, lobisomem_player_id: int) -> bool:
+        423:     return is_lua_cheia(state, owner.id)
+        426: def apply_lua_cheia_effects(state: GameState) -> None:
+        432:         if not is_lua_cheia(state, p.id):
+        435:         log(state, f"--- LUA CHEIA para {p.name} ---")
+    grep state.py: 0 hit(s)
+
+==========================================================================
+# 17 — Gnomos — apostas no início do TURNO + HUD corretas
+==========================================================================
+    grep turn.py: 3 hit(s)
+         28:     _reset_gnomos_bets_e_sorteio(state)
+         33: def _reset_gnomos_bets_e_sorteio(state: GameState) -> None:
+         34:     peoples.reset_gnomos_bets(state)
+    grep peoples.py: 33 hit(s)
+          7:     BET_HEART, BET_CLUB, BET_DIAMOND, BET_SPADE, ALL_BETS, FILHOS_BONUS_TURN,
+         24: ACTION_TO_BET = {
+         25:     "raise_city_life": BET_HEART,
+         26:     "lose_city_life": BET_HEART,
+         27:     "play_artifact": BET_CLUB,
+         28:     "buy_artifact_gold": BET_DIAMOND,
+         29:     "buy_artifact_magic": BET_DIAMOND,
+         30:     "transmute_artifact_magic": BET_DIAMOND,
+         31:     "sell_artifact": BET_DIAMOND,
+         32:     "summon_hero": BET_SPADE,
+         33:     "summon_troop": BET_SPADE,
+         34:     "kill": BET_SPADE,
+         49:     suit = ACTION_TO_BET.get(action)
+         57:         target = getattr(gnomo, f"bet_{suit}_target", None)
+         62:         gnomo.correct_bets += 1
+         63:         setattr(gnomo, f"bet_{suit}_target", None)
+         65:         log(state, f"{gnomo.name}: Aposta {suit} cumprida por {actor.name}. "
+         66:                    f"(Total: {gnomo.correct_bets} corretas)")
+         69: def sao_tome_has_aposta_em(player: Player, target_id: int) -> bool:
+         71:         player.bet_H_target == target_id
+         72:         or player.bet_C_target == target_id
+         73:         or player.bet_D_target == target_id
+         74:         or player.bet_S_target == target_id
+         93:         if sao_tome_has_aposta_em(player, other.id):
+        110:         if not sao_tome_has_aposta_em(owner, other.id):
+        137: def reset_gnomos_bets(state: GameState) -> None:
+        143:         p.bet_H_target = None
+        144:         p.bet_C_target = None
+        145:         p.bet_D_target = None
+        146:         p.bet_S_target = None
+      ... (+3)
+    grep main.py: 26 hit(s)
+         23:     gnomo_alocar_aposta,
+         74:     "gnomos_duendes": "Continue Apostando: 4 apostas (H/C/D/S) alocadas em outros jogadores no inicio do turno.",
+        125:     "bimbo_do_mal": "Gastar aposta: invisivel (1) ou artefato da Loja (5).",
+        126:     "sao_tome": "Passivas dos alvos das apostas. 2 determinacoes por dia.",
+        127:     "zebum": "Mistico: apostas corretas compram herois estrangeiros.",
+        772:     if player.people == "gnomos_duendes" and player.bets_need_realocacao:
+        773:         opts.append("Alocar apostas do turno")
+        808:         opts.append(f"Bimbo ({player.correct_bets} apostas corretas)")
+        877: def _gnomo_bets_menu(state, player):
+        880:     if not player.bets_need_realocacao:
+        882:     console.print(Panel.fit("[bold cyan]Continue Apostando...[/bold cyan]",
+        884:     console.print(f"Apostas corretas acumuladas: [yellow]{player.correct_bets}[/yellow]")
+        888:         player.bets_need_realocacao = False
+        902:             setattr(player, f"bet_{suit}_target", None)
+        904:             setattr(player, f"bet_{suit}_target", other_ids[idx])
+        905:     player.bets_need_realocacao = False
+       1036:     console.print(f"[cyan]Apostas corretas: {player.correct_bets}[/cyan]")
+       1037:     opts = ["Invisivel (1 aposta correta)", "Artefato da Loja (5 apostas corretas)"]
+       1092:     console.print(f"[cyan]Apostas corretas: {player.correct_bets}[/cyan]")
+       1395:     if player.people == "gnomos_duendes" and player.bets_need_realocacao:
+       1396:         r.append(("Gnomos", "A", "Alocar apostas do turno"))
+       1410:         r.append(("Especiais", "p", f"Bimbo ({player.correct_bets} apostas corretas)"))
+       1832:     # Sao Tome: passivas virtuais dos alvos das apostas
+       2199:         _gnomo_bets_menu(state, player)
+       2343:     if player.people == "gnomos_duendes" and player.bets_need_realocacao:
+       2344:         _gnomo_bets_menu(state, player)
+    grep models.py: 5 hit(s)
+        105:     bet_H_target: Optional[int] = None
+        106:     bet_C_target: Optional[int] = None
+        107:     bet_D_target: Optional[int] = None
+        108:     bet_S_target: Optional[int] = None
+        109:     correct_bets: int = 0
+
+==========================================================================
+# 18 — Caractere ao lado do nome de infectado (lobisomem)
+==========================================================================
+    grep main.py: 11 hit(s)
+         70:     "lobisomens": "Maldicao da Lua: em Lua Cheia, dobro de dano. Unidades mortas ficam infectadas.",
+        415:     _board_empalados_infectados(state)
+        417: def _board_empalados_infectados(state) -> None:
+        424:         for sig in p.infectados:
+        433:             console.print("[bold]Infectados (viram Lobisomem em Lua Cheia)[/bold]")
+        719:         "Unidades empaladas / infectadas",
+        737:         show_empalados_infectados(state)
+        745: def show_empalados_infectados(state) -> None:
+        756:     console.print("[bold]Infectados (viram Lobisomem em Lua Cheia)[/bold]")
+        759:         if p.infectados:
+        761:             for sig in p.infectados:
+    grep models.py: 2 hit(s)
+         43:     infectado: bool = False
+         97:     infectados: list[dict] = field(default_factory=list)
+    grep peoples.py: 9 hit(s)
+        314:         if sig not in killer_player.infectados:
+        315:             killer_player.infectados.append(sig)
+        316:             log(state, f"  {dead_unit.id} infectado pela Maldicao da Lua.")
+        363:             if sig not in killer_player.infectados:
+        364:                 killer_player.infectados.append(sig)
+        365:                 log(state, f"  {dead_unit.id} infectado por Sao Tome (Maldicao da Lua).")
+        459:     if not lobisomem.infectados:
+        461:     sigs_hero = {e["id"] for e in lobisomem.infectados if e["kind"] == "hero"}
+        462:     sigs_troop = {e["id"] for e in lobisomem.infectados if e["kind"] == "troop"}
+
+==========================================================================
+# 19 — Empalados/infectados — nome + jogador + povo
+==========================================================================
+    grep main.py: 17 hit(s)
+         70:     "lobisomens": "Maldicao da Lua: em Lua Cheia, dobro de dano. Unidades mortas ficam infectadas.",
+        143:     "Empalado": "Unidade destruida por Dracula nao pode ser reinvocada pelo dono.",
+        415:     _board_empalados_infectados(state)
+        417: def _board_empalados_infectados(state) -> None:
+        420:         for sig in p.empalados:
+        424:         for sig in p.infectados:
+        429:             console.print("[bold]Empalados (nao reinvocaveis)[/bold]")
+        433:             console.print("[bold]Infectados (viram Lobisomem em Lua Cheia)[/bold]")
+        719:         "Unidades empaladas / infectadas",
+        737:         show_empalados_infectados(state)
+        745: def show_empalados_infectados(state) -> None:
+        746:     console.print("[bold]Empalados (nao podem ser reinvocados)[/bold]")
+        749:         if p.empalados:
+        751:             for sig in p.empalados:
+        756:     console.print("[bold]Infectados (viram Lobisomem em Lua Cheia)[/bold]")
+        759:         if p.infectados:
+        761:             for sig in p.infectados:
+    grep models.py: 2 hit(s)
+         96:     empalados: list[str] = field(default_factory=list)
+         97:     infectados: list[dict] = field(default_factory=list)
+
+    [_board_empalados] NÃO ENCONTRADA
+
+==========================================================================
+# 20 — Renomear tropas padrão: pequena/média/grande (todos povos)
+==========================================================================
+    grep main.py: 11 hit(s)
+        172:   - Tropa: 1 Magia + X Ouro (X = vida desejada). 3 tipos: light(4) medium(6) heavy(8).
+        197:     "light": "pequena",
+        198:     "medium": "media",
+        199:     "heavy": "grande",
+        944:         labels = ["light", "medium", "heavy", "extra", "ghoul", "esqueleto"]
+       1688:         console.print(empty[i] + sep + j3[i] + sep + empty[i], highlight=False)
+       1689:     console.print(line_sep, highlight=False)
+       1691:         console.print(j4[i] + sep + center[i] + sep + j2[i], highlight=False)
+       1692:     console.print(line_sep, highlight=False)
+       1694:         console.print(empty[i] + sep + j1[i] + sep + empty[i], highlight=False)
+       2259:             labels = ["light", "medium", "heavy", "extra", "ghoul", "esqueleto"]
+    grep constants.py: 10 hit(s)
+          8: DEFAULT_STARTING_TROOPS = 0
+         17: TROOP_SUMMON_COST_MAGIC = 1
+         18: TROOP_MAX_LIFE = {
+         19:     "light": 4,
+         20:     "medium": 6,
+         21:     "heavy": 8,
+         65: class TroopArchetype(Enum):
+         66:     LIGHT = "light"
+         67:     MEDIUM = "medium"
+         68:     HEAVY = "heavy"
+
+==========================================================================
+# 21 — Guarari — andar 2x permanentemente
+==========================================================================
+    grep peoples.py: 0 hit(s)
+    grep heroes.py: 3 hit(s)
+         77:     "guarari": HeroDefinition("guarari", "filhos_floresta", "Guarari, Centauro Guardiao da Floresta", 5,
+        120:     "Guarari": "guarari",
+        138:         return [HERO_CATALOG[h] for h in ("guarari", "aiquara", "baoba_ba")]
+    grep main.py: 13 hit(s)
+         60:     "filhos_floresta": ["Guarari", "Aiquara", "Baoba-bá"],
+        122:     "guarari": "Centauro: 2 Magia transforma tropa da casa em Centauro ate fim da Noite.",
+        138:     "Centauro (Guarari)": "Anda 2x. Volta ao normal no fim da Noite.",
+        796:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "guarari" for u in player.units):
+        797:         opts.append("Guarari: transformar tropa em Centauro (2 Magia)")
+       1398:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "guarari"
+       1400:         r.append(("Especiais", "q", "Guarari: tropa -> Centauro (2 Magia)"))
+       2201:         guarari = next((u for u in player.units
+       2203:                         and u.hero_id == "guarari"), None)
+       2204:         if guarari is None:
+       2205:             raise ActionError("Guarari nao esta vivo.")
+       2208:                   and u.house == guarari.house]
+       2210:             raise ActionError("Sem tropas na casa de Guarari.")
+    grep models.py: 1 hit(s)
+         91:     andar_duas_vezes_turn: int = -1
+
+==========================================================================
+# 22 — Aiquara — especial no menu 4 (não no i)
+==========================================================================
+    grep main.py: 18 hit(s)
+         20:     transformar_em_centauro, aiquara_mover, aiquara_atacar,
+         60:     "filhos_floresta": ["Guarari", "Aiquara", "Baoba-bá"],
+        123:     "aiquara": "Ninfa: controla inimigo da casa (mover no Dia, atacar na Noite).",
+        799:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara" for u in player.units):
+        800:         opts.append("Aiquara: controlar inimigo")
+        969: def _aiquara_ui(state, pid):
+        971:     aiquara = next((u for u in player.units
+        973:                     and u.hero_id == "aiquara"), None)
+        974:     if aiquara is None:
+        975:         raise ActionError("Aiquara nao esta viva.")
+        981:             if u.house == aiquara.house and u.is_alive():
+        984:         raise ActionError("Sem inimigos na casa de Aiquara.")
+        991:     acao = pick_index("Aiquara", ["Forcar movimento", "Forcar ataque"])
+       1000:         aiquara_mover(state, pid, tgt_unit.id, dests[idx2 - 1])
+       1025:         aiquara_atacar(state, pid, tgt_unit.id, tt, ti)
+       1401:     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"
+       1403:         r.append(("Especiais", "i", "Aiquara: controlar inimigo"))
+       2216:         _aiquara_ui(state, pid)
+    grep main.py: 22 hit(s)
+        768: def _menu_especiais(state, pid: int) -> str | None:
+        817:         console.print("[dim]Sem acoes especiais disponiveis.[/dim]")
+        820:     idx = pick_index("Especiais", opts)
+       1158:         "[bold]Atalhos de teclado[/bold]\n\n"
+       1191:         "Atalhos de teclado",
+       1314:         ("4", "Invocar Heroi"),
+       1364:     r.append(("Turno", "4", "Especiais (herois, habilidades)"))
+       1369:         r.append(("Especiais", "d", f"Miyamoto: atacar de Dia ({miyamoto_atks})"))
+       1374:         r.append(("Especiais", "e", "Arken: Espoliar"))
+       1381:             r.append(("Especiais", "t", "Tin Tin: ficar Invisivel"))
+       1388:             r.append(("Especiais", "y", "Dandara: invisibilidade do grupo"))
+       1393:         r.append(("Especiais", "z", "Luide Vampa: ativar movimento noturno"))
+       1400:         r.append(("Especiais", "q", "Guarari: tropa -> Centauro (2 Magia)"))
+       1403:         r.append(("Especiais", "i", "Aiquara: controlar inimigo"))
+       1407:         r.append(("Especiais", "b", f"Baoba-ba: pagar Magia ({player.baoba_pagamentos}/3)"))
+       1410:         r.append(("Especiais", "p", f"Bimbo ({player.correct_bets} apostas corretas)"))
+       1413:         r.append(("Especiais", "g", "Zebum: invocar/reinvocar heroi"))
+       1422:         r.append(("Especiais", "h", f"Usar cura pendente ({player.pending_heals})"))
+       1933:     table.add_column("Tecla", style="cyan", justify="center")
+       2110:     elif choice == "4":
+       2312:     if choice == "4":
+       2313:         return _menu_especiais(state, pid)
+
+==========================================================================
+# 23 — Lupã vida máxima 6 (era 7)
+==========================================================================
+    grep heroes.py: 2 hit(s)
+         59:     "lupa_lider": HeroDefinition("lupa_lider", "lobisomens", "Lupa, Lider da Matilha", 7,
+        109:     "Lupã": "lupa_lider",
+lupa_lider": HeroDefinition("lupa_lider", "lobisomens", "Lupa, Lider da Matilha", 7,
+        ("resistencia_lua_cheia",)),
+    "cigana": HeroDefinition("cigana", "lobisomens", "Cigana, Caminhante da Nevoa", 2,
+        ("veu_da_lua",)),
+    "luarado": HeroDefinition("luarado", "lobisomens", "Luarado, Filhote da Mare", 4,
+        ("cacada_infecciosa",)),
+    "joao_grandao": HeroDefinition("joao_grandao",
+
+=== FIM DO DIAGNÓSTICO ===

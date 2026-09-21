@@ -1,0 +1,148 @@
+"""Testes de combate (Noite)."""
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from jessica.core.setup import run_setup
+from jessica.core.actions import summon_troop, summon_hero
+from jessica.core.combat import resolve_attack, Attack, CombatError
+from jessica.core.constants import TroopArchetype, Phase
+
+
+def make_state():
+    state, _ = run_setup(
+        all_peoples=["humanos", "anoes", "orcs", "fadas"],
+        heroes_by_people={
+            "humanos": ["m"], "anoes": ["b"], "orcs": ["g"], "fadas": ["ai"],
+        },
+        choices={
+            1: {"povo": "humanos", "heroi": "m"},
+            2: {"povo": "anoes", "heroi": "b"},
+            3: {"povo": "orcs", "heroi": "g"},
+            4: {"povo": "fadas", "heroi": "ai"},
+        },
+        seed=20260916,
+    )
+    state.phase = Phase.NIGHT
+    return state
+
+
+def test_troop_vs_city():
+    state = make_state()
+    state.players[0].city.gold = 10
+    state.players[0].city.magic = 5
+    troop = summon_troop(state, 1, TroopArchetype.LIGHT, 4)
+    troop.house = "city_2"
+
+    resolve_attack(state, Attack(troop.id, "city", "2"))
+
+    city2 = state.players[1].city
+    assert city2.life == 1, f"Cidade 2 vida esperada 1, veio {city2.life}"
+    assert troop.life == 3, f"Tropa vida esperada 3, veio {troop.life}"
+    print("OK  - Tropa vs Cidade (1 dano / 1 retaliação)")
+
+
+def test_troop_vs_troop():
+    state = make_state()
+    state.players[0].city.gold = 20
+    state.players[0].city.magic = 5
+    state.players[1].city.gold = 20
+    state.players[1].city.magic = 5
+
+    t1 = summon_troop(state, 1, TroopArchetype.LIGHT, 4)
+    t2 = summon_troop(state, 2, TroopArchetype.LIGHT, 3)
+
+    t1.life = 5
+    t1.life_max = 5
+    t2.life = 3
+
+    t1.house = "center"
+    t2.house = "center"
+
+    resolve_attack(state, Attack(t1.id, "unit", t2.id))
+
+    assert t1.life == 2, f"Esperado 2 em t1, veio {t1.life}"
+    assert state.players[1].units == [], "Tropa 2 deveria ter morrido"
+    print("OK  - Tropa vs Tropa (troca simples 5 vs 3 -> 2 sobrevive)")
+
+
+def test_hero_cannot_attack_city():
+    state = make_state()
+    state.players[0].city.magic = 5
+    hero = summon_hero(state, 1)
+    hero.house = "city_2"
+
+    try:
+        resolve_attack(state, Attack(hero.id, "city", "2"))
+        raise AssertionError("Deveria ter bloqueado herói atacando cidade")
+    except CombatError as e:
+        print(f"OK  - Herói vs Cidade bloqueado: {e}")
+
+
+def test_sequential_resolution():
+    """
+    Com resolução imediata: t1 (vida 5) ataca t3 (vida 3).
+    t3 morre, t1 fica com 2. Depois t2 (vida 6) não pode atacar t3 morto.
+    """
+    state = make_state()
+    state.players[0].city.gold = 20
+    state.players[0].city.magic = 5
+    state.players[1].city.gold = 20
+    state.players[1].city.magic = 5
+
+    t1 = summon_troop(state, 1, TroopArchetype.LIGHT, 4)
+    t2 = summon_troop(state, 1, TroopArchetype.MEDIUM, 6)
+    t3 = summon_troop(state, 2, TroopArchetype.LIGHT, 3)
+
+    t1.life = 5
+    t1.life_max = 5
+
+    t1.house = "center"
+    t2.house = "center"
+    t3.house = "center"
+
+    resolve_attack(state, Attack(t1.id, "unit", t3.id))
+    # t3 (3) morre; t1 toma 3 -> fica com 2
+    assert not t3.is_alive(), "t3 deveria ter morrido"
+    assert t1.life == 2, f"t1 esperado 2, veio {t1.life}"
+
+    # t2 tenta atacar t3 (morto) -> deve dar erro
+    try:
+        resolve_attack(state, Attack(t2.id, "unit", t3.id))
+        raise AssertionError("Deveria ter bloqueado ataque a alvo morto")
+    except CombatError as e:
+        print(f"OK  - Resolução sequencial: t3 morreu antes do segundo ataque")
+
+
+def test_no_attacks():
+    state = make_state()
+    resolve_attack.__wrapped__ if False else None
+    from jessica.core.combat import resolve_night
+    resolve_night(state, [])
+    print("OK  - Noite sem ataques não quebrou")
+
+
+def run_all():
+    tests = [
+        test_troop_vs_city,
+        test_troop_vs_troop,
+        test_hero_cannot_attack_city,
+        test_sequential_resolution,
+        test_no_attacks,
+    ]
+    print("=== Rodando testes de combat.py ===\n")
+    passed = 0
+    failed = 0
+    for t in tests:
+        try:
+            t()
+            passed += 1
+        except Exception as e:
+            failed += 1
+            print(f"FALHOU - {t.__name__}: {type(e).__name__}: {e}")
+    print(f"\n=== Resultado: {passed} passaram, {failed} falharam ===")
+
+
+if __name__ == "__main__":
+    run_all()
