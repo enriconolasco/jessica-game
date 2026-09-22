@@ -31,27 +31,34 @@ A baseline P0 permanece em `baseline-v0.1` (`94db32b`) e a versão mecânica ant
 
 ## Ações existentes
 
-Legenda: **Core** = regra e validação no core; **Parcial** = execução no core, mas
-legalidade/parâmetros ainda montados no terminal; **Terminal** = decisão/orquestração
-permanece em `main.py`. Todas as linhas abaixo alteram estado, salvo “consultas”.
+Variantes de povos, heróis, feitiços e artefatos ficam na ação estrutural comum.
+**Core** = porta e regra no motor; **Parcial** = parâmetros/fluxo ainda no terminal;
+**Terminal** = validação ou mutação relevante ainda em `main.py`.
 
-| Grupo | Ações | Situação | Informação privada |
-|---|---|---|---|
-| Setup | bans, escolha de povo/herói, nomes, ordem | Parcial | escolhas ainda não reveladas |
-| Economia | coletar, subir vida, construir monumento | Parcial | não |
-| Unidades | invocar tropa, invocar herói, mover, usar cura | Parcial | não |
-| Artefatos | comprar, transmutar, vender, jogar, descartar campo | Parcial | mão e compras |
-| Pendências | escolher cartas de J♦/Boin; recompensa de Q♦ | Parcial | cartas vistas/escolhidas |
-| Feitiços | Resistência, Armadura de Ouro, Espoliar, Sonho Lúcido, Morcego, Licantropo, Linhagem Ancestral, Levantar Mortos, Decompor, Imitação Gnomérica | Parcial | mão no Sonho/Imitação |
-| Combate | ataque diurno, ataque noturno a unidade/cidade | Parcial | não |
-| Reação | pagamento de Armadura de Ouro | Terminal | ouro do próprio jogador |
-| Heróis | Arken, Tin Tin, Dandara, Besouro, Luide, Guarari, Aiquara, Baobá-bá, Bimbo, Zebum | Parcial | mão em Besouro; compra de Bimbo |
-| Povos | alocar apostas; usar/dar Pena | Parcial | apostas e mão |
-| Fases | iniciar turno/dia, encerrar dia/turno | Core, orquestrado no terminal | não |
-| Noite | ordem por casa/jogador, passar/atacar, janelas de Luide, Ainai, Luna, Vovó e Mandinga | Terminal | mão em Mandinga |
-| Passar | encerrar o dia do jogador sem agir mais | Terminal | não |
-| Sistema | undo, Mola e reiniciar | Terminal | snapshot integral |
-| Consultas | mapa, board, loja, log, fichas, ajuda e relatórios | Terminal; não alteram estado | devem respeitar visão |
+| Ação e parâmetros | Recebida em | Validada em | Altera estado em | RNG | Eventos/logs | Privado | Classe |
+|---|---|---|---|---|---|---|---|
+| `setup(names, bans, peoples, heroes)` | `setup_ui` | `setup_ui`, `run_setup` | `run_setup` | ordem inicial | `event_log` | escolhas | Parcial |
+| `collect_resources(gold, magic)` | `_do_action` | `headless.apply_action`, `actions.collect_resources` | `actions.collect_resources` | não | `Event resources_collected`, `action_log`, `event_log` | não | Core |
+| `raise_city_life(times)` | `_do_action` | `actions.raise_city_life` | mesma função | não | `action_log`, `event_log` | não | Parcial |
+| `summon_troop(archetype, life)` | `_do_action` | `main` e `actions.summon_troop` | `actions.summon_troop` | não | `action_log`, `event_log` | não | Parcial |
+| `summon_hero(hero_id?)` | `_do_action` | `main` e `actions.summon_hero` | `actions.summon_hero` | não | `action_log`, `event_log` | não | Parcial |
+| `move_unit(unit_id, destination)` | `_do_action`, janela Luide | `valid_destinations`, `actions.move_unit` | `actions.move_unit` | não | `action_log`, `event_log` | não | Parcial |
+| `build_monument()` | `_do_action` | `actions.build_monument` | mesma função | não | `action_log`, `event_log` | não | Parcial |
+| `buy_artifact_gold()` | `_do_action` | `actions.buy_artifact_with_gold` | mesma função | sim | `action_log`, `event_log` | carta obtida | Parcial |
+| `transmute_artifact_magic()` | `_do_action` | `actions.transmute_artifact_with_magic` | mesma função | sim | `action_log`, `event_log` | carta obtida | Parcial |
+| `sell_artifact(card_id)` | `_do_action` | `actions.sell_artifact` | mesma função | não | `action_log`, `event_log` | mão | Parcial |
+| `play_artifact(card_id, choice)` | `_do_action`, Mandinga | `actions.play_artifact`, `artifacts_effects.on_play` | mesmas funções | conforme carta | `action_log`, `event_log` | mão/escolha | Parcial |
+| `resolve_artifact_choice(choice)` | `_resolve_pending_choice_if_any` | `actions.resolve_pending_artifact_choice` | mesma função | não | `event_log` | cartas/recompensa | Parcial |
+| `cast_spell(choice)` | `_do_action`, janela Luide | `actions.cast_spell` e variante | mesmas funções | conforme feitiço | `action_log`, `event_log` | Sonho/Imitação | Parcial |
+| `use_heal(unit_id)` | `_do_action` | `actions.use_heal` | mesma função | não | `action_log`, `event_log` | não | Parcial |
+| `attack(attacker_id, target_type, target_id)` | dia e `_declarar_casa` | `combat.resolve_attack*` | `core.combat` | conforme atacante | `action_log`, `event_log` | não | Parcial |
+| `use_special(ability_id, choice)` | `_menu_especiais`, janelas | `main` e função específica de `actions` | função específica de `actions` | conforme habilidade | principalmente `event_log` | conforme habilidade | Parcial |
+| `allocate_bet(suit, target_id)` | `_gnomo_bets_menu` | `actions.gnomo_alocar_aposta` | mesma função | não | `event_log` | apostas | Parcial |
+| `armor_reaction(gold)` | `_armor_choice_prompt` | callback em `combat._apply_armor` | `core.combat` | não | `event_log` | decisão/ouro | Terminal |
+| `night_decision(pass/attack)` | `_declarar_casa` | `main`; ataque no `core.combat` | `main`/`core.combat` | conforme ataque | `action_log`, `event_log` | não | Terminal |
+| `pass_day()` | `run_player_day` | `main` | `Player.has_played_day_this_turn` em `main` | não | nenhum | não | Terminal |
+| `system_action(undo/mola/restart)` | `_menu_sistema` | `_run_one_game` | substituição de snapshot em `main` | não | nenhum | snapshot total | Terminal |
+| `inspect(view_type, params)` | menus de informação | `main` | não altera | não | nenhum | depende da visão | Terminal |
 
 As funções de mutação já existentes devem ser reutilizadas; P1 não deve duplicar suas
 regras. Os principais pontos de entrada estão em `core.actions`, `core.combat`,

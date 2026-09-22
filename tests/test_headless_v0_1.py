@@ -101,6 +101,32 @@ def test_player_view_hides_opponent_hand_shop_order_and_rng():
     assert "rng" not in view
 
 
+def test_terminal_collection_uses_engine_port():
+    from jessica import main as main_mod
+
+    state = make_state()
+    calls = []
+    original_apply = main_mod.apply_engine_action
+    original_ask = main_mod.IntPrompt.ask
+
+    def tracked_apply(current_state, action):
+        calls.append(action)
+        return original_apply(current_state, action)
+
+    try:
+        main_mod.apply_engine_action = tracked_apply
+        main_mod.IntPrompt.ask = lambda *args, **kwargs: 1
+        main_mod._do_action(state, 1, "1")
+    finally:
+        main_mod.apply_engine_action = original_apply
+        main_mod.IntPrompt.ask = original_ask
+
+    assert calls[0]["type"] == "collect_resources"
+    assert calls[0]["params"] == {"gold": 1, "magic": 1}
+    assert state.players[0].city.gold == 1
+    assert state.players[0].city.magic == 1
+
+
 def run_all():
     tests = [
         test_legal_actions_enumerates_collect_splits_without_mutation,
@@ -108,6 +134,7 @@ def run_all():
         test_rejected_action_is_atomic,
         test_same_state_and_action_are_deterministic,
         test_player_view_hides_opponent_hand_shop_order_and_rng,
+        test_terminal_collection_uses_engine_port,
     ]
     passed = failed = 0
     for test in tests:

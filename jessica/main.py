@@ -13,7 +13,7 @@ from .core.state import (
     make_rng, get_player, declaration_order_for_house, sync_house_priority,
 )
 from .core.actions import (
-    collect_resources, raise_city_life, summon_troop, summon_hero,
+    raise_city_life, summon_troop, summon_hero,
     move_unit, build_monument, buy_artifact_with_gold,
     transmute_artifact_with_magic, sell_artifact, play_artifact,
     resolve_pending_artifact_choice, use_heal, cast_spell, arken_espolia,
@@ -41,6 +41,7 @@ from .core.constants import (
 from .core.models import Hero, Troop
 from .core.artifacts import card_display, get_definition, ARTIFACT_CATALOG
 from .core.serialize import state_to_dict, state_from_dict
+from .core.headless import ACTION_VERSION, apply_action as apply_engine_action
 from .core import artifacts_effects, peoples, heroes, spells as spells_mod
 
 
@@ -2135,14 +2136,30 @@ def _escolher_heroi_mv() -> str:
     return ["cobra", "zoia", "cova_rasa"][idx]
 
 
+def _collect_resources_via_engine(state, pid: int, gold: int) -> dict:
+    result = apply_engine_action(state, {
+        "version": ACTION_VERSION,
+        "type": "collect_resources",
+        "player_id": pid,
+        "params": {"gold": gold, "magic": RESOURCES_PER_DAY - gold},
+    })
+    if not result["success"]:
+        raise ActionError(result["error"]["message"])
+    for event in result["events"]:
+        if event["type"] == "resources_collected":
+            data = event["data"]
+            console.print(f"[green]Coletou {data['gold']} Ouro e "
+                          f"{data['magic']} Magia.[/green]")
+    return result
+
+
 def _do_action(state, pid: int, choice: str) -> str | None:
     player = get_player(state, pid)
     if choice == "1":
         gold = IntPrompt.ask(f"Ouro (0 a {RESOURCES_PER_DAY})", default=RESOURCES_PER_DAY)
         if gold < 0 or gold > RESOURCES_PER_DAY:
             raise ActionError("Fora do intervalo.")
-        collect_resources(state, pid, gold, RESOURCES_PER_DAY - gold)
-        console.print("[green]Coleta ok.[/green]")
+        _collect_resources_via_engine(state, pid, gold)
     elif choice == "2":
         raise_city_life(state, pid, IntPrompt.ask("Vezes", default=1))
         console.print("[green]Vida ok.[/green]")
