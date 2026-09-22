@@ -105,6 +105,10 @@ um `state_to_dict`; a visão deve ser construída por lista permitida.
 - Na prova inicial, enumera as três divisões legais da coleta diária:
   `0/2`, `1/1` e `2/0`, quando `collect_resources` estiver disponível.
 
+Limitação conhecida: o `GameState` atual não registra qual jogador possui a janela de
+decisão do dia. A prova v0.1 valida fase e estado individual; o laço chamador ainda
+controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do motor.
+
 ### `apply_action(state, action) -> ActionResult`
 
 - Valida versão, formato, jogador, fase, janela e parâmetros.
