@@ -183,3 +183,33 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         # event_log atual mistura texto público e privado; não é exposto.
         "events": [],
     }
+
+
+def apply_event_to_view(view: dict, event: dict) -> dict:
+    """Projeta um evento v0.1 sem acessar o GameState completo."""
+    if event.get("version") != EVENT_VERSION:
+        raise ValueError("Versão de evento não suportada.")
+    visibility = event.get("visibility", {})
+    kind = visibility.get("kind")
+    viewer_id = view.get("viewer_id")
+    visible = kind == "public"
+    if kind == "private":
+        visible = viewer_id in event.get("participants", [])
+    elif kind == "players":
+        visible = viewer_id in visibility.get("player_ids", [])
+    if not visible:
+        raise ValueError("Evento não é visível para este jogador.")
+
+    projected = deepcopy(view)
+    if event.get("type") == "resources_collected":
+        data = event["data"]
+        player = next((p for p in projected["players"]
+                       if p["id"] == data["player_id"]), None)
+        if player is None:
+            raise ValueError("Participante do evento não existe na visão.")
+        player["city"]["gold"] += data["gold"]
+        player["city"]["magic"] += data["magic"]
+    else:
+        raise ValueError("Tipo de evento ainda não projetável.")
+    projected["events"].append(deepcopy(event))
+    return projected

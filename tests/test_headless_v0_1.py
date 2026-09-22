@@ -2,13 +2,16 @@
 import json
 import os
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from jessica.core.headless import (
-    ACTION_VERSION, apply_action, legal_actions, view_for_player,
+    ACTION_VERSION, apply_action, apply_event_to_view, legal_actions,
+    view_for_player,
 )
-from jessica.core.serialize import state_to_dict
+from jessica.core.actions import collect_resources
+from jessica.core.serialize import load_from_file, save_to_file, state_to_dict
 from jessica.core.setup import run_setup
 
 
@@ -99,6 +102,46 @@ def test_player_view_hides_opponent_hand_shop_order_and_rng():
     assert "HIDDEN_CHOICE" not in encoded
     assert "deck" not in view["shop"]
     assert "rng" not in view
+    assert json.loads(json.dumps(view)) == view
+
+
+def test_serialized_action_keeps_meaning():
+    state_a = make_state()
+    state_b = make_state()
+    action = legal_actions(state_a, 1)[2]
+    restored = json.loads(json.dumps(action))
+    assert apply_action(state_a, action) == apply_action(state_b, restored)
+    assert state_to_dict(state_a) == state_to_dict(state_b)
+
+
+def test_event_reconstructs_resource_change_in_player_view():
+    state = make_state()
+    before = view_for_player(state, 2)
+    result = apply_action(state, legal_actions(state, 1)[1])
+    projected = apply_event_to_view(before, result["events"][0])
+    after = view_for_player(state, 2)
+    assert projected["players"] == after["players"]
+    assert projected["events"] == result["events"]
+
+
+def test_old_and_new_collection_flows_match():
+    old_state = make_state()
+    new_state = make_state()
+    collect_resources(old_state, 1, 1, 1)
+    result = apply_action(new_state, legal_actions(new_state, 1)[1])
+    assert result["success"]
+    assert state_to_dict(old_state) == state_to_dict(new_state)
+
+
+def test_save_load_after_headless_action():
+    state = make_state()
+    apply_action(state, legal_actions(state, 1)[1])
+    with tempfile.TemporaryDirectory() as directory:
+        path = os.path.join(directory, "headless-save.json")
+        save_to_file(state, path)
+        restored = load_from_file(path)
+    assert state_to_dict(restored) == state_to_dict(state)
+    assert view_for_player(restored, 1) == view_for_player(state, 1)
 
 
 def test_terminal_collection_uses_engine_port():
@@ -134,6 +177,10 @@ def run_all():
         test_rejected_action_is_atomic,
         test_same_state_and_action_are_deterministic,
         test_player_view_hides_opponent_hand_shop_order_and_rng,
+        test_serialized_action_keeps_meaning,
+        test_event_reconstructs_resource_change_in_player_view,
+        test_old_and_new_collection_flows_match,
+        test_save_load_after_headless_action,
         test_terminal_collection_uses_engine_port,
     ]
     passed = failed = 0

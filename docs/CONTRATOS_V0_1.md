@@ -125,6 +125,12 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
 - Constrói uma projeção por lista permitida e filtra eventos por `visibility`.
 - A mesma função deve servir terminal, IA local, testes e futura conexão online.
 
+### `apply_event_to_view(view, event) -> PlayerView`
+
+- Aplica somente eventos visíveis ao observador, sem acessar o `GameState` completo.
+- Não altera a visão original.
+- Na prova v0.1, reconstrói o efeito público de `resources_collected`.
+
 ## Invariantes da prova
 
 1. Mesma seed + mesmo save + mesmas ações produz o mesmo estado e eventos.
