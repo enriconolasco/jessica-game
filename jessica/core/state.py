@@ -178,4 +178,6 @@ def mark_summoned(state: GameState, player: Player, unit) -> None:
     if getattr(player, "people", None) == "dragoes" and getattr(unit, "hero_id", None):
         from . import peoples
         peoples.apply_dragon_canastra_to_hero(player, unit)
+    from . import peoples
+    peoples.on_unit_summoned(state, player.id)
     sync_house_priority(state, unit.house)

@@ -23,16 +23,10 @@ PEOPLE_DRAGOES = "dragoes"
 
 
 ACTION_TO_BET = {
-    "raise_city_life": BET_HEART,
-    "lose_city_life": BET_HEART,
     "play_artifact": BET_CLUB,
-    "buy_artifact_gold": BET_DIAMOND,
-    "buy_artifact_magic": BET_DIAMOND,
-    "transmute_artifact_magic": BET_DIAMOND,
-    "sell_artifact": BET_DIAMOND,
-    "summon_hero": BET_SPADE,
-    "summon_troop": BET_SPADE,
-    "kill": BET_SPADE,
+    "base_life_gained": BET_HEART,
+    "artifact_obtained": BET_DIAMOND,
+    "unit_summoned": BET_SPADE,
 }
 
 
@@ -163,6 +157,9 @@ def apply_dragon_turn_start(state: GameState) -> None:
         for unit in dragon_heroes(player):
             unit.max_moves_this_turn = 2 if dragon_has_suit(player, "C") else 1
             unit.has_moved_this_turn = unit.moves_this_turn >= unit.max_moves_this_turn
+            if state.turn == 1 and unit.statuses.get("summoned_turn") == 1:
+                unit.moves_this_turn = unit.max_moves_this_turn
+                unit.has_moved_this_turn = True
             if unit.hero_id == "purpura" and state.turn % 2 == 0:
                 unit.life_max += 1
                 unit.life += 1
@@ -189,6 +186,19 @@ def on_action_performed(state: GameState, actor_id: int, action: str) -> None:
         actor = get_player(state, actor_id)
         log(state, f"{gnomo.name}: Aposta {suit} cumprida por {actor.name}. "
                    f"(Total: {gnomo.correct_bets} corretas)")
+
+
+def on_unit_summoned(state: GameState, actor_id: int) -> None:
+    on_action_performed(state, actor_id, "unit_summoned")
+
+
+def on_artifact_obtained(state: GameState, actor_id: int) -> None:
+    on_action_performed(state, actor_id, "artifact_obtained")
+
+
+def on_base_life_gained(state: GameState, actor_id: int, amount: int) -> None:
+    if amount > 0:
+        on_action_performed(state, actor_id, "base_life_gained")
 
 
 def sao_tome_has_aposta_em(player: Player, target_id: int) -> bool:
@@ -257,6 +267,7 @@ def apply_filhos_bonus(state: GameState) -> None:
         p.city.magic += 2
         p.filhos_bonus_recebido = True
         log(state, f"{p.name} (Filhos): Florescimento Exuberante (+{ganho_vida} Vida, +2 Ouro, +2 Magia).")
+        on_base_life_gained(state, p.id, ganho_vida)
 
 
 def reset_gnomos_bets(state: GameState) -> None:
@@ -434,6 +445,7 @@ def on_unit_killed_by(state: GameState, killer_player_id: int,
         if not state.shop.is_empty():
             card = state.shop.draw_random(state.rng)
             killer_player.hand.append(card)
+            on_artifact_obtained(state, killer_player_id)
             log(state, f"{killer_player.name} (Fadas): {killer_unit.id} matou "
                        f"Heroi {dead_unit.id} e ganhou {card}.")
 

@@ -21,6 +21,7 @@ de mecânica deve atualizar sua linha e possuir ao menos um teste comportamental
 | Dragões | Canastra, Bases móveis, Púrpura, Mar de Chamas e Chamado | `tests/test_dragoes.py` |
 | Anões | Sete Anões e empalamento temporário | `tests/test_7_dwarves.py`, `tests/test_seven_dwarves_abilities.py` |
 | Filhos da Floresta | Guarari/Centauro e Cabaça Cheia | `tests/test_filhos_floresta.py`, `tests/test_gigantes.py` |
+| Gnomos e Duendes | Apostas por fatos gerais: vida da Base, artefato obtido, invocação e artefato jogado | `tests/test_gnomos_duendes.py` |
 
 ## Fluxo mínimo de alteração
 

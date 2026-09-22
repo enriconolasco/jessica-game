@@ -115,8 +115,9 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
 - Valida versão, formato, jogador, fase, janela e parâmetros.
 - Reutiliza a função existente do core; não replica a regra mecânica.
 - Captura erros de domínio em códigos estáveis e produz eventos estruturados.
-- Despacha `collect_resources`, `raise_city_life` e `build_monument`; tipos ainda
-  não adaptados retornam `unsupported_action` sem mutação.
+- Despacha `collect_resources`, `raise_city_life`, `build_monument`,
+  `summon_troop` e `summon_hero`; tipos ainda não adaptados retornam
+  `unsupported_action` sem mutação.
 - O `GameState` continua sendo alterado in-place nesta versão.
 
 ### `view_for_player(state, player_id) -> PlayerView`
@@ -130,8 +131,8 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
 
 - Aplica somente eventos visíveis ao observador, sem acessar o `GameState` completo.
 - Não altera a visão original.
-- Reconstrói os efeitos públicos de `resources_collected`, `city_life_raised` e
-  `monument_built`.
+- Reconstrói os efeitos públicos de `resources_collected`, `city_life_raised`,
+  `monument_built` e `unit_summoned`.
 
 ## Invariantes da prova
 

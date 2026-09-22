@@ -62,6 +62,7 @@ def _monument_bonus(state: GameState) -> None:
             continue
         card = state.shop.draw_random(state.rng)
         player.hand.append(card)
+        peoples.on_artifact_obtained(state, player.id)
         log(state, f"{player.name}: Monumento concedeu {card}.")
 
 

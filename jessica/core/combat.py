@@ -86,6 +86,7 @@ def _award_city_destruction(state: GameState, destroyer_id: int) -> None:
         if state.shop.is_empty():
             break
         destroyer.hand.append(state.shop.draw_random(state.rng))
+        peoples.on_artifact_obtained(state, destroyer_id)
     log(state, f"  {destroyer.name} destruiu Cidade e ganhou {reward} artefato(s).")
 
 

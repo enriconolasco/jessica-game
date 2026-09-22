@@ -130,6 +130,9 @@ def run_setup(
             life=hdef.life, life_max=hdef.life, hero_id=hid,
         )
         base.statuses["dragon_base"] = True
+        base.statuses["summoned_turn"] = 1
+        base.moves_this_turn = base.max_moves_this_turn
+        base.has_moved_this_turn = True
         p.units.append(base)
         log(state, f"Jogador {pid}: {hdef.name} iniciou como Base movel.")
 

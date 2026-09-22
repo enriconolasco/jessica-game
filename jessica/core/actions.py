@@ -115,7 +115,7 @@ def raise_city_life(state: GameState, player_id: int, times: int = 1) -> None:
     bump_stat(state, player_id, "city_life_raised", times)
     record_action(state, player_id, "raise_city_life", times=times)
     log(state, f"{player.name} subiu vida em {times} ({city.life}/{city.life_max}).")
-    peoples.on_action_performed(state, player_id, "raise_city_life")
+    peoples.on_base_life_gained(state, player_id, times)
 
 
 # =============================================================
@@ -524,6 +524,7 @@ def use_or_give_pena(state: GameState, player_id: int, card_id: str,
         if not state.shop.is_empty():
             new_card = state.shop.draw_random(state.rng)
             player.hand.append(new_card)
+            peoples.on_artifact_obtained(state, player_id)
             log(state, f"{player.name} deu Pena a Iuna e ganhou {card_display(new_card)}.")
         record_action(state, player_id, "pena_give_iuna")
         return
@@ -900,8 +901,11 @@ def _dragon_canastra_enter(state: GameState, player, card_id: str) -> None:
     player.canastra.append(card_id)
     if card_id.startswith("Q_"):
         for unit in peoples.dragon_heroes(player):
+            was_base = bool(unit.statuses.get("dragon_base"))
             unit.life_max += 2
             unit.life = min(unit.life_max, unit.life + 2)
+            if was_base:
+                peoples.on_base_life_gained(state, player.id, 2)
     jacks_after = peoples.dragon_rank_count(player, "J")
     if card_id.startswith("J_") and jacks_after:
         player.city.gold += jacks_after
@@ -1198,6 +1202,7 @@ def bimbo_gastar_5(state: GameState, player_id: int) -> None:
     player.correct_bets -= 5
     card = state.shop.draw_random(state.rng)
     player.hand.append(card)
+    peoples.on_artifact_obtained(state, player_id)
     log(state, f"{player.name}: Bimbo trocou 5 apostas por {card_display(card)}.")
 
 
@@ -1397,6 +1402,7 @@ def buy_artifact_with_gold(state, player_id):
         return None
     card = state.shop.draw_random(state.rng)
     player.hand.append(card)
+    peoples.on_artifact_obtained(state, player_id)
     bump_stat(state, player_id, "artifacts_bought")
     record_action(state, player_id, "buy_artifact_gold", card=card)
     log(state, f"{player.name} comprou: {card_display(card)}.")
@@ -1426,6 +1432,7 @@ def transmute_artifact_with_magic(state, player_id):
         return None
     card = state.shop.draw_random(state.rng)
     player.hand.append(card)
+    peoples.on_artifact_obtained(state, player_id)
     bump_stat(state, player_id, "artifacts_bought")
     record_action(state, player_id, "transmute_artifact_magic", card=card)
     log(state, f"{player.name} transmutou: {card_display(card)}.")
@@ -1508,6 +1515,8 @@ def resolve_pending_artifact_choice(state, player_id, kept_cards=None, resource=
             kept.append(c)
         for c in kept:
             player.hand.append(c)
+        if kept:
+            peoples.on_artifact_obtained(state, player_id)
         for c in available:
             state.shop.return_card(c)
         player.pending_artifact_choice = None
@@ -1518,6 +1527,7 @@ def resolve_pending_artifact_choice(state, player_id, kept_cards=None, resource=
             raise ActionError("Boin: escolha 1.")
         chosen = kept_cards[0]
         player.hand.append(chosen)
+        peoples.on_artifact_obtained(state, player_id)
         for c in pending["cards"]:
             if c != chosen:
                 state.shop.return_card(c)

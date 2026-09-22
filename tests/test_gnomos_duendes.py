@@ -6,7 +6,7 @@ _utf8.setup()
 
 from jessica.core.setup import run_setup
 from jessica.core.actions import (
-    summon_hero, summon_troop, play_artifact, raise_city_life, ActionError,
+    summon_hero, summon_troop, play_artifact, raise_city_life, cast_spell, ActionError,
     gnomo_alocar_aposta, bimbo_invisibilidade, bimbo_gastar_5,
     zebum_invocar_heroi,
 )
@@ -87,7 +87,7 @@ def test_aposta_cumprida_em_play_artifact():
     print("OK  - Aposta C cumprida em play_artifact")
 
 
-def test_aposta_cumprida_em_kill():
+def test_aposta_espadas_nao_e_cumprida_em_kill():
     state = make_state()
     p1 = state.players[0]
     p2 = state.players[1]
@@ -103,8 +103,47 @@ def test_aposta_cumprida_em_kill():
     gnomo_alocar_aposta(state, 1, "S", 2)
     state.phase = Phase.NIGHT
     resolve_attack(state, Attack(atk.id, "unit", vit.id))
-    assert p1.correct_bets == 1
-    print("OK  - Aposta S cumprida em kill")
+    assert p1.correct_bets == 0
+    assert p1.bet_S_target == 2
+    print("OK  - Aposta S exige invocacao, nao morte")
+
+
+def test_aposta_espadas_detecta_invocacao_por_artefato():
+    state = make_state()
+    p1, p2 = state.players[0], state.players[1]
+    gnomo_alocar_aposta(state, 1, "S", 2)
+    p2.hand.append("J_S")
+    play_artifact(state, 2, "J_S", choice={"house": CENTER})
+    assert p1.correct_bets == 1 and p1.bet_S_target is None
+    print("OK  - Aposta S detecta invocacao por Valete")
+
+
+def test_aposta_ouros_detecta_artefato_do_monumento():
+    from jessica.core.turn import _monument_bonus
+    state = make_state()
+    p1, p2 = state.players[0], state.players[1]
+    gnomo_alocar_aposta(state, 1, "D", 2)
+    p2.city.has_monument = True
+    state.turn = 4
+    _monument_bonus(state)
+    assert p1.correct_bets == 1 and p1.bet_D_target is None
+    print("OK  - Aposta D detecta artefato obtido por Monumento")
+
+
+def test_aposta_copas_detecta_cura_da_base_dragao():
+    state, _ = run_setup(
+        all_peoples=["gnomos_duendes", "dragoes", "orcs", "fadas"],
+        heroes_by_people={"gnomos_duendes": ["zebum"], "dragoes": ["barba_negra"],
+                           "orcs": ["arken"], "fadas": ["ainai"]},
+        choices={1: {"povo": "gnomos_duendes", "heroi": "zebum"},
+                 2: {"povo": "dragoes", "heroi": "barba_negra"},
+                 3: {"povo": "orcs", "heroi": "arken"},
+                 4: {"povo": "fadas", "heroi": "ainai"}}, seed=99)
+    gnomo_alocar_aposta(state, 1, "H", 2)
+    state.players[1].hand.append("Q_H")
+    cast_spell(state, 2, {"action": "add", "card_id": "Q_H"})
+    assert state.players[0].correct_bets == 1
+    print("OK  - Aposta H detecta cura da Base Dragao pela Canastra")
 
 
 def test_aposta_acumula_entre_turnos():
@@ -229,7 +268,10 @@ def run_all():
         test_aposta_cumprida_em_raise_city_life,
         test_aposta_cumprida_em_summon_troop,
         test_aposta_cumprida_em_play_artifact,
-        test_aposta_cumprida_em_kill,
+        test_aposta_espadas_nao_e_cumprida_em_kill,
+        test_aposta_espadas_detecta_invocacao_por_artefato,
+        test_aposta_ouros_detecta_artefato_do_monumento,
+        test_aposta_copas_detecta_cura_da_base_dragao,
         test_aposta_acumula_entre_turnos,
         test_bimbo_invisibilidade,
         test_bimbo_gastar_5,

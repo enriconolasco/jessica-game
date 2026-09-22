@@ -39,12 +39,14 @@ def on_turn_start(state: GameState) -> None:
                 if dragon_base is not None and dragon_base.life < dragon_base.life_max:
                     dragon_base.life += 1
                     peoples.sync_dragon_base_city(player)
+                    peoples.on_base_life_gained(state, player.id, 1)
                     log(state, f"{player.name}: Kh Aquilombar (+1 Vida na Base).")
                     state.morning_gains.append(
                         {"pid": player.id, "kind": "Kh", "life": 1}
                     )
                 elif player.city.life < player.city.life_max:
                     player.city.life += 1
+                    peoples.on_base_life_gained(state, player.id, 1)
                     log(state, f"{player.name}: Kh Aquilombar (+1 Vida).")
                     state.morning_gains.append(
                         {"pid": player.id, "kind": "Kh", "life": 1}

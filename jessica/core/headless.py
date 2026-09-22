@@ -3,11 +3,12 @@ from __future__ import annotations
 from copy import deepcopy
 
 from .actions import (ActionError, build_monument, collect_resources,
-                      raise_city_life)
+                      raise_city_life, summon_hero, summon_troop)
 from .constants import (CITY_LIFE_COST_GOLD, MONUMENT_COST_GOLD, Phase,
-                        RESOURCES_PER_DAY)
+                        RESOURCES_PER_DAY, TROOP_MAX_LIFE, TroopArchetype)
 from .models import GameState, Hero, Troop, Unit
 from .state import get_player
+from . import peoples
 
 
 ACTION_VERSION = "action-v0.1"
@@ -68,6 +69,35 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
             and player.city.life == player.city.life_max
             and player.city.gold >= MONUMENT_COST_GOLD):
         actions.append(_action("build_monument", player_id))
+    houses = [f"city_{player_id}"]
+    baoba = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                  and u.hero_id == "baoba_ba"), None)
+    if baoba is not None and baoba.house not in houses:
+        houses.append(baoba.house)
+    for archetype in peoples.available_archetypes(player, state):
+        for life in range(1, TROOP_MAX_LIFE[archetype.value] + 1):
+            for house in houses:
+                candidate = _action("summon_troop", player_id,
+                                    archetype=archetype.value, life=life, house=house)
+                trial = deepcopy(state)
+                try:
+                    summon_troop(trial, player_id, archetype, life, house)
+                except (ActionError, ValueError):
+                    continue
+                actions.append(candidate)
+    hero_choices = [None]
+    if player.people == "mortos_vivos":
+        from .heroes import heroes_for_people
+        hero_choices = [h.hero_id for h in heroes_for_people("mortos_vivos")]
+    for hero_id in hero_choices:
+        params = {} if hero_id is None else {"hero_id": hero_id}
+        candidate = _action("summon_hero", player_id, **params)
+        trial = deepcopy(state)
+        try:
+            summon_hero(trial, player_id, force_hero_id=hero_id)
+        except (ActionError, ValueError):
+            continue
+        actions.append(candidate)
     return actions
 
 
@@ -85,7 +115,8 @@ def apply_action(state: GameState, action: dict) -> dict:
     if action.get("version") != ACTION_VERSION:
         return _error("unsupported_action_version", "Versão de ação não suportada.")
     action_type = action.get("type")
-    if action_type not in {"collect_resources", "raise_city_life", "build_monument"}:
+    if action_type not in {"collect_resources", "raise_city_life", "build_monument",
+                           "summon_troop", "summon_hero"}:
         return _error("unsupported_action", "Tipo de ação ainda não adaptado.",
                       action_type=action.get("type"))
 
@@ -94,11 +125,16 @@ def apply_action(state: GameState, action: dict) -> dict:
     if isinstance(player_id, bool) or not isinstance(player_id, int):
         return _error("invalid_action", "player_id inválido.")
     expected = {"collect_resources": {"gold", "magic"},
-                "raise_city_life": {"times"}, "build_monument": set()}[action_type]
+                "raise_city_life": {"times"}, "build_monument": set(),
+                "summon_troop": {"archetype", "life", "house"},
+                "summon_hero": set()}[action_type]
+    if action_type == "summon_hero" and isinstance(params, dict) and set(params) == {"hero_id"}:
+        expected = {"hero_id"}
     if not isinstance(params, dict) or set(params) != expected:
         return _error("invalid_action", "Parâmetros inválidos para a ação.")
-    if any(isinstance(value, bool) or not isinstance(value, int)
-           for value in params.values()):
+    numeric_keys = {"gold", "magic", "times", "life"} & set(params)
+    if any(isinstance(params[key], bool) or not isinstance(params[key], int)
+           for key in numeric_keys):
         return _error("invalid_action", "Parâmetros numéricos devem ser inteiros.")
 
     candidate = _action(action_type, player_id, **params)
@@ -111,14 +147,21 @@ def apply_action(state: GameState, action: dict) -> dict:
             collect_resources(state, player_id, params["gold"], params["magic"])
         elif action_type == "raise_city_life":
             raise_city_life(state, player_id, params["times"])
-        else:
+        elif action_type == "build_monument":
             build_monument(state, player_id)
+        elif action_type == "summon_troop":
+            summoned = summon_troop(state, player_id, TroopArchetype(params["archetype"]),
+                                    params["life"], params["house"])
+        else:
+            summoned = summon_hero(state, player_id, force_hero_id=params.get("hero_id"))
     except (ActionError, ValueError) as exc:
         return _error("domain_error", str(exc))
 
     event_types = {"collect_resources": "resources_collected",
                    "raise_city_life": "city_life_raised",
-                   "build_monument": "monument_built"}
+                   "build_monument": "monument_built",
+                   "summon_troop": "unit_summoned",
+                   "summon_hero": "unit_summoned"}
     after = get_player(state, player_id).city
     data = {"player_id": player_id}
     if action_type == "collect_resources":
@@ -128,6 +171,9 @@ def apply_action(state: GameState, action: dict) -> dict:
                     life_before=before.life, life_after=after.life)
     else:
         data.update(gold_spent=before.gold - after.gold)
+    if action_type in {"summon_troop", "summon_hero"}:
+        data.update(unit=_unit_view(summoned), city_gold_after=after.gold,
+                    city_magic_after=after.magic)
     event = {
         "version": EVENT_VERSION,
         "type": event_types[action_type],
@@ -237,7 +283,8 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
         raise ValueError("Evento não é visível para este jogador.")
 
     projected = deepcopy(view)
-    if event.get("type") in {"resources_collected", "city_life_raised", "monument_built"}:
+    if event.get("type") in {"resources_collected", "city_life_raised", "monument_built",
+                              "unit_summoned"}:
         data = event["data"]
         player = next((p for p in projected["players"]
                        if p["id"] == data["player_id"]), None)
@@ -249,9 +296,13 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
         elif event["type"] == "city_life_raised":
             player["city"]["gold"] -= data["gold_spent"]
             player["city"]["life"] = data["life_after"]
-        else:
+        elif event["type"] == "monument_built":
             player["city"]["gold"] -= data["gold_spent"]
             player["city"]["has_monument"] = True
+        if event["type"] == "unit_summoned":
+            player["city"]["gold"] = data["city_gold_after"]
+            player["city"]["magic"] = data["city_magic_after"]
+            projected["board"]["units"].append(deepcopy(data["unit"]))
     else:
         raise ValueError("Tipo de evento ainda não projetável.")
     projected["events"].append(deepcopy(event))

@@ -64,7 +64,7 @@ def test_apply_action_uses_core_and_emits_public_event():
     assert state.players[0].city.gold == 1
     assert state.players[0].city.magic == 1
     assert state.players[0].has_collected_this_turn
-    assert legal_actions(state, 1) == []
+    assert not any(a["type"] == "collect_resources" for a in legal_actions(state, 1))
 
 
 def test_rejected_action_is_atomic():
@@ -228,6 +228,51 @@ def test_terminal_economic_actions_use_engine_port():
     assert [a["type"] for a in calls] == ["raise_city_life", "build_monument"]
 
 
+def test_summon_actions_match_core_and_project_event():
+    direct = make_state()
+    port = make_state()
+    for state in (direct, port):
+        state.players[0].city.gold = 20
+        state.players[0].city.magic = 20
+    from jessica.core.actions import summon_troop
+    from jessica.core.constants import TroopArchetype
+    summon_troop(direct, 1, TroopArchetype.LIGHT, 3)
+    action = next(a for a in legal_actions(port, 1)
+                  if a["type"] == "summon_troop"
+                  and a["params"] == {"archetype": "light", "life": 3,
+                                      "house": "city_1"})
+    before = view_for_player(port, 2)
+    result = apply_action(port, action)
+    assert result["success"] and result["events"][0]["type"] == "unit_summoned"
+    assert state_to_dict(direct) == state_to_dict(port)
+    projected = apply_event_to_view(before, result["events"][0])
+    assert projected["players"] == view_for_player(port, 2)["players"]
+    assert projected["board"] == view_for_player(port, 2)["board"]
+
+
+def test_terminal_summons_use_engine_port():
+    from jessica import main as main_mod
+    state = make_state()
+    p = state.players[0]
+    p.city.gold = p.city.magic = 20
+    calls = []
+    original_apply = main_mod.apply_engine_action
+    original_pick = main_mod.pick_index
+    original_ask = main_mod.IntPrompt.ask
+    try:
+        main_mod.apply_engine_action = lambda current, action: (
+            calls.append(action) or original_apply(current, action))
+        main_mod.pick_index = lambda *args, **kwargs: 0
+        main_mod.IntPrompt.ask = lambda *args, **kwargs: 1
+        main_mod._do_action(state, 1, "3")
+        main_mod._do_action(state, 1, "4")
+    finally:
+        main_mod.apply_engine_action = original_apply
+        main_mod.pick_index = original_pick
+        main_mod.IntPrompt.ask = original_ask
+    assert [a["type"] for a in calls] == ["summon_troop", "summon_hero"]
+
+
 def run_all():
     tests = [
         test_legal_actions_enumerates_collect_splits_without_mutation,
@@ -243,6 +288,8 @@ def run_all():
         test_economic_actions_emit_events_and_match_direct_core,
         test_economic_events_reconstruct_view_and_rejection_is_atomic,
         test_terminal_economic_actions_use_engine_port,
+        test_summon_actions_match_core_and_project_event,
+        test_terminal_summons_use_engine_port,
     ]
     passed = failed = 0
     for test in tests:

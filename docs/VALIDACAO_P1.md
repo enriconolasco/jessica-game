@@ -25,4 +25,6 @@ ações individualmente sem interromper o fluxo antigo.
 
 - A família econômica começou a ser migrada na branch `codex/p1-economic-actions`.
 - `raise_city_life` e `build_monument` usam a porta e produzem eventos públicos.
-- Coleta, aumento de vida e Monumento são as três ações atualmente migradas.
+- Coleta, aumento de vida, Monumento e invocações comuns de Herói/Tropa estão migrados.
+- Toda invocação, inclusive por artefato, feitiço ou habilidade, usa o gatilho geral
+  de unidade invocada; isso também alimenta corretamente a aposta de Espadas.

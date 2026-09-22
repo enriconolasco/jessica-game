@@ -2224,14 +2224,25 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         archetype = archetypes[pick_index("Arquetipo", labels)]
         max_life = TROOP_MAX_LIFE[archetype.value]
         life = IntPrompt.ask(f"Vida (1 a {max_life})", default=max_life)
-        summon_troop(state, pid, archetype, life)
+        action = next((a for a in legal_actions(state, pid)
+                       if a["type"] == "summon_troop"
+                       and a["params"] == {"archetype": archetype.value,
+                                           "life": life, "house": f"city_{pid}"}), None)
+        if action is None:
+            raise ActionError("Invocação de Tropa não é legal no estado atual.")
+        _apply_simple_engine_action(state, action)
         console.print("[green]Tropa ok.[/green]")
     elif choice == "4":
         if player.people == "mortos_vivos":
             hid = _escolher_heroi_mv()
-            summon_hero(state, pid, force_hero_id=hid)
+            params = {"hero_id": hid}
         else:
-            summon_hero(state, pid)
+            params = {}
+        action = next((a for a in legal_actions(state, pid)
+                       if a["type"] == "summon_hero" and a["params"] == params), None)
+        if action is None:
+            raise ActionError("Invocação de Herói não é legal no estado atual.")
+        _apply_simple_engine_action(state, action)
         console.print("[green]Heroi ok.[/green]")
     elif choice == "5":
         units = [u for u in player.units if not u.has_moved_this_turn and u.moves_this_turn < u.max_moves_this_turn]

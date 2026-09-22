@@ -7,6 +7,7 @@ from jessica.core.actions import (cast_spell, summon_hero, purpura_invisibilidad
                                   valtherion_chamado)
 from jessica.core.constants import TroopArchetype
 from jessica.core.peoples import dragon_base, apply_dragon_turn_start
+from jessica.core.actions import move_unit, ActionError
 from jessica.core.serialize import state_to_dict, state_from_dict
 
 
@@ -70,6 +71,17 @@ def test_moving_bases_and_chamado():
     assert troop.life == 3 and troop.life_max == 4 and troop.house == base.house
 
 
+def test_moving_base_cannot_move_on_turn_one():
+    state = make_state("barba_negra")
+    base = dragon_base(state.players[0])
+    apply_dragon_turn_start(state)
+    try:
+        move_unit(state, 1, base.id, "center")
+        raise AssertionError("Base Dragao moveu no turno 1")
+    except ActionError:
+        pass
+
+
 def test_king_morning_and_club_move():
     state = make_state()
     p = state.players[0]
@@ -84,7 +96,7 @@ def test_king_morning_and_club_move():
 def run_all():
     tests = [test_canastra_add_remove_and_queen, test_suits_and_jack_reward,
              test_purpura_growth_invisibility_and_save, test_moving_bases_and_chamado,
-             test_king_morning_and_club_move]
+             test_moving_base_cannot_move_on_turn_one, test_king_morning_and_club_move]
     passed = failed = 0
     for test in tests:
         try:
