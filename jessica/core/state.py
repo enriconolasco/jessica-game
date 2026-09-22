@@ -170,4 +170,9 @@ def mark_summoned(state: GameState, player: Player, unit) -> None:
     unit.statuses["summoned_turn"] = state.turn
     unit.moves_this_turn = unit.max_moves_this_turn
     unit.has_moved_this_turn = True
+    # Guarari e um Centauro permanente: excepcionalmente anda 1x ao ser invocado.
+    if getattr(unit, "hero_id", None) == "guarari":
+        unit.max_moves_this_turn = 1
+        unit.moves_this_turn = 0
+        unit.has_moved_this_turn = False
     sync_house_priority(state, unit.house)

@@ -121,7 +121,7 @@ HERO_ABILITY_DESC = {
     "cobra": "Cobra: herois mortos retornam como Espectros por 1 turno.",
     "zoia": "Zoia: 2 tropas extras (Ghoul e Esqueleto com 1 vida).",
     "cova_rasa": "Cova Rasa: amaldicoa inimigos proximos no inicio da Noite.",
-    "guarari": "Centauro: 2 Magia transforma tropa da casa em Centauro ate fim da Noite.",
+    "guarari": "Centauro permanente: anda 2x (1x ao ser invocado). Transforma tropa da casa por 2 Magia.",
     "aiquara": "Ninfa: controla inimigo da casa (mover no Dia, atacar na Noite).",
     "baoba_ba": "Anciao: 1 Magia x 3 turnos para invocar. Tropas aliadas na casa dele.",
     "bimbo_do_mal": "Gastar aposta: invisivel (1) ou artefato da Loja (5).",
@@ -943,6 +943,14 @@ def _gnomo_bets_menu(state, player):
         else:
             setattr(player, f"bet_{suit}_target", other_ids[idx])
     player.bets_need_realocacao = False
+
+
+def _gnomos_bets_inicio_turno(state):
+    """Realoca apostas antes de qualquer jogador iniciar seu dia."""
+    for player in state.players:
+        if (player.people == "gnomos_duendes" and player.city.is_alive()
+                and player.bets_need_realocacao):
+            _gnomo_bets_menu(state, player)
 
 
 def _escolher_decompor(state, player):
@@ -2798,6 +2806,7 @@ def _run_one_game() -> None:
         console.rule(f"[bold yellow]TURNO {state.turn} - DIA[/bold yellow]")
         curuna = get_player(state, state.curuna_id)
         console.print(f"[bold yellow]* Curuna: {curuna.name}[/bold yellow]\n")
+        _gnomos_bets_inicio_turno(state)
         if interest or state.morning_gains:
             by_pid: dict[int, list[dict]] = {}
             for g in state.morning_gains:

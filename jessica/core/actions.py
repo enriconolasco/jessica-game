@@ -314,7 +314,8 @@ def move_unit(state: GameState, player_id: int, unit_id: str, destination: str) 
     unit = next((u for u in player.units if u.id == unit_id and u.is_alive()), None)
     if unit is None:
         raise ActionError(f"Unidade {unit_id} nao encontrada.")
-    if unit.statuses.get("summoned_turn") == state.turn:
+    summoned_now = unit.statuses.get("summoned_turn") == state.turn
+    if summoned_now and not (isinstance(unit, Hero) and unit.hero_id == "guarari"):
         raise ActionError("Unidade invocada neste turno nao pode se mover.")
     if unit.moves_this_turn >= unit.max_moves_this_turn:
         raise ActionError("Unidade ja se moveu o maximo.")
@@ -661,12 +662,13 @@ def _spell_licantropo(state, player, choice):
     if t is None:
         raise ActionError("Alvo nao encontrado.")
     t.statuses["lobisomem_until_turn"] = state.turn
+    peoples.apply_lobisomem_hero_buffs(state, player, t)
     if peoples.is_lua_cheia(state, player.id):
-        peoples.apply_lua_cheia_unit_buffs(state, player, t)
         log(state, f"{player.name}: {t.id} virou Lobisomem na Lua Cheia "
                    "(dano dobrado e bonus dos herois vivos).")
     else:
-        log(state, f"{player.name}: {t.id} virou Lobisomem ate o fim do turno.")
+        log(state, f"{player.name}: {t.id} virou Lobisomem ate o fim do turno "
+                   "(com bonus dos herois vivos).")
 def _spell_linhagem_ancestral(state, player, choice):
     hid = choice.get("hero_id")
     if not hid:

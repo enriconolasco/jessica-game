@@ -156,7 +156,7 @@ def test_dead_unit_cannot_use_second_attack():
         pass
 
 
-def test_licantropo_outside_full_moon_has_no_lupa_or_cigana_buff():
+def test_licantropo_gets_lupa_and_cigana_buffs_outside_full_moon():
     state = make_state(
         ["lobisomens", "humanos", "orcs", "fadas"],
         ["lupa_lider", "miyamoto", "arken", "ainai"],
@@ -167,8 +167,24 @@ def test_licantropo_outside_full_moon_has_no_lupa_or_cigana_buff():
     target = troop(state, 1)
     cast_spell(state, 1, {"unit_id": target.id})
     assert target.statuses.get("lobisomem_until_turn") == state.turn
-    assert target.resistance_stacks == 0
-    assert "invisivel_until_turn" not in target.statuses
+    assert target.resistance_stacks == 1
+    assert target.statuses.get("invisivel_until_turn") == state.turn
+
+
+def test_guarari_can_move_once_on_summon_turn():
+    state = make_state(
+        ["filhos_floresta", "humanos", "orcs", "fadas"],
+        ["guarari", "miyamoto", "arken", "ainai"],
+    )
+    guarari = summon_hero(state, 1)
+    assert guarari.max_moves_this_turn == 1
+    assert guarari.moves_this_turn == 0
+    move_unit(state, 1, guarari.id, CENTER)
+    try:
+        move_unit(state, 1, guarari.id, "city_2")
+        raise AssertionError("Guarari andou 2x no turno em que foi invocado")
+    except ActionError:
+        pass
 
 
 def test_guarari_has_two_normal_moves_after_summon_turn():
@@ -185,6 +201,26 @@ def test_guarari_has_two_normal_moves_after_summon_turn():
     assert guarari.house == "city_2"
 
 
+def test_gnome_bets_are_requested_before_player_days():
+    state = make_state(
+        ["gnomos_duendes", "humanos", "orcs", "fadas"],
+        ["bimbo_do_mal", "miyamoto", "arken", "ainai"],
+    )
+    start_turn(state)
+    gnome = state.players[0]
+    assert gnome.bets_need_realocacao
+
+    from jessica import main as main_mod
+    calls = []
+    original = main_mod._gnomo_bets_menu
+    try:
+        main_mod._gnomo_bets_menu = lambda current_state, player: calls.append(player.id)
+        main_mod._gnomos_bets_inicio_turno(state)
+    finally:
+        main_mod._gnomo_bets_menu = original
+    assert calls == [gnome.id]
+
+
 def run_all():
     tests = [
         test_priority_is_per_player_and_updates_on_entry,
@@ -193,8 +229,10 @@ def run_all():
         test_miyamoto_kill_and_retaliation_gain_victim_life,
         test_summon_cannot_move_but_can_attack,
         test_dead_unit_cannot_use_second_attack,
-        test_licantropo_outside_full_moon_has_no_lupa_or_cigana_buff,
+        test_licantropo_gets_lupa_and_cigana_buffs_outside_full_moon,
+        test_guarari_can_move_once_on_summon_turn,
         test_guarari_has_two_normal_moves_after_summon_turn,
+        test_gnome_bets_are_requested_before_player_days,
     ]
     passed = failed = 0
     for test in tests:

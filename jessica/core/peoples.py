@@ -492,6 +492,12 @@ def apply_lua_cheia_unit_buffs(state: GameState, player: Player, unit: Unit,
                                has_cigana: bool | None = None) -> None:
     if not is_lua_cheia(state, player.id):
         return
+    apply_lobisomem_hero_buffs(state, player, unit, has_lupa, has_cigana)
+
+
+def apply_lobisomem_hero_buffs(state: GameState, player: Player, unit: Unit,
+                               has_lupa: bool | None = None,
+                               has_cigana: bool | None = None) -> None:
     if has_lupa is None:
         has_lupa = any(isinstance(u, Hero) and u.is_alive()
                        and u.hero_id == "lupa_lider" for u in player.units)
