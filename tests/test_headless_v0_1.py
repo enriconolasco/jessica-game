@@ -150,7 +150,7 @@ def test_terminal_collection_uses_engine_port():
     state = make_state()
     calls = []
     original_apply = main_mod.apply_engine_action
-    original_ask = main_mod.IntPrompt.ask
+    original_pick = main_mod.pick_index
 
     def tracked_apply(current_state, action):
         calls.append(action)
@@ -158,11 +158,11 @@ def test_terminal_collection_uses_engine_port():
 
     try:
         main_mod.apply_engine_action = tracked_apply
-        main_mod.IntPrompt.ask = lambda *args, **kwargs: 1
+        main_mod.pick_index = lambda *args, **kwargs: 1
         main_mod._do_action(state, 1, "1")
     finally:
         main_mod.apply_engine_action = original_apply
-        main_mod.IntPrompt.ask = original_ask
+        main_mod.pick_index = original_pick
 
     assert calls[0]["type"] == "collect_resources"
     assert calls[0]["params"] == {"gold": 1, "magic": 1}

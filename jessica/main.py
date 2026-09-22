@@ -41,7 +41,7 @@ from .core.constants import (
 from .core.models import Hero, Troop
 from .core.artifacts import card_display, get_definition, ARTIFACT_CATALOG
 from .core.serialize import state_to_dict, state_from_dict
-from .core.headless import ACTION_VERSION, apply_action as apply_engine_action
+from .core.headless import apply_action as apply_engine_action, legal_actions
 from .core import artifacts_effects, peoples, heroes, spells as spells_mod
 
 
@@ -2136,13 +2136,15 @@ def _escolher_heroi_mv() -> str:
     return ["cobra", "zoia", "cova_rasa"][idx]
 
 
-def _collect_resources_via_engine(state, pid: int, gold: int) -> dict:
-    result = apply_engine_action(state, {
-        "version": ACTION_VERSION,
-        "type": "collect_resources",
-        "player_id": pid,
-        "params": {"gold": gold, "magic": RESOURCES_PER_DAY - gold},
-    })
+def _collect_resources_via_engine(state, pid: int) -> dict:
+    actions = [action for action in legal_actions(state, pid)
+               if action["type"] == "collect_resources"]
+    if not actions:
+        raise ActionError("Coleta indisponivel.")
+    labels = [f"{action['params']['gold']} Ouro / "
+              f"{action['params']['magic']} Magia" for action in actions]
+    action = actions[pick_index("Coletar", labels)]
+    result = apply_engine_action(state, action)
     if not result["success"]:
         raise ActionError(result["error"]["message"])
     for event in result["events"]:
@@ -2156,10 +2158,7 @@ def _collect_resources_via_engine(state, pid: int, gold: int) -> dict:
 def _do_action(state, pid: int, choice: str) -> str | None:
     player = get_player(state, pid)
     if choice == "1":
-        gold = IntPrompt.ask(f"Ouro (0 a {RESOURCES_PER_DAY})", default=RESOURCES_PER_DAY)
-        if gold < 0 or gold > RESOURCES_PER_DAY:
-            raise ActionError("Fora do intervalo.")
-        _collect_resources_via_engine(state, pid, gold)
+        _collect_resources_via_engine(state, pid)
     elif choice == "2":
         raise_city_life(state, pid, IntPrompt.ask("Vezes", default=1))
         console.print("[green]Vida ok.[/green]")
