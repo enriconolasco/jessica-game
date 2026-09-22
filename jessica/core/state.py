@@ -175,4 +175,7 @@ def mark_summoned(state: GameState, player: Player, unit) -> None:
         unit.max_moves_this_turn = 1
         unit.moves_this_turn = 0
         unit.has_moved_this_turn = False
+    if getattr(player, "people", None) == "dragoes" and getattr(unit, "hero_id", None):
+        from . import peoples
+        peoples.apply_dragon_canastra_to_hero(player, unit)
     sync_house_priority(state, unit.house)

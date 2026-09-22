@@ -44,16 +44,16 @@ def test_summon_first_dwarf():
     p = state.players[1]
     p.city.magic = 10
     h = summon_hero(state, 2)
-    assert h.hero_id == "dain"
+    assert h.hero_id == "buin"
     assert h.life == 1
-    print("OK  - 1o anao (dain) invocado")
+    print("OK  - 1o anao (Dengoso) invocado")
 
 
 def test_summon_chain_in_order():
     state = make_state()
     p = state.players[1]
     p.city.magic = 20
-    for expected in ["dain", "buin", "bein", "boin", "tintin", "don", "din"]:
+    for expected in ["buin", "dain", "bein", "boin", "tintin", "don", "din"]:
         h = summon_hero(state, 2)
         assert h.hero_id == expected, f"Esperado {expected}, veio {h.hero_id}"
     print("OK  - Corrente completa dos 7 anoes invocada em ordem")
@@ -67,13 +67,13 @@ def test_chain_allows_resummon_dead_first():
     state = make_state()
     p = state.players[1]
     p.city.magic = 20
-    summon_hero(state, 2)  # dain
-    dain = next(u for u in p.units if isinstance(u, Hero) and u.hero_id == "dain")
-    dain.life = 0
+    summon_hero(state, 2)  # buin
+    buin = next(u for u in p.units if isinstance(u, Hero) and u.hero_id == "buin")
+    buin.life = 0
     p.units = [u for u in p.units if u.is_alive()]
     # Auto-pick: dain (menor não-vivo). Sem restrição de corrente.
     h = summon_hero(state, 2)
-    assert h.hero_id == "dain", f"Esperado dain (reinvocação), veio {h.hero_id}"
+    assert h.hero_id == "buin", f"Esperado buin (reinvocação), veio {h.hero_id}"
     print("OK  - Apos morrer, o menor anao pode ser reinvocado")
 
 
@@ -86,9 +86,9 @@ def test_chain_blocked_when_prev_missing():
     """
     from jessica.core import heroes as hmod
     # Simula: dain morto (não em alive), buin vivo. Próximo não-vivo é dain.
-    alive = {"buin"}
+    alive = {"dain"}
     nxt = hmod.next_dwarf_to_summon(alive)
-    assert nxt == "dain", f"Esperado dain, veio {nxt}"
+    assert nxt == "buin", f"Esperado buin, veio {nxt}"
     idx = hmod.dwarf_index(nxt)
     # idx=0, não precisa de anterior. OK, dain pode ser invocado.
     print("OK  - Corrente respeitada: quando um morre, reinvoca o menor morto")

@@ -22,7 +22,8 @@ from .core.actions import (
     transformar_em_centauro, aiquara_mover, aiquara_atacar,
     baoba_pagar_magia, bimbo_invisibilidade, bimbo_gastar_5,
     zebum_invocar_heroi, zebum_reinvocar, zebum_invocar_proximo_anao,
-    gnomo_alocar_aposta,
+    gnomo_alocar_aposta, purpura_invisibilidade, barba_mar_de_chamas,
+    valtherion_chamado,
 )
 from .core.combat import (
     resolve_attack, resolve_attack_day, Attack, CombatError,
@@ -49,7 +50,7 @@ console = Console()
 
 PEOPLES = ["humanos", "anoes", "orcs", "fadas",
            "vampiros", "lobisomens", "gigantes", "mortos_vivos",
-           "filhos_floresta", "gnomos_duendes"]
+           "filhos_floresta", "gnomos_duendes", "dragoes"]
 
 HEROES_BY_PEOPLE = {
     "humanos": ["Miyamoto Musashi", "Besouro Mangangá", "Iúna"],
@@ -62,6 +63,7 @@ HEROES_BY_PEOPLE = {
     "mortos_vivos": [],
     "filhos_floresta": ["Guarari", "Aiquara", "Baoba-bá"],
     "gnomos_duendes": ["Bimbo do Mal", "São Tomé", "Zebum"],
+    "dragoes": ["Barba Negra", "Púrpura", "Valtherion"],
 }
 
 PASSIVA_DESC = {
@@ -75,6 +77,7 @@ PASSIVA_DESC = {
     "mortos_vivos": "Heróis custam 2 Magia, sem escolha no setup. Os 3 disponiveis na partida.",
     "filhos_floresta": "Florescimento Exuberante: Cidade comeca com 1 vida; no turno 13 recebe +2 Vida, +2 Ouro, +2 Magia.",
     "gnomos_duendes": "Continue Apostando: 4 apostas (H/C/D/S) alocadas em outros jogadores no inicio do turno.",
+    "dragoes": "Envolvimento Cosmologico: ate 1 Artefato por naipe na Canastra fortalece Herois Dragoes.",
 }
 
 FEITICO_DESC = {
@@ -88,6 +91,7 @@ FEITICO_DESC = {
     "levantar_mortos": "Levantar os Mortos: escolha 2 tropas e invoque com 1 de vida.",
     "decompor": "Decompor: sacrifica um elemento seu por Magia (Heroi +4 / Tropa vida+2 / Muralha -1vida +3).",
     "imitacao_gnomerica": "Imitacao Gnomerica: copia o feitico sorteado do dia.",
+    "ressonancia_magica": "Ressonancia Magica: adiciona, remove ou troca Artefato da Canastra.",
 }
 
 HERO_ABILITY_DESC = {
@@ -97,11 +101,11 @@ HERO_ABILITY_DESC = {
     "barbadourada": "Filho das Cachoeiras: +1 Magia por artefato na mao.",
     "ori": "Velho Mestre Ferreiro: ele + aliados na casa ganham Resistencia.",
     "seven_dwarves": "Os 7 Anoes: 7 herois em corrente. Sem Tropas.",
-    "dain": "Alergico: atacante morre no fim da Noite.",
-    "buin": "Dengoso: nao pode ser atacado por Herois.",
-    "bein": "Soneca: quem for atacado dorme ate os Anoes serem Curuna.",
+    "dain": "Atim: quem declara combate contra ele morre no fim da Noite.",
+    "buin": "Dengoso: Invulneravel contra Herois.",
+    "bein": "Soneca: mortos por ele ficam empalados ate os Anoes serem Curuna.",
     "boin": "Feliz: ve 2, escolhe 1 ao comprar/transmutar.",
-    "tintin": "Bobao: fica Invisivel (recarga 1 turno).",
+    "tintin": "Dunga: fica Invisivel (recarga 1 turno).",
     "don": "Zangado: 1 ataque extra por Anao proximo.",
     "din": "Mestre: Anoes proximos atacam Cidades.",
     "garoche": "Rei do Sertao: executa sem aliados proximos. +1 vida por execucao.",
@@ -122,12 +126,15 @@ HERO_ABILITY_DESC = {
     "cobra": "Cobra: herois mortos retornam como Espectros por 1 turno.",
     "zoia": "Zoia: 2 tropas extras (Ghoul e Esqueleto com 1 vida).",
     "cova_rasa": "Cova Rasa: amaldicoa inimigos proximos no inicio da Noite.",
-    "guarari": "Centauro permanente: anda 2x (1x ao ser invocado). Transforma tropa da casa por 2 Magia.",
+    "guarari": "Centauro permanente: anda 2x (1x ao ser invocado). Transforma aliado por 1 Magia.",
     "aiquara": "Ninfa: controla inimigo da casa (mover no Dia, atacar na Noite).",
     "baoba_ba": "Anciao: 1 Magia x 3 turnos para invocar. Tropas aliadas na casa dele.",
     "bimbo_do_mal": "Gastar aposta: invisivel (1) ou artefato da Loja (5).",
     "sao_tome": "Passivas dos alvos das apostas. 2 determinacoes por dia.",
     "zebum": "Mistico: apostas corretas compram herois estrangeiros.",
+    "barba_negra": "Base movel. Mar de Chamas e modo Heroi por uma Noite.",
+    "purpura": "Cresce conforme manhas pares passadas. Pode ficar Invisivel.",
+    "valtherion": "Base movel que combate como Heroi. Chamado invoca Tropas Dragao.",
 }
 
 
@@ -1001,6 +1008,33 @@ def _spell_choice_ui(state, player, spell_id):
     return cd
 
 
+def _dragon_resonance_ui(player):
+    options = []
+    occupied = {get_definition(c).suit for c in player.canastra}
+    addable = [c for c in player.hand if get_definition(c).suit
+               and get_definition(c).suit not in occupied]
+    if addable:
+        options.append("Adicionar")
+    if player.canastra:
+        options.append("Remover")
+    swaps = [(old, new) for old in player.canastra for new in player.hand
+             if get_definition(old).suit == get_definition(new).suit]
+    if swaps:
+        options.append("Trocar")
+    if not options:
+        raise ActionError("Nenhuma operacao valida para a Canastra.")
+    op = options[pick_index("Ressonancia Magica", options)]
+    if op == "Adicionar":
+        card = addable[pick_index("Incorporar", [card_display(c) for c in addable])]
+        return {"action": "add", "card_id": card}
+    if op == "Remover":
+        card = player.canastra[pick_index("Remover", [card_display(c) for c in player.canastra])]
+        return {"action": "remove", "card_id": card}
+    old, new = swaps[pick_index("Trocar", [f"{card_display(a)} -> {card_display(b)}"
+                                            for a, b in swaps])]
+    return {"action": "swap", "old_card_id": old, "new_card_id": new}
+
+
 def _escolher_imitacao(state, player):
     sp_id = player.spell_copia_id
     if not sp_id:
@@ -1446,7 +1480,15 @@ def _get_actions(state, player) -> list[tuple[str, str, str]]:
 
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "guarari"
            for u in player.units):
-        r.append(("Especiais", "q", "Guarari: tropa -> Centauro (2 Magia)"))
+        r.append(("Especiais", "q", "Guarari: aliado -> Centauro (1 Magia)"))
+    purpura = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                    and u.hero_id == "purpura"), None)
+    if purpura and purpura.statuses.get("purpura_cooldown_until_turn", -1) <= state.turn:
+        r.append(("Especiais", "u", "Purpura: ficar Invisivel"))
+    valtherion = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                       and u.hero_id == "valtherion"), None)
+    if valtherion and valtherion.statuses.get("chamado_cooldown_until_turn", -1) <= state.turn:
+        r.append(("Especiais", "v", "Valtherion: Chamado"))
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"
            for u in player.units):
         r.append(("Especiais", "c", "Aiquara: controlar inimigo"))  # v5v10 #22
@@ -1816,7 +1858,7 @@ def show_active_artifacts(state) -> None:
 TODOS_POVOS = [
     "humanos", "anoes", "orcs", "fadas", "vampiros",
     "lobisomens", "gigantes", "mortos_vivos",
-    "filhos_floresta", "gnomos_duendes",
+    "filhos_floresta", "gnomos_duendes", "dragoes",
 ]
 
 
@@ -2268,15 +2310,23 @@ def _do_action(state, pid: int, choice: str) -> str | None:
                         and u.hero_id == "guarari"), None)
         if guarari is None:
             raise ActionError("Guarari nao esta vivo.")
-        tropas = [u for u in player.units
-                  if isinstance(u, Troop) and u.is_alive()
-                  and u.house == guarari.house]
-        if not tropas:
-            raise ActionError("Sem tropas na casa de Guarari.")
-        labels = [f"{u.id} ({u.life}/{u.life_max})" for u in tropas]
-        t = tropas[pick_index("Tropa", labels)]
+        aliados = [u for u in player.units if u.is_alive() and u.id != guarari.id
+                   and u.house == guarari.house]
+        if not aliados:
+            raise ActionError("Sem aliados na casa de Guarari.")
+        labels = [f"{u.id} ({u.life}/{u.life_max})" for u in aliados]
+        t = aliados[pick_index("Aliado", labels)]
         transformar_em_centauro(state, pid, t.id)
         console.print("[green]Centauro ativo ate o fim da Noite.[/green]")
+    elif choice == "u":
+        purpura_invisibilidade(state, pid)
+        console.print("[green]Purpura ficou invisivel.[/green]")
+    elif choice == "v":
+        kinds = [TroopArchetype.DRAGON_LIGHT, TroopArchetype.DRAGON_MEDIUM,
+                 TroopArchetype.DRAGON_HEAVY]
+        labels = [f"{a.value} (max {TROOP_MAX_LIFE[a.value]})" for a in kinds]
+        troop = valtherion_chamado(state, pid, kinds[pick_index("Chamado", labels)])
+        console.print(f"[green]Chamado: {troop.id} ({troop.life}/{troop.life_max}).[/green]")
     elif choice == "i":
         _aiquara_ui(state, pid)
     elif choice == "b":
@@ -2355,6 +2405,8 @@ def _do_action(state, pid: int, choice: str) -> str | None:
                     console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
                     return None
                 choice_data["flip_cards"] = [player.hand[idx]]
+        elif sp.spell_id == "ressonancia_magica":
+            choice_data = _dragon_resonance_ui(player)
         cast_spell(state, pid, choice_data)
         console.print(f"[green]{sp.name} lancado.[/green]")
     elif choice == "h":
@@ -2447,7 +2499,7 @@ def find_targets(state, unit):
         target_pid = int(house.split("_")[1])
         if target_pid != unit.owner_id:
             target = get_player(state, target_pid)
-            if target.city.is_alive():
+            if target.city.is_alive() and peoples.dragon_base(target) is None:
                 targets.append(("city", str(target_pid),
                                 f"Cidade de {target.name} ({target.city.life})"))
     for other in state.players:
@@ -2771,6 +2823,14 @@ def run_night_phase(state) -> None:
     _ask_vovo_position(state)
 
     all_pids = list(day_order(state))
+    for pid in all_pids:
+        player = get_player(state, pid)
+        barba = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                      and u.hero_id == "barba_negra"), None)
+        if (barba is not None
+                and barba.statuses.get("mar_chamas_cooldown_until_turn", -1) <= state.turn
+                and Prompt.ask(f"{player.name}: usar Mar de Chamas?", choices=["s", "n"], default="n") == "s"):
+            barba_mar_de_chamas(state, pid)
     for pid in all_pids:
         player = get_player(state, pid)
         _try_luna_return(state, player)

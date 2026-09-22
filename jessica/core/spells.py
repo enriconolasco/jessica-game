@@ -52,6 +52,10 @@ SPELL_CATALOG: dict[str, SpellDefinition] = {
         "imitacao_gnomerica", "gnomos_duendes", "Imitacao Gnomerica",
         "Copia o feitico de outro povo participante (sorteado por dia).",
     ),
+    "ressonancia_magica": SpellDefinition(
+        "ressonancia_magica", "dragoes", "Ressonancia Magica",
+        "Adiciona, remove ou troca Artefato da Canastra.",
+    ),
 }
 
 

@@ -99,6 +99,10 @@ def _cleanup_dead(state: GameState) -> None:
                 dead_units.append(u)
 
     for u in dead_units:
+        if u.statuses.get("dragon_base"):
+            owner = get_player(state, u.owner_id)
+            owner.city.life = 0
+            log(state, f"  Base movel de {owner.name} foi destruida.")
         owner = get_player(state, u.owner_id)
         if owner.people == peoples.PEOPLE_FAE:
             state.fae_fallen_this_turn.append((owner.id, u.house))
@@ -129,9 +133,13 @@ def _cleanup_dead(state: GameState) -> None:
     artifacts_effects.on_cleanup_after_combat(state)
 
     for player in state.players:
+        if player.people == peoples.PEOPLE_DRAGOES and player.city.is_alive():
+            peoples.sync_dragon_base_city(player)
         if not player.city.is_alive() and player.units:
             log(state, f"  {player.name} eliminado.")
             player.units = []
+    from .victory import check_victory
+    check_victory(state)
 
 
 def _attack_multiplier(state: GameState, attacker: Unit, target: Unit | None = None) -> int:
@@ -183,6 +191,10 @@ def _apply_defense(state: GameState, defender: Unit, dmg: int,
     # v5v10e #06: Cabaca Cheia marca no status da unidade
     if defender.statuses.get("invulneravel_until_turn", -1) >= state.turn:
         notes.append("invulneravel -> 0")
+        return 0, notes
+    if (_hero_has(defender, "invulnerable_vs_heroes")
+            and isinstance(attacker, Hero)):
+        notes.append("Dengoso invulneravel contra Heroi -> 0")
         return 0, notes
     if _hero_has(defender, "takes_1_damage_when_attacked") and not is_city_retaliation:
         if dmg > 0:
@@ -243,6 +255,9 @@ def _check_can_attack(state: GameState, unit: Unit) -> None:
         raise CombatError(f"Unidade {unit.id} nao pode atacar (Espoliou).")
     if unit.statuses.get("sono_until_turn", -1) > state.turn:
         raise CombatError(f"Unidade {unit.id} esta dormindo (Bein).")
+    if (isinstance(unit, Hero) and unit.hero_id == "barba_negra"
+            and unit.statuses.get("barba_hero_mode_turn") != state.turn):
+        raise CombatError("Barba Negra so ataca apos usar Mar de Chamas.")
 
 
 def _compute_bein_sleep_until(state: GameState, attacker_owner_id: int) -> int:
@@ -336,14 +351,30 @@ def _resolve_combat_round(state: GameState, attacker: Unit, target: Unit) -> Non
     atk_life = attacker.life
     tgt_life = target.life
 
-    raw_atk = _compute_attack_damage(state, attacker, atk_life, target=target)
+    target_barba_base = (
+        isinstance(target, Hero) and target.hero_id == "barba_negra"
+        and target.statuses.get("barba_hero_mode_turn") != state.turn
+    )
+    raw_atk = _compute_attack_damage(
+        state, attacker, 1 if target_barba_base else atk_life, target=target
+    )
     raw_atk = _apply_vovo_bonus(state, attacker, raw_atk, target)
     raw_atk = _apply_amaldicoado(state, target, raw_atk)
-    raw_tgt = _compute_attack_damage(state, target, tgt_life, target=attacker)
+    raw_tgt = _compute_attack_damage(
+        state, target, 1 if target_barba_base else tgt_life, target=attacker
+    )
     raw_tgt = _apply_vovo_bonus(state, target, raw_tgt, attacker)
     raw_tgt = _apply_amaldicoado(state, attacker, raw_tgt)
 
-    dmg_to_target, notes_t = _apply_defense(state, target, raw_atk, attacker)
+    if target_barba_base:
+        target_player_state = get_player(state, target.owner_id)
+        if (target_player_state.invulnerable_until_end_turn
+                or target.statuses.get("invulneravel_until_turn", -1) >= state.turn):
+            dmg_to_target, notes_t = 0, ["invulneravel -> 0"]
+        else:
+            dmg_to_target, notes_t = raw_atk, []
+    else:
+        dmg_to_target, notes_t = _apply_defense(state, target, raw_atk, attacker)
     dmg_to_attacker, notes_a = _apply_defense(state, attacker, raw_tgt, target)
 
     dmg_to_target = _apply_armor(state, target.owner_id, dmg_to_target)
@@ -370,14 +401,9 @@ def _resolve_combat_round(state: GameState, attacker: Unit, target: Unit) -> Non
             target.statuses.pop("sono_until_turn", None)
             log(state, f"    {target.id} acordou (foi atacado).")
 
-    if _hero_has(attacker, "sleep_on_attack") and target.is_alive():
-        sono_until = _compute_bein_sleep_until(state, attacker.owner_id)
-        target.statuses["sono_until_turn"] = sono_until
-        log(state, f"    {target.id} adormeceu (ate turno {sono_until}).")
-
-    if _hero_has(target, "kill_attacker_at_night_end") and dmg_to_target > 0:
+    if _hero_has(target, "kill_attacker_at_night_end"):
         state.dain_kills.append({"attacker_id": attacker.id, "turn": state.turn})
-        log(state, f"    {attacker.id} atacou Dain e morrera no fim da noite.")
+        log(state, f"    {attacker.id} declarou contra Atim e morrera no fim da noite.")
 
     extra = ""
     if notes_t:
@@ -444,6 +470,10 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
 
     if attack.target_type == "city":
         can_hero_attack_city = attacker.hero_can_attack_city
+        if (isinstance(attacker, Hero) and not can_hero_attack_city
+                and attacker_player.people == peoples.PEOPLE_DRAGOES
+                and peoples.dragon_has_suit(attacker_player, "S")):
+            can_hero_attack_city = True
         if isinstance(attacker, Hero) and not can_hero_attack_city:
             if _hero_has(attacker, "dwarves_can_attack_cities"):
                 can_hero_attack_city = True
@@ -465,6 +495,9 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
         if target_pid == attacker.owner_id:
             raise CombatError("Nao pode atacar a propria Cidade.")
         target_player = get_player(state, target_pid)
+        if (target_player.people == peoples.PEOPLE_DRAGOES
+                and target_player.chosen_hero_id in ("barba_negra", "valtherion")):
+            raise CombatError("A Base Dragao e movel: ataque o Heroi-Base no local.")
         city = target_player.city
         if not city.is_alive():
             raise CombatError(f"Cidade ja destruida.")
@@ -517,9 +550,6 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
             raise CombatError("Nao pode atacar aliado.")
         if target.statuses.get("invisivel_until_turn", -1) >= state.turn:
             raise CombatError(f"{target.id} esta invisivel.")
-        if _hero_has(target, "cannot_be_attacked_by_heroes") and isinstance(attacker, Hero):
-            raise CombatError(f"{target.id} (Buin) nao pode ser atacado por Herois.")
-
         _resolve_combat_round(state, attacker, target)
 
     else:

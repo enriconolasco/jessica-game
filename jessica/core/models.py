@@ -94,6 +94,7 @@ class Player:
     besouro_mandinga_used_turn: int = -1
     carocos_gerados: int = 0
     empalados: list[str] = field(default_factory=list)
+    dwarf_empalados: list[dict] = field(default_factory=list)
     infectados: list[dict] = field(default_factory=list)
 
     # Filhos da Floresta
@@ -131,6 +132,11 @@ class Player:
 
     pending_artifact_choice: Optional[dict] = None
     miyamoto_life_max_bonus: int = 0  # v5v9a
+
+    # Dragoes
+    canastra: list[str] = field(default_factory=list)
+    canastra_moves_turn: int = -1
+    canastra_moved_cards: list[str] = field(default_factory=list)
 
 
 @dataclass

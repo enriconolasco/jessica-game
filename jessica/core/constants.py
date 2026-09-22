@@ -23,6 +23,9 @@ TROOP_MAX_LIFE = {
     "extra": 4,
     "ghoul": 1,
     "esqueleto": 1,
+    "dragon_light": 4,
+    "dragon_medium": 6,
+    "dragon_heavy": 8,
 }
 MONUMENT_COST_GOLD = 1
 MONUMENT_BONUS_INTERVAL = 4
@@ -70,3 +73,6 @@ class TroopArchetype(Enum):
     EXTRA = "extra"
     GHOUL = "ghoul"
     ESQUELETO = "esqueleto"
+    DRAGON_LIGHT = "dragon_light"
+    DRAGON_MEDIUM = "dragon_medium"
+    DRAGON_HEAVY = "dragon_heavy"

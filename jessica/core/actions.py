@@ -23,7 +23,7 @@ class ActionError(Exception):
 SEVEN_DWARVES_COST = 2
 BAOBA_COST_PER_PAYMENT = 1
 BAOBA_PAYMENTS_NEEDED = 3
-GUARARI_CENTAURO_COST = 2
+GUARARI_CENTAURO_COST = 1
 ZEBUM_FIRST_COST = 4
 ZEBUM_COST_STEP = 2
 ZEBUM_RESUMMON_COST = 3
@@ -100,6 +100,9 @@ def raise_city_life(state: GameState, player_id: int, times: int = 1) -> None:
         raise ActionError("Turno 13+: nao pode mais subir muralha.")
     city = get_city(state, player_id)
     player = get_player(state, player_id)
+    if (player.people == peoples.PEOPLE_DRAGOES
+            and player.chosen_hero_id in ("barba_negra", "valtherion")):
+        raise ActionError("Base Dragao nao pode pagar para aumentar Muralha.")
     if not city.is_alive():
         raise ActionError("Cidade destruida.")
     total_cost = CITY_LIFE_COST_GOLD * times
@@ -128,6 +131,9 @@ def _baoba_alive(player) -> Hero | None:
 def summon_troop(state: GameState, player_id: int, archetype: TroopArchetype,
                  life: int, house: str | None = None) -> Troop:
     player = get_player(state, player_id)
+    if (player.people == peoples.PEOPLE_DRAGOES
+            and player.chosen_hero_id in ("barba_negra", "valtherion")):
+        raise ActionError("Este heroi-Base nao pode pagar para invocar Tropas.")
     if peoples.has_7_dwarves_chosen(player) or player.zebum_seven_dwarves:
         raise ActionError("Os 7 Anoes (ou Zebum que os obteve): sem Tropas.")
     sig = {"kind": "troop", "id": archetype.value}
@@ -195,7 +201,7 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
         city.magic -= magic_cost
         hdef = heroes.get_hero(hid)
         unit_id = f"p{player_id}_hero_{hdef.hero_id}"
-        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef)
+        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef, state)
         hero = Hero(id=unit_id, owner_id=player_id, house=f"city_{player_id}",
                     life=hero_life, life_max=hero_life,
                     hero_id=hdef.hero_id, has_moved_this_turn=True, moves_this_turn=1)
@@ -229,7 +235,7 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
         city.magic -= magic_cost
         hdef = heroes.get_hero(next_hid)
         unit_id = f"p{player_id}_hero_{next_hid}"
-        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef)
+        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef, state)
         hero = Hero(id=unit_id, owner_id=player_id, house=f"city_{player_id}",
                     life=hero_life, life_max=hero_life,
                     hero_id=hdef.hero_id, has_moved_this_turn=True, moves_this_turn=1)
@@ -284,7 +290,7 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
         raise ActionError(f"Magia insuficiente ({magic_cost}).")
     city.magic -= magic_cost
     hdef = heroes.get_hero(target_id)
-    hero_life_max = peoples.hero_life_with_persistent_bonus(player, hdef)
+    hero_life_max = peoples.hero_life_with_persistent_bonus(player, hdef, state)
     if player.people == peoples.PEOPLE_GIGANTES and state.turn % 4 == 0:
         hero_life_max *= 2
     unit_id = f"p{player_id}_hero_{hdef.hero_id}"
@@ -536,7 +542,8 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
         raise ActionError("Cidade destruida.")
     if state.turn < player.spell_cooldown_until_turn:
         raise ActionError(f"Feitico em recarga.")
-    if player.has_cast_spell_this_turn:
+    is_resonance = player.people == peoples.PEOPLE_DRAGOES
+    if player.has_cast_spell_this_turn and not is_resonance:
         raise ActionError("Ja usou feitico.")
 
     sp = spells_mod.spell_for_people(player.people)
@@ -597,10 +604,13 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     elif sp.spell_id == "imitacao_gnomerica":
         spell_imitacao_gnomerica(state, player_id, choice)
         no_cooldown = True
+    elif sp.spell_id == "ressonancia_magica":
+        cooldown = _spell_ressonancia_magica(state, player, choice)
+        no_cooldown = not cooldown
     else:
         raise ActionError(f"Feitico {sp.spell_id} sem implementacao.")
 
-    player.has_cast_spell_this_turn = True
+    player.has_cast_spell_this_turn = not no_cooldown
     if not no_cooldown:
         player.spell_cooldown_until_turn = state.turn + 2
     bump_stat(state, player_id, "spells_cast")
@@ -697,7 +707,7 @@ def _cabaca_cheia(state, player):
     carocos = [u for u in player.units
                if isinstance(u, Hero) and u.is_alive() and u.hero_id == "caroco"]
     alvos = carocos if carocos else [None]
-    nomes = {1: "Invulneravel (★)", 2: "+1 movimento", 3: "+1 Ouro", 4: "+1 Magia"}
+    nomes = {1: "Invulneravel (★)", 2: "Pode atacar Base", 3: "+1 Ouro", 4: "+1 Magia"}
     for c in alvos:
         r = state.rng.randint(1, 4)
         rotulo = f" (Caroço {c.id})" if c is not None else ""
@@ -709,8 +719,7 @@ def _cabaca_cheia(state, player):
         elif r == 2:
             for u in player.units:
                 if u.is_alive():
-                    u.max_moves_this_turn += 1
-                    u.has_moved_this_turn = False
+                    u.hero_can_attack_city = True
         elif r == 3:
             player.city.gold += 1
         elif r == 4:
@@ -829,20 +838,196 @@ def transformar_em_centauro(state: GameState, player_id: int, unit_id: str) -> N
         raise ActionError("Guarari nao esta vivo.")
     if player.city.magic < GUARARI_CENTAURO_COST:
         raise ActionError(f"Precisa {GUARARI_CENTAURO_COST} Magia.")
-    t = next((u for u in player.units
-              if isinstance(u, Troop) and u.is_alive() and u.id == unit_id), None)
+    t = next((u for u in player.units if u.is_alive() and u.id == unit_id), None)
     if t is None:
-        raise ActionError("Tropa alvo nao encontrada.")
+        raise ActionError("Aliado alvo nao encontrado.")
     if t.house != guarari.house:
-        raise ActionError("Tropa precisa estar na mesma casa que Guarari.")
+        raise ActionError("Aliado precisa estar na mesma casa que Guarari.")
     if t.statuses.get("centauro_until_turn", -1) == state.turn:
-        raise ActionError("Tropa ja transformada neste turno.")
+        raise ActionError("Aliado ja transformado neste turno.")
     player.city.magic -= GUARARI_CENTAURO_COST
     t.statuses["centauro_until_turn"] = state.turn
     t.max_moves_this_turn = 2
     t.has_moved_this_turn = False
     t.moves_this_turn = 0
     log(state, f"{player.name}: Guarari transformou {t.id} em Centauro.")
+
+
+# =============================================================
+# Dragoes
+# =============================================================
+
+def _dragon_refresh_canastra_buffs(state: GameState, player) -> None:
+    has_heart = peoples.dragon_has_suit(player, "H")
+    has_club = peoples.dragon_has_suit(player, "C")
+    for unit in peoples.dragon_heroes(player):
+        marked = unit.statuses.get("dragon_heart_resistance", False)
+        if has_heart and not marked:
+            unit.resistance_stacks += 1
+            unit.statuses["dragon_heart_resistance"] = True
+        elif not has_heart and marked:
+            unit.resistance_stacks = max(0, unit.resistance_stacks - 1)
+            unit.statuses.pop("dragon_heart_resistance", None)
+        unit.max_moves_this_turn = 2 if has_club else 1
+        unit.has_moved_this_turn = unit.moves_this_turn >= unit.max_moves_this_turn
+    peoples.sync_dragon_base_city(player)
+
+
+def _dragon_canastra_leave(state: GameState, player, card_id: str) -> None:
+    if card_id not in player.canastra:
+        raise ActionError("Artefato nao esta na Canastra.")
+    jacks_before = peoples.dragon_rank_count(player, "J")
+    if card_id.startswith("J_") and jacks_before:
+        player.city.gold += jacks_before
+        log(state, f"{player.name}: Acumulador +{jacks_before} Ouro ao retirar Valete.")
+    if card_id.startswith("Q_"):
+        for unit in peoples.dragon_heroes(player):
+            unit.life_max = max(1, unit.life_max - 2)
+    player.canastra.remove(card_id)
+    player.hand.append(card_id)
+
+
+def _dragon_canastra_enter(state: GameState, player, card_id: str) -> None:
+    if card_id not in player.hand:
+        raise ActionError("Artefato nao esta na mao.")
+    from .artifacts import get_definition
+    definition = get_definition(card_id)
+    if not definition.suit:
+        raise ActionError("Pena nao pode ser incorporada.")
+    if peoples.dragon_has_suit(player, definition.suit):
+        raise ActionError("Ja existe Artefato desse naipe na Canastra.")
+    player.hand.remove(card_id)
+    player.canastra.append(card_id)
+    if card_id.startswith("Q_"):
+        for unit in peoples.dragon_heroes(player):
+            unit.life_max += 2
+            unit.life = min(unit.life_max, unit.life + 2)
+    jacks_after = peoples.dragon_rank_count(player, "J")
+    if card_id.startswith("J_") and jacks_after:
+        player.city.gold += jacks_after
+        log(state, f"{player.name}: Acumulador +{jacks_after} Ouro ao incorporar Valete.")
+
+
+def _spell_ressonancia_magica(state: GameState, player, choice: dict) -> bool:
+    action = choice.get("action")
+    moved: list[str] = []
+    if player.canastra_moves_turn != state.turn:
+        player.canastra_moves_turn = state.turn
+        player.canastra_moved_cards = []
+    if action == "add":
+        card_id = choice.get("card_id")
+        _dragon_canastra_enter(state, player, card_id)
+        moved.append(card_id)
+    elif action == "remove":
+        card_id = choice.get("card_id")
+        _dragon_canastra_leave(state, player, card_id)
+        moved.append(card_id)
+    elif action == "swap":
+        old_card = choice.get("old_card_id")
+        new_card = choice.get("new_card_id")
+        if not old_card or not new_card:
+            raise ActionError("Troca exige carta de saida e entrada.")
+        old_suit = old_card.rsplit("_", 1)[-1]
+        new_suit = new_card.rsplit("_", 1)[-1]
+        if old_suit != new_suit:
+            raise ActionError("Troca deve manter o naipe ocupado.")
+        _dragon_canastra_leave(state, player, old_card)
+        try:
+            _dragon_canastra_enter(state, player, new_card)
+        except Exception:
+            player.hand.remove(old_card)
+            player.canastra.append(old_card)
+            raise
+        moved.extend([old_card, new_card])
+    else:
+        raise ActionError("Ressonancia: use add, remove ou swap.")
+    previous = list(player.canastra_moved_cards)
+    player.canastra_moved_cards.extend(moved)
+    repeated = any(card in previous for card in moved)
+    cooldown = repeated or len(player.canastra_moved_cards) > 1
+    _dragon_refresh_canastra_buffs(state, player)
+    log(state, f"{player.name}: Ressonancia {action} ({', '.join(moved)}).")
+    return cooldown
+
+
+def purpura_invisibilidade(state: GameState, player_id: int) -> None:
+    player = get_player(state, player_id)
+    purpura = next((u for u in peoples.dragon_heroes(player)
+                    if u.hero_id == "purpura"), None)
+    if purpura is None:
+        raise ActionError("Purpura nao esta viva.")
+    if purpura.statuses.get("purpura_cooldown_until_turn", -1) > state.turn:
+        raise ActionError("Purpura em recarga.")
+    purpura.statuses["invisivel_until_turn"] = state.turn
+    purpura.statuses["purpura_cooldown_until_turn"] = state.turn + 2
+    log(state, f"{player.name}: Purpura ficou invisivel.")
+
+
+def barba_mar_de_chamas(state: GameState, player_id: int) -> None:
+    player = get_player(state, player_id)
+    barba = next((u for u in peoples.dragon_heroes(player)
+                  if u.hero_id == "barba_negra"), None)
+    if barba is None:
+        raise ActionError("Barba Negra nao esta vivo.")
+    if state.phase != Phase.NIGHT:
+        raise ActionError("Mar de Chamas so pode ser usado no inicio da Noite.")
+    if barba.statuses.get("mar_chamas_cooldown_until_turn", -1) > state.turn:
+        raise ActionError("Mar de Chamas em recarga.")
+    barba.statuses["barba_hero_mode_turn"] = state.turn
+    barba.statuses["mar_chamas_cooldown_until_turn"] = state.turn + 2
+    for other in state.players:
+        if other.id == player_id:
+            continue
+        for unit in other.units:
+            if (unit.is_alive() and unit.house == barba.house
+                    and not unit.statuses.get("dragon_base")):
+                before = unit.life
+                unit.life = max(0, unit.life - 1)
+                if not unit.is_alive():
+                    unit.statuses["life_at_death"] = before
+                    unit.killed_by_player_id = player_id
+                    unit.killed_by_unit_id = barba.id
+    from .combat import _cleanup_dead
+    _cleanup_dead(state)
+    log(state, f"{player.name}: Mar de Chamas ativado; Barba Negra combate como Heroi.")
+
+
+def valtherion_chamado(state: GameState, player_id: int,
+                       archetype: TroopArchetype) -> Troop:
+    player = get_player(state, player_id)
+    valtherion = next((u for u in peoples.dragon_heroes(player)
+                       if u.hero_id == "valtherion"), None)
+    if valtherion is None:
+        raise ActionError("Valtherion nao esta vivo.")
+    if valtherion.statuses.get("chamado_cooldown_until_turn", -1) > state.turn:
+        raise ActionError("Chamado em recarga.")
+    allowed = {
+        TroopArchetype.DRAGON_LIGHT,
+        TroopArchetype.DRAGON_MEDIUM,
+        TroopArchetype.DRAGON_HEAVY,
+    }
+    if archetype not in allowed:
+        raise ActionError("Escolha uma Tropa Dragao pequena, media ou grande.")
+    if any(isinstance(u, Troop) and u.is_alive() and u.archetype == archetype
+           for u in player.units):
+        raise ActionError("Esta vaga de Tropa Dragao ja esta ocupada.")
+    amount = len(player.hand) + len(player.canastra)
+    if amount <= 0:
+        raise ActionError("Chamado exige ao menos 1 Artefato entre mao e Canastra.")
+    max_life = TROOP_MAX_LIFE[archetype.value]
+    life = min(amount, max_life)
+    n = sum(1 for u in player.units if isinstance(u, Troop))
+    troop = Troop(
+        id=f"p{player_id}_dragon_{archetype.value}_{n}", owner_id=player_id,
+        house=valtherion.house, life=life, life_max=max_life,
+        archetype=archetype, has_moved_this_turn=True, moves_this_turn=1,
+    )
+    player.units.append(troop)
+    mark_summoned(state, player, troop)
+    valtherion.statuses["chamado_cooldown_until_turn"] = state.turn + 2
+    sync_house_priority(state, troop.house)
+    log(state, f"{player.name}: Chamado invocou {archetype.value} ({life}/{max_life}).")
+    return troop
 
 
 # =============================================================
@@ -1069,7 +1254,7 @@ def zebum_invocar_heroi(state: GameState, player_id: int, hero_id: str) -> None:
         hdef = heroes.get_hero("dain")
         n = sum(1 for u in player.units if isinstance(u, Hero))
         unit_id = f"p{player_id}_zebum_dain_{n}"
-        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef)
+        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef, state)
         h = Hero(id=unit_id, owner_id=player_id, house=f"city_{player_id}",
                  life=hero_life, life_max=hero_life,
                  hero_id="dain", has_moved_this_turn=True, moves_this_turn=1)
@@ -1083,7 +1268,7 @@ def zebum_invocar_heroi(state: GameState, player_id: int, hero_id: str) -> None:
     player.zebum_herois.append(hero_id)
     n = sum(1 for u in player.units if isinstance(u, Hero))
     unit_id = f"p{player_id}_zebum_{hero_id}_{n}"
-    hero_life = peoples.hero_life_with_persistent_bonus(player, hdef)
+    hero_life = peoples.hero_life_with_persistent_bonus(player, hdef, state)
     h = Hero(id=unit_id, owner_id=player_id, house=f"city_{player_id}",
              life=hero_life, life_max=hero_life,
              hero_id=hero_id, has_moved_this_turn=True, moves_this_turn=1)
@@ -1113,7 +1298,7 @@ def zebum_invocar_proximo_anao(state: GameState, player_id: int) -> Hero:
     hdef = heroes.get_hero(nxt)
     n = sum(1 for u in player.units if isinstance(u, Hero))
     unit_id = f"p{player_id}_zebum_{nxt}_{n}"
-    hero_life = peoples.hero_life_with_persistent_bonus(player, hdef)
+    hero_life = peoples.hero_life_with_persistent_bonus(player, hdef, state)
     h = Hero(id=unit_id, owner_id=player_id, house=f"city_{player_id}",
              life=hero_life, life_max=hero_life,
              hero_id=nxt, has_moved_this_turn=True, moves_this_turn=1)
@@ -1138,7 +1323,7 @@ def zebum_reinvocar(state: GameState, player_id: int, hero_id: str) -> None:
     hdef = heroes.get_hero(hero_id)
     n = sum(1 for u in player.units if isinstance(u, Hero))
     unit_id = f"p{player_id}_zebum_re_{hero_id}_{n}"
-    hero_life = peoples.hero_life_with_persistent_bonus(player, hdef)
+    hero_life = peoples.hero_life_with_persistent_bonus(player, hdef, state)
     h = Hero(id=unit_id, owner_id=player_id, house=f"city_{player_id}",
              life=hero_life, life_max=hero_life,
              hero_id=hero_id, has_moved_this_turn=True, moves_this_turn=1)
@@ -1197,11 +1382,13 @@ def buy_artifact_with_gold(state, player_id):
         raise ActionError("Ja comprou com Ouro hoje.")
     if not _has_unit_at_center(state, player_id):
         raise ActionError("Precisa unidade no Centro.")
-    if city.gold < ARTIFACT_GOLD_COST:
-        raise ActionError(f"Ouro insuficiente ({ARTIFACT_GOLD_COST}).")
+    cost = 5 if (player.people == peoples.PEOPLE_DRAGOES
+                 and peoples.dragon_has_suit(player, "D")) else ARTIFACT_GOLD_COST
+    if city.gold < cost:
+        raise ActionError(f"Ouro insuficiente ({cost}).")
     if state.shop.is_empty():
         raise ActionError("Loja vazia.")
-    city.gold -= ARTIFACT_GOLD_COST
+    city.gold -= cost
     player.artifacts_bought_gold_today += 1
     if _boin_alive(player) and state.shop.size() >= 2:
         drawn = [state.shop.draw_random(state.rng) for _ in range(2)]
@@ -1224,11 +1411,13 @@ def transmute_artifact_with_magic(state, player_id):
         raise ActionError("Cidade destruida.")
     if player.artifacts_bought_magic_today >= ARTIFACT_MAX_BUYS_MAGIC_PER_DAY:
         raise ActionError("Ja transmutou hoje.")
-    if city.magic < ARTIFACT_MAGIC_COST:
-        raise ActionError(f"Magia insuficiente ({ARTIFACT_MAGIC_COST}).")
+    cost = 5 if (player.people == peoples.PEOPLE_DRAGOES
+                 and peoples.dragon_has_suit(player, "D")) else ARTIFACT_MAGIC_COST
+    if city.magic < cost:
+        raise ActionError(f"Magia insuficiente ({cost}).")
     if state.shop.is_empty():
         raise ActionError("Loja vazia.")
-    city.magic -= ARTIFACT_MAGIC_COST
+    city.magic -= cost
     player.artifacts_bought_magic_today += 1
     if _boin_alive(player) and state.shop.size() >= 2:
         drawn = [state.shop.draw_random(state.rng) for _ in range(2)]

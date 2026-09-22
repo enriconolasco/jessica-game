@@ -19,6 +19,7 @@ PEOPLE_GIGANTES = "gigantes"
 PEOPLE_MORTOS_VIVOS = "mortos_vivos"
 PEOPLE_FILHOS = "filhos_floresta"
 PEOPLE_GNOMOS = "gnomos_duendes"
+PEOPLE_DRAGOES = "dragoes"
 
 
 ACTION_TO_BET = {
@@ -79,17 +80,94 @@ def is_unit_infected(state: GameState, unit: Unit) -> bool:
     )
 
 
-def hero_life_with_persistent_bonus(player: Player, hero_def) -> int:
+def dragon_rank_count(player: Player, rank: str) -> int:
+    return sum(1 for card_id in player.canastra if card_id.startswith(f"{rank}_"))
+
+
+def dragon_has_suit(player: Player, suit: str) -> bool:
+    return any(card_id.endswith(f"_{suit}") for card_id in player.canastra)
+
+
+def dragon_heroes(player: Player) -> list[Hero]:
+    return [u for u in player.units
+            if isinstance(u, Hero) and u.is_alive()
+            and heroes.get_hero(u.hero_id).people == PEOPLE_DRAGOES]
+
+
+def dragon_base(player: Player) -> Hero | None:
+    return next((u for u in dragon_heroes(player)
+                 if u.statuses.get("dragon_base")), None)
+
+
+def sync_dragon_base_city(player: Player) -> None:
+    base = dragon_base(player)
+    if base is None:
+        if player.people == PEOPLE_DRAGOES and player.chosen_hero_id in (
+                "barba_negra", "valtherion"):
+            player.city.life = 0
+        return
+    player.city.life = base.life
+    player.city.life_max = base.life_max
+
+
+def apply_dragon_canastra_to_hero(player: Player, unit: Hero) -> None:
+    """Aplica os efeitos persistentes da Canastra a um Dragao recem-invocado."""
+    if player.people != PEOPLE_DRAGOES:
+        return
+    if dragon_has_suit(player, "H") and not unit.statuses.get("dragon_heart_resistance"):
+        unit.resistance_stacks += 1
+        unit.statuses["dragon_heart_resistance"] = True
+    if dragon_has_suit(player, "C"):
+        unit.max_moves_this_turn = max(2, unit.max_moves_this_turn)
+        # Invocado normalmente ja gastou 1 movimento; Paus libera o segundo.
+        unit.has_moved_this_turn = unit.moves_this_turn >= unit.max_moves_this_turn
+
+
+def hero_life_with_persistent_bonus(player: Player, hero_def,
+                                    state: GameState | None = None) -> int:
     life = hero_def.life
     if hero_def.hero_id == "miyamoto":
         life += player.miyamoto_life_max_bonus
     if hero_def.hero_id == "garoche":
         life += player.garoche_life_max_bonus
+    if hero_def.hero_id == "purpura" and state is not None:
+        life += state.turn // 2
+    if hero_def.people == PEOPLE_DRAGOES:
+        life += 2 * dragon_rank_count(player, "Q")
     return life
 
 
 def is_empalado(player: Player, sig: dict) -> bool:
-    return sig in player.empalados
+    return sig in player.empalados or any(e.get("sig") == sig for e in player.dwarf_empalados)
+
+
+def clear_dwarf_impales_for_curuna(state: GameState) -> None:
+    for victim in state.players:
+        victim.dwarf_empalados = [
+            e for e in victim.dwarf_empalados
+            if e.get("dwarf_owner_id") != state.curuna_id
+        ]
+
+
+def apply_dragon_turn_start(state: GameState) -> None:
+    for player in state.players:
+        if player.people != PEOPLE_DRAGOES or not player.city.is_alive():
+            continue
+        kings = dragon_rank_count(player, "K")
+        if kings:
+            player.city.magic += kings
+            state.morning_gains.append(
+                {"pid": player.id, "kind": "Sangue Encantado", "magic": kings}
+            )
+            log(state, f"{player.name} (Dragoes): +{kings} Magia pela Canastra.")
+        for unit in dragon_heroes(player):
+            unit.max_moves_this_turn = 2 if dragon_has_suit(player, "C") else 1
+            unit.has_moved_this_turn = unit.moves_this_turn >= unit.max_moves_this_turn
+            if unit.hero_id == "purpura" and state.turn % 2 == 0:
+                unit.life_max += 1
+                unit.life += 1
+                log(state, f"{player.name}: Purpura cresceu para {unit.life}/{unit.life_max}.")
+        sync_dragon_base_city(player)
 
 
 def on_action_performed(state: GameState, actor_id: int, action: str) -> None:
@@ -341,6 +419,14 @@ def on_unit_killed_by(state: GameState, killer_player_id: int,
             killer_unit.life_max += ganho
             log(state, f"  {killer_unit.id} (Miyamoto) +{ganho} vida maxima "
                        f"(acumulado: {killer_player.miyamoto_life_max_bonus}).")
+
+    if (isinstance(killer_unit, Hero)
+            and killer_unit.hero_id == "bein"):
+        sig = unit_signature(dead_unit)
+        entry = {"sig": sig, "dwarf_owner_id": killer_player_id}
+        if entry not in victim_owner.dwarf_empalados:
+            victim_owner.dwarf_empalados.append(entry)
+            log(state, f"  {dead_unit.id} empalado por Soneca ate os Anoes serem Curuna.")
 
     if (killer_player.people == PEOPLE_FAE
             and isinstance(killer_unit, Hero)

@@ -41,6 +41,7 @@ def test_dain_marks_attacker_and_kills_at_end_of_night():
     state.phase = Phase.NIGHT
     p2 = state.players[1]
     p2.city.magic = 10
+    summon_hero(state, 2)
     dain = summon_hero(state, 2)
     dain.house = CENTER
     enemy = _make_troop(state, 1, archetype=TroopArchetype.HEAVY, life=8, house=CENTER)
@@ -55,14 +56,12 @@ def test_dain_marks_attacker_and_kills_at_end_of_night():
     print("OK  - Dain: atacante morre no fim da noite")
 
 
-def test_buin_cannot_be_attacked_by_hero():
-    """Buin: não pode ser atacado por Heróis."""
+def test_buin_is_invulnerable_against_hero():
+    """Dengoso recebe o ataque, mas não perde vida contra Heróis."""
     state = make_state()
     state.phase = Phase.NIGHT
     p2 = state.players[1]
     p2.city.magic = 20
-    # Invoca dain + buin
-    summon_hero(state, 2)
     summon_hero(state, 2)
     buin = next(u for u in p2.units if isinstance(u, Hero) and u.hero_id == "buin")
     buin.house = CENTER
@@ -72,15 +71,14 @@ def test_buin_cannot_be_attacked_by_hero():
     p1.city.magic = 10
     hero_enemy = summon_hero(state, 1)
     hero_enemy.house = CENTER
-    try:
-        resolve_attack(state, Attack(hero_enemy.id, "unit", buin.id))
-        raise AssertionError("Herói deveria ser bloqueado contra Buin")
-    except CombatError as e:
-        print(f"OK  - Buin nao pode ser atacado por Heroi: {e}")
+    before = buin.life
+    resolve_attack(state, Attack(hero_enemy.id, "unit", buin.id))
+    assert buin.life == before
+    print("OK  - Dengoso e invulneravel contra Heroi")
 
 
-def test_bein_puts_target_to_sleep():
-    """Bein dorme alvo até os Anões serem Curuna."""
+def test_bein_impales_killed_target():
+    """Soneca empala temporariamente inimigo morto por ele."""
     state = make_state()
     state.phase = Phase.NIGHT
     p2 = state.players[1]
@@ -89,15 +87,13 @@ def test_bein_puts_target_to_sleep():
         summon_hero(state, 2)
     bein = next(u for u in p2.units if isinstance(u, Hero) and u.hero_id == "bein")
     bein.house = CENTER
-    target = _make_troop(state, 1, archetype=TroopArchetype.HEAVY, life=8, house=CENTER)
+    target = _make_troop(state, 1, life=1, house=CENTER)
     resolve_attack(state, Attack(bein.id, "unit", target.id))
-    sono = target.statuses.get("sono_until_turn", -1)
-    assert sono > state.turn, f"Alvo deveria dormir, sono_until={sono}"
-    print(f"OK  - Bein dorme alvo ate turno {sono}")
+    assert state.players[0].dwarf_empalados
+    print("OK  - Soneca empala o inimigo morto")
 
 
-def test_bein_target_wakes_if_attacked():
-    """Alvo dormindo acorda se for atacado."""
+def test_bein_impale_clears_when_dwarves_are_curuna():
     state = make_state()
     state.phase = Phase.NIGHT
     p2 = state.players[1]
@@ -106,18 +102,13 @@ def test_bein_target_wakes_if_attacked():
         summon_hero(state, 2)
     bein = next(u for u in p2.units if isinstance(u, Hero) and u.hero_id == "bein")
     bein.house = CENTER
-    target = _make_troop(state, 1, archetype=TroopArchetype.HEAVY, life=8, house=CENTER)
+    target = _make_troop(state, 1, life=1, house=CENTER)
     resolve_attack(state, Attack(bein.id, "unit", target.id))
-    assert target.statuses.get("sono_until_turn", -1) > state.turn
-    # Dain ataca o alvo dormindo (usa outro anao)
-    dain = next(u for u in p2.units if isinstance(u, Hero) and u.hero_id == "dain")
-    dain.house = CENTER
-    # Reset dain attack counter
-    dain.attacks_made_this_night = 0
-    resolve_attack(state, Attack(dain.id, "unit", target.id))
-    # Alvo acordou (sono removido)
-    assert "sono_until_turn" not in target.statuses or         target.statuses.get("sono_until_turn", -1) <= state.turn,         f"Alvo deveria ter acordado, sono={target.statuses.get('sono_until_turn')}"
-    print("OK  - Bein: alvo acorda se for atacado")
+    from jessica.core.peoples import clear_dwarf_impales_for_curuna
+    state.curuna_id = 2
+    clear_dwarf_impales_for_curuna(state)
+    assert state.players[0].dwarf_empalados == []
+    print("OK  - Empalamento de Soneca expira com Anoes Curuna")
 
 
 def test_tintin_invisibility():
@@ -159,9 +150,9 @@ def test_tintin_cooldown():
 def run_all():
     tests = [
         test_dain_marks_attacker_and_kills_at_end_of_night,
-        test_buin_cannot_be_attacked_by_hero,
-        test_bein_puts_target_to_sleep,
-        test_bein_target_wakes_if_attacked,
+        test_buin_is_invulnerable_against_hero,
+        test_bein_impales_killed_target,
+        test_bein_impale_clears_when_dwarves_are_curuna,
         test_tintin_invisibility,
         test_tintin_cooldown,
     ]

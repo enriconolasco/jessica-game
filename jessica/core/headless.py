@@ -154,6 +154,7 @@ def view_for_player(state: GameState, player_id: int) -> dict:
                 "has_monument": player.city.has_monument,
             },
             "hand_count": len(player.hand),
+            "canastra": list(player.canastra),
         })
         board["units"].extend(_unit_view(unit) for unit in player.units
                               if unit.is_alive())

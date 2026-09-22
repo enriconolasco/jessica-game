@@ -17,11 +17,11 @@ def test_imports():
 def test_heroes_catalog():
     from jessica.core import heroes
     # 12 base + 7 anoes individuais + 12 novos (vampiros/lobisomens/gigantes/mv)
-    assert len(heroes.HERO_CATALOG) == 37, (
-        f"Esperado 37 herois, tem {len(heroes.HERO_CATALOG)}"
+    assert len(heroes.HERO_CATALOG) == 40, (
+        f"Esperado 40 herois, tem {len(heroes.HERO_CATALOG)}"
     )
     for people in ("humanos", "orcs", "fadas", "vampiros", "lobisomens",
-                   "gigantes", "mortos_vivos"):
+                   "gigantes", "mortos_vivos", "dragoes"):
         hs = heroes.heroes_for_people(people)
         assert len(hs) == 3, f"{people} tem {len(hs)} herois escolhiveis, esperado 3"
     anao = heroes.heroes_for_people("anoes")
@@ -31,11 +31,11 @@ def test_heroes_catalog():
 
 def test_spells_catalog():
     from jessica.core import spells
-    assert len(spells.SPELL_CATALOG) == 10, (
-        f"Esperado 10 feiticos, tem {len(spells.SPELL_CATALOG)}"
+    assert len(spells.SPELL_CATALOG) == 11, (
+        f"Esperado 11 feiticos, tem {len(spells.SPELL_CATALOG)}"
     )
     for people in ("humanos", "anoes", "orcs", "fadas",
-                   "vampiros", "lobisomens", "gigantes", "mortos_vivos"):
+                   "vampiros", "lobisomens", "gigantes", "mortos_vivos", "dragoes"):
         sp = spells.spell_for_people(people)
         assert sp is not None, f"{people} sem feitico"
     print("OK  - 8 feiticos, 1 por povo")

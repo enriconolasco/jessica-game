@@ -24,15 +24,15 @@ HERO_CATALOG: dict[str, HeroDefinition] = {
         ("resistance_aura",)),
     "seven_dwarves": HeroDefinition("seven_dwarves", "anoes", "Os 7 Anoes", 1,
         ("seven_dwarves",)),
-    "dain": HeroDefinition("dain", "anoes", "Dain, o Alergico", 1,
+    "dain": HeroDefinition("dain", "anoes", "Atim", 2,
         ("kill_attacker_at_night_end",)),
-    "buin": HeroDefinition("buin", "anoes", "Buin, o Dengoso", 2,
-        ("cannot_be_attacked_by_heroes",)),
-    "bein": HeroDefinition("bein", "anoes", "Bein, o Soneca", 3,
-        ("sleep_on_attack",)),
+    "buin": HeroDefinition("buin", "anoes", "Dengoso", 1,
+        ("invulnerable_vs_heroes",)),
+    "bein": HeroDefinition("bein", "anoes", "Soneca", 3,
+        ("temporary_impale_on_kill",)),
     "boin": HeroDefinition("boin", "anoes", "Boin, o Feliz", 4,
         ("see_2_pick_1_artifact",)),
-    "tintin": HeroDefinition("tintin", "anoes", "Tin Tin, o Bobao", 5,
+    "tintin": HeroDefinition("tintin", "anoes", "Dunga", 5,
         ("can_be_invisible",)),
     "don": HeroDefinition("don", "anoes", "Don, o Zangado", 6,
         ("extra_attacks_per_dwarf",)),
@@ -56,11 +56,11 @@ HERO_CATALOG: dict[str, HeroDefinition] = {
         ("invisibilidade_grupo",)),
     "luide_vampa": HeroDefinition("luide_vampa", "vampiros", "Luide Vampa, Lider dos Bandidos", 5,
         ("move_aliados_noturno",)),
-    "lupa_lider": HeroDefinition("lupa_lider", "lobisomens", "Lupa, Lider da Matilha", 6,  # v5v10 #23
+    "lupa_lider": HeroDefinition("lupa_lider", "lobisomens", "Lupa, Lider da Matilha", 7,
         ("resistencia_lua_cheia",)),
     "cigana": HeroDefinition("cigana", "lobisomens", "Cigana, Caminhante da Nevoa", 2,
         ("veu_da_lua",)),
-    "luarado": HeroDefinition("luarado", "lobisomens", "Luarado, Filhote da Mare", 4,
+    "luarado": HeroDefinition("luarado", "lobisomens", "Luarado, Filhote da Mare", 1,
         ("cacada_infecciosa",)),
     "joao_grandao": HeroDefinition("joao_grandao", "gigantes", "Joao Grandao, Protetor do Pe Desenterrado", 10,
         ("presenca_magnetica",)),
@@ -86,9 +86,15 @@ HERO_CATALOG: dict[str, HeroDefinition] = {
         ("passivas_dos_alvos", "duas_determinacoes")),
     "zebum": HeroDefinition("zebum", "gnomos_duendes", "Zebum, o Mistico Viajante", 3,
         ("invocar_heroi_estrangeiro",)),
+    "barba_negra": HeroDefinition("barba_negra", "dragoes", "Barba Negra, o Rei do Mundo", 2,
+        ("dragon_base", "mar_de_chamas")),
+    "purpura": HeroDefinition("purpura", "dragoes", "Purpura, Filhote de Nebula", 3,
+        ("crescimento_matinhas_pares", "invisibilidade")),
+    "valtherion": HeroDefinition("valtherion", "dragoes", "Valtherion, o Pai da Primeira Aurora", 20,
+        ("dragon_base", "chamado")),
 }
 
-SEVEN_DWARVES_ORDER = ["dain", "buin", "bein", "boin", "tintin", "don", "din"]
+SEVEN_DWARVES_ORDER = ["buin", "dain", "bein", "boin", "tintin", "don", "din"]
 
 LEGACY_NAMES: dict[str, str] = {
     "Miyamoto Musashi": "miyamoto",
@@ -126,6 +132,10 @@ LEGACY_NAMES: dict[str, str] = {
     "Sao Tome": "sao_tome",
     "Zebum": "zebum",
     "Zebum, o Místico Viajante": "zebum",
+    "Barba Negra": "barba_negra",
+    "Púrpura": "purpura",
+    "Purpura": "purpura",
+    "Valtherion": "valtherion",
 }
 
 
@@ -138,6 +148,8 @@ def heroes_for_people(people: str) -> list[HeroDefinition]:
         return [HERO_CATALOG[h] for h in ("guarari", "aiquara", "baoba_ba")]
     if people == "gnomos_duendes":
         return [HERO_CATALOG[h] for h in ("bimbo_do_mal", "sao_tome", "zebum")]
+    if people == "dragoes":
+        return [HERO_CATALOG[h] for h in ("barba_negra", "purpura", "valtherion")]
     return [h for h in HERO_CATALOG.values()
             if h.people == people and h.hero_id not in SEVEN_DWARVES_ORDER]
 

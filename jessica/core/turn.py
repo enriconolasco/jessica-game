@@ -22,6 +22,7 @@ def start_turn(state: GameState) -> list[tuple[int, int]]:
     snapshot_turn_start_priority(state)
     # Reset deve preceder qualquer bonus ou invocacao do novo turno.
     reset_unit_flags(state)
+    peoples.clear_dwarf_impales_for_curuna(state)
     interest = apply_gold_interest(state)
     artifacts_effects.on_turn_start(state)
     if state.turn % MONUMENT_BONUS_INTERVAL == 0:
@@ -31,6 +32,7 @@ def start_turn(state: GameState) -> list[tuple[int, int]]:
     _process_gigantes_turn(state)
     peoples.apply_lua_cheia_effects(state)
     peoples.apply_filhos_bonus(state)
+    peoples.apply_dragon_turn_start(state)
     _reset_gnomos_bets_e_sorteio(state)
     # Guarari possui dois movimentos normais em todo turno.
     for player in state.players:

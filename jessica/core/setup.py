@@ -5,7 +5,7 @@ from .constants import (
     DEFAULT_STARTING_GOLD, DEFAULT_STARTING_MAGIC,
 )
 from .state import make_rng, create_empty_state, get_player, log
-from .models import GameState
+from .models import GameState, Hero
 from .rng import DeterministicRNG
 from . import heroes
 
@@ -112,6 +112,26 @@ def run_setup(
             p = get_player(state, pid)
             p.city.life = 1
             log(state, f"Jogador {pid} (Filhos): Florescimento Exuberante - vida inicial 1.")
+
+    # Barba Negra e Valtherion substituem a Cidade como Base movel e
+    # comecam em campo. A City permanece como cofre/placar de vida.
+    for pid in povo_order:
+        if chosen_peoples[pid] != "dragoes":
+            continue
+        hid = chosen_heroes[pid]
+        if hid not in ("barba_negra", "valtherion"):
+            continue
+        p = get_player(state, pid)
+        hdef = heroes.get_hero(hid)
+        p.city.life = hdef.life
+        p.city.life_max = hdef.life
+        base = Hero(
+            id=f"p{pid}_hero_{hid}", owner_id=pid, house=f"city_{pid}",
+            life=hdef.life, life_max=hdef.life, hero_id=hid,
+        )
+        base.statuses["dragon_base"] = True
+        p.units.append(base)
+        log(state, f"Jogador {pid}: {hdef.name} iniciou como Base movel.")
 
     state.curuna_id = order[0]
     # Ordem de jogo fixa: anti-horario no mapa (baixo -> direita -> cima -> esquerda)

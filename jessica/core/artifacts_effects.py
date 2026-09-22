@@ -35,7 +35,15 @@ def on_turn_start(state: GameState) -> None:
             continue
         for artifact in player.field_artifacts:
             if artifact.card_id == "K_H":
-                if player.city.life < player.city.life_max:
+                dragon_base = peoples.dragon_base(player)
+                if dragon_base is not None and dragon_base.life < dragon_base.life_max:
+                    dragon_base.life += 1
+                    peoples.sync_dragon_base_city(player)
+                    log(state, f"{player.name}: Kh Aquilombar (+1 Vida na Base).")
+                    state.morning_gains.append(
+                        {"pid": player.id, "kind": "Kh", "life": 1}
+                    )
+                elif player.city.life < player.city.life_max:
                     player.city.life += 1
                     log(state, f"{player.name}: Kh Aquilombar (+1 Vida).")
                     state.morning_gains.append(
@@ -53,7 +61,12 @@ def on_turn_start(state: GameState) -> None:
 def on_play(state: GameState, player_id: int, card_id: str, choice: dict) -> None:
     player = get_player(state, player_id)
     if card_id == "K_H":
-        player.city.life_max += 1
+        dragon_base = peoples.dragon_base(player)
+        if dragon_base is not None:
+            dragon_base.life_max += 1
+            peoples.sync_dragon_base_city(player)
+        else:
+            player.city.life_max += 1
         log(state, f"{player.name} jogou Kh Aquilombar.")
         return
     if card_id == "K_D":
@@ -100,7 +113,7 @@ def on_play(state: GameState, player_id: int, card_id: str, choice: dict) -> Non
         n = sum(1 for u in player.units if isinstance(u, Hero))
         hero_unit_id = f"p{player_id}_hero_extra_{n}"
         hdef = heroes.get_hero(hero_id)
-        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef)
+        hero_life = peoples.hero_life_with_persistent_bonus(player, hdef, state)
         hero = Hero(id=hero_unit_id, owner_id=player_id,
                     house=f"city_{player_id}",
                     life=hero_life, life_max=hero_life,
@@ -264,11 +277,7 @@ def on_night_start(state: GameState) -> None:
                     u.hero_can_attack_city = True
                 if u.house in hero_houses:
                     u.statuses["k_s_active"] = True
-            if isinstance(u, Hero) and heroes.has_ability(u.hero_id, "extra_attacks_per_dwarf"):
-                n = sum(1 for u2 in player.units
-                        if isinstance(u2, Hero) and u2.is_alive()
-                        and u2.id != u.id and u2.house == u.house)
-                u.max_attacks_this_night += n
+            # Don e calculado dinamicamente em combat._effective_max_attacks.
 
 
 def on_unit_death(state: GameState, dead_unit: Unit) -> None:
