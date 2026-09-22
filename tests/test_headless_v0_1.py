@@ -10,7 +10,7 @@ from jessica.core.headless import (
     ACTION_VERSION, apply_action, apply_event_to_view, legal_actions,
     view_for_player,
 )
-from jessica.core.actions import collect_resources
+from jessica.core.actions import build_monument, collect_resources, raise_city_life
 from jessica.core.serialize import load_from_file, save_to_file, state_to_dict
 from jessica.core.setup import run_setup
 
@@ -170,6 +170,64 @@ def test_terminal_collection_uses_engine_port():
     assert state.players[0].city.magic == 1
 
 
+def test_economic_actions_emit_events_and_match_direct_core():
+    direct = make_state()
+    port = make_state()
+    for state in (direct, port):
+        state.players[0].city.gold = 20
+    raise_city_life(direct, 1, 2)
+    action = next(a for a in legal_actions(port, 1)
+                  if a["type"] == "raise_city_life" and a["params"] == {"times": 2})
+    result = apply_action(port, action)
+    assert result["success"] and result["events"][0]["type"] == "city_life_raised"
+    assert state_to_dict(direct) == state_to_dict(port)
+
+    direct.players[0].city.life = direct.players[0].city.life_max
+    port.players[0].city.life = port.players[0].city.life_max
+    build_monument(direct, 1)
+    action = next(a for a in legal_actions(port, 1) if a["type"] == "build_monument")
+    result = apply_action(port, action)
+    assert result["success"] and result["events"][0]["type"] == "monument_built"
+    assert state_to_dict(direct) == state_to_dict(port)
+
+
+def test_economic_events_reconstruct_view_and_rejection_is_atomic():
+    state = make_state()
+    state.players[0].city.gold = 10
+    before_view = view_for_player(state, 2)
+    action = next(a for a in legal_actions(state, 1)
+                  if a["type"] == "raise_city_life" and a["params"] == {"times": 1})
+    result = apply_action(state, action)
+    projected = apply_event_to_view(before_view, result["events"][0])
+    assert projected["players"] == view_for_player(state, 2)["players"]
+
+    before = state_to_dict(state)
+    rejected = apply_action(state, {"version": ACTION_VERSION,
+                                    "type": "raise_city_life", "player_id": 1,
+                                    "params": {"times": 99}})
+    assert not rejected["success"] and state_to_dict(state) == before
+
+
+def test_terminal_economic_actions_use_engine_port():
+    from jessica import main as main_mod
+    state = make_state()
+    state.players[0].city.gold = 30
+    calls = []
+    original_apply = main_mod.apply_engine_action
+    original_ask = main_mod.IntPrompt.ask
+    try:
+        main_mod.apply_engine_action = lambda current, action: (
+            calls.append(action) or original_apply(current, action))
+        main_mod.IntPrompt.ask = lambda *args, **kwargs: 1
+        main_mod._do_action(state, 1, "2")
+        state.players[0].city.life = state.players[0].city.life_max
+        main_mod._do_action(state, 1, "6")
+    finally:
+        main_mod.apply_engine_action = original_apply
+        main_mod.IntPrompt.ask = original_ask
+    assert [a["type"] for a in calls] == ["raise_city_life", "build_monument"]
+
+
 def run_all():
     tests = [
         test_legal_actions_enumerates_collect_splits_without_mutation,
@@ -182,6 +240,9 @@ def run_all():
         test_old_and_new_collection_flows_match,
         test_save_load_after_headless_action,
         test_terminal_collection_uses_engine_port,
+        test_economic_actions_emit_events_and_match_direct_core,
+        test_economic_events_reconstruct_view_and_rejection_is_atomic,
+        test_terminal_economic_actions_use_engine_port,
     ]
     passed = failed = 0
     for test in tests:

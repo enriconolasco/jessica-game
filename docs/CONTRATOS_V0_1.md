@@ -102,8 +102,9 @@ um `state_to_dict`; a visão deve ser construída por lista permitida.
 - Retorna apenas ações válidas para o jogador, fase e janela atuais.
 - Não revela dados privados de outros jogadores.
 - Ordem estável para o mesmo estado.
-- Na prova inicial, enumera as três divisões legais da coleta diária:
-  `0/2`, `1/1` e `2/0`, quando `collect_resources` estiver disponível.
+- Enumera as três divisões legais da coleta diária (`0/2`, `1/1`, `2/0`),
+  aumentos de vida da Cidade que podem ser pagos e construção de Monumento
+  quando seus requisitos estiverem satisfeitos.
 
 Limitação conhecida: o `GameState` atual não registra qual jogador possui a janela de
 decisão do dia. A prova v0.1 valida fase e estado individual; o laço chamador ainda
@@ -114,8 +115,8 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
 - Valida versão, formato, jogador, fase, janela e parâmetros.
 - Reutiliza a função existente do core; não replica a regra mecânica.
 - Captura erros de domínio em códigos estáveis e produz eventos estruturados.
-- Na prova inicial, despacha somente `collect_resources`; tipos ainda não adaptados
-  retornam `unsupported_action` sem mutação.
+- Despacha `collect_resources`, `raise_city_life` e `build_monument`; tipos ainda
+  não adaptados retornam `unsupported_action` sem mutação.
 - O `GameState` continua sendo alterado in-place nesta versão.
 
 ### `view_for_player(state, player_id) -> PlayerView`
@@ -129,7 +130,8 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
 
 - Aplica somente eventos visíveis ao observador, sem acessar o `GameState` completo.
 - Não altera a visão original.
-- Na prova v0.1, reconstrói o efeito público de `resources_collected`.
+- Reconstrói os efeitos públicos de `resources_collected`, `city_life_raised` e
+  `monument_built`.
 
 ## Invariantes da prova
 

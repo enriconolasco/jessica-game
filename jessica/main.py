@@ -2197,12 +2197,24 @@ def _collect_resources_via_engine(state, pid: int) -> dict:
     return result
 
 
+def _apply_simple_engine_action(state, action: dict) -> dict:
+    result = apply_engine_action(state, action)
+    if not result["success"]:
+        raise ActionError(result["error"]["message"])
+    return result
+
+
 def _do_action(state, pid: int, choice: str) -> str | None:
     player = get_player(state, pid)
     if choice == "1":
         _collect_resources_via_engine(state, pid)
     elif choice == "2":
-        raise_city_life(state, pid, IntPrompt.ask("Vezes", default=1))
+        times = IntPrompt.ask("Vezes", default=1)
+        actions = [a for a in legal_actions(state, pid)
+                   if a["type"] == "raise_city_life" and a["params"]["times"] == times]
+        if not actions:
+            raise ActionError("Quantidade de aumento não é legal no estado atual.")
+        _apply_simple_engine_action(state, actions[0])
         console.print("[green]Vida ok.[/green]")
     elif choice == "3":
         if peoples.has_7_dwarves_chosen(player):
@@ -2238,7 +2250,10 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         move_unit(state, pid, unit.id, dests[idx2 - 1])
         console.print("[green]Movimento ok.[/green]")
     elif choice == "6":
-        build_monument(state, pid)
+        actions = [a for a in legal_actions(state, pid) if a["type"] == "build_monument"]
+        if not actions:
+            raise ActionError("Construir Monumento não é legal no estado atual.")
+        _apply_simple_engine_action(state, actions[0])
         console.print("[green]Monumento ok.[/green]")
     elif choice == "7":
         card = buy_artifact_with_gold(state, pid)

@@ -20,3 +20,9 @@ Data: 2026-09-22. Branch: `codex/p1-headless`.
 
 Os critérios definidos para P1 foram atendidos. A arquitetura permite migrar novas
 ações individualmente sem interromper o fluxo antigo.
+
+## Expansão posterior
+
+- A família econômica começou a ser migrada na branch `codex/p1-economic-actions`.
+- `raise_city_life` e `build_monument` usam a porta e produzem eventos públicos.
+- Coleta, aumento de vida e Monumento são as três ações atualmente migradas.
