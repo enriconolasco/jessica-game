@@ -5,3 +5,5 @@ releases/*.bundle
 .venv/
 venv/
 *.tmp
+vendor/font-build/
+saves/web/

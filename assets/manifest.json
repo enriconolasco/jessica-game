@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "direction": "visual-direction-v0.1",
+  "assets": [
+    {
+      "id": "font.jessica_caligrafica_pixel.display",
+      "stage": "intermediate",
+      "files": [
+        "visual-direction-v0.1/font/JessicaCaligraficaPixel-Display-v0.1.ttf",
+        "visual-direction-v0.1/font/JessicaCaligraficaPixel-Display-v0.1.woff2"
+      ],
+      "usage": "Titulos, botoes e rotulos curtos",
+      "notes": "Conjunto PT-BR funcional; desenho ainda requer refinamento para se aproximar mais do lettering B."
+    },
+    {
+      "id": "sprite.orc.troop.concept_01",
+      "stage": "concept",
+      "master": "visual-direction-v0.1/sprites/orc-troop-master.png",
+      "scale_test": "visual-direction-v0.1/sprites/orc-troop-48.png",
+      "notes": "Silhueta e vestuario para validacao; scale test nao e arte final."
+    },
+    {
+      "id": "sprite.dwarf.troop.concept_01",
+      "stage": "concept",
+      "master": "visual-direction-v0.1/sprites/dwarf-troop-master.png",
+      "scale_test": "visual-direction-v0.1/sprites/dwarf-troop-48.png",
+      "notes": "Silhueta e equipamento para validacao; scale test nao e arte final."
+    },
+    {
+      "id": "sprite.dwarf.ori.concept_01",
+      "stage": "concept",
+      "master": "visual-direction-v0.1/sprites/ori-hero-master.png",
+      "scale_test": "visual-direction-v0.1/sprites/ori-hero-48.png",
+      "notes": "Identidade visual de Ori para validacao; scale test nao e arte final."
+    },
+    {
+      "id": "icon.orc.face.concept_01",
+      "stage": "concept",
+      "master": "visual-direction-v0.1/sprites/orc-face-icon-master.png",
+      "scale_test": "visual-direction-v0.1/sprites/orc-face-icon-32.png",
+      "notes": "Retrato modular para validacao; scale test nao e arte final."
+    },
+    {
+      "id": "map.minimap.cross_template",
+      "stage": "concept",
+      "files": [
+        "visual-direction-v0.1/map/minimap-template-cross-v0.1.svg"
+      ],
+      "usage": "Template estrutural da visao geral do mapa",
+      "notes": "Cinco casas vazias: centro e quatro posicoes cardinais. Sem cenario, objetos, icones ou rotulos."
+    },
+    {
+      "id": "icons.people.map_markers.v2",
+      "stage": "concept",
+      "files": [
+        "visual-direction-v0.2/icons/people-humanos-32.svg",
+        "visual-direction-v0.2/icons/people-anoes-32.svg",
+        "visual-direction-v0.2/icons/people-orcs-32.svg",
+        "visual-direction-v0.2/icons/people-fadas-32.svg",
+        "visual-direction-v0.2/icons/people-vampiros-32.svg",
+        "visual-direction-v0.2/icons/people-lobisomens-32.svg",
+        "visual-direction-v0.2/icons/people-gigantes-32.svg",
+        "visual-direction-v0.2/icons/people-mortos-vivos-32.svg",
+        "visual-direction-v0.2/icons/people-filhos-floresta-32.svg",
+        "visual-direction-v0.2/icons/people-gnomos-duendes-32.svg",
+        "visual-direction-v0.2/icons/people-dragoes-32.svg",
+        "visual-direction-v0.2/icons/people-demonios-32.svg"
+      ],
+      "preview": "visual-direction-v0.2/icons/contact-sheet.svg",
+      "usage": "Proposta de marcadores de povo no mapa, sujeita a validacao visual",
+      "notes": "SVGs vetoriais em viewport 32x32, com estetica simples de fantasia classica. Substituem a linha de icones 16x16 descontinuada; nenhum PNG antigo deve ser integrado."
+    }
+  ]
+}

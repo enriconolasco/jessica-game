@@ -15,6 +15,7 @@ from ..core.turn import start_player_day, start_turn
 
 ROOT = Path(__file__).resolve().parent
 STATIC = ROOT / "static"
+ASSETS = ROOT.parent.parent / "assets"
 SAVES = ROOT.parent.parent / "saves" / "web"
 MATCHES: dict[str, dict] = {}
 LOCK = threading.RLock()
@@ -64,6 +65,16 @@ class Handler(BaseHTTPRequestHandler):
         if parts[0] == "static" and len(parts) == 2:
             mime = "text/css" if parts[1].endswith(".css") else "text/javascript"
             return self._file(parts[1], mime)
+        if parts[0] == "assets" and len(parts) > 1:
+            path = (ASSETS / Path(*parts[1:])).resolve()
+            try:
+                path.relative_to(ASSETS.resolve())
+            except ValueError:
+                return self._json(404, {"error": "Arquivo não encontrado."})
+            if not path.is_file():
+                return self._json(404, {"error": "Arquivo não encontrado."})
+            mime = "image/svg+xml" if path.suffix == ".svg" else "application/octet-stream"
+            return self._send_file(path, mime)
         if len(parts) == 3 and parts[0] == "matches":
             match_id, resource = parts[1], parts[2]
             with LOCK:
@@ -122,6 +133,9 @@ class Handler(BaseHTTPRequestHandler):
         path = STATIC / name
         if not path.is_file():
             return self._json(404, {"error": "Arquivo não encontrado."})
+        return self._send_file(path, mime)
+
+    def _send_file(self, path: Path, mime: str) -> None:
         data = path.read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", mime)

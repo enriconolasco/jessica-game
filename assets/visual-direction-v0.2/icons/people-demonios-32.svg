@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Demônios">
+<title>Demônios</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c67065" stroke-width="2"/>
+<path d="M4 4L11 10L16 7L21 10L28 4L26 17L23 25L16 28L9 25L6 17Z" fill="#a63d45"/><path d="M4 4L7 13L11 10ZM28 4L25 13L21 10Z" fill="#e2bd8c"/><path d="M10 12Q16 9 22 12L24 21L20 26H12L8 21Z" fill="#b94a4e"/><path d="M10 17L14 19 M18 19L22 17" fill="none" stroke="#f1bb6b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 23L16 21L19 23L17 25H15Z" fill="#5f2633"/><path d="M7 27L11 25 M21 25L25 27" fill="none" stroke="#6b2834" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

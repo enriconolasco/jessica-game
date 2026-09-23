@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Dragões">
+<title>Dragões</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#61a9a5" stroke-width="2"/>
+<path d="M3 5L10 10L16 5L22 10L29 5L26 15L23 24L16 29L9 24L6 15Z" fill="#358485"/><path d="M6 8L10 14L5 16ZM26 8L22 14L27 16Z" fill="#7cbbb0"/><path d="M10 16L16 13L22 16L23 22L16 27L9 22Z" fill="#79aaa0"/><path d="M9 17L14 19 M18 19L23 17" fill="none" stroke="#e9a852" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 22L16 19L19 22L17 25H15Z" fill="#2a565e"/><circle cx="10" cy="8" r="1" fill="#dbb66a"/><circle cx="22" cy="8" r="1" fill="#dbb66a"/>
+</svg>

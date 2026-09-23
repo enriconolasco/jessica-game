@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Vampiros">
+<title>Vampiros</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#ad6178" stroke-width="2"/>
+<path d="M5 28L8 19L9 9Q12 4 16 4T23 9L24 19L27 28Z" fill="#332537"/><path d="M10 13Q16 10 22 13V22Q19 27 16 27T10 22Z" fill="#d4c6bd"/><path d="M8 14L10 7L16 9L22 7L24 14L20 11L16 14L12 11Z" fill="#24202f"/><path d="M11 17H14 M18 17H21" fill="none" stroke="#ae495e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22L14 24L15 22ZM17 22L18 24L20 22Z" fill="#f2e6c7"/><path d="M5 29L11 25H21L27 29Z" fill="#733244"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Lobisomens">
+<title>Lobisomens</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a08265" stroke-width="2"/>
+<path d="M4 3L11 7Q16 4 21 7L28 3L27 17L24 23L19 28H13L8 23L5 17Z" fill="#755e4e"/><path d="M7 8L11 11L8 14ZM25 8L21 11L24 14Z" fill="#c09a75"/><path d="M8 15L13 13L16 17L19 13L24 15L22 22L16 27L10 22Z" fill="#a28669"/><path d="M9 16L14 18 M18 18L23 16" fill="none" stroke="#e5bd6c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 21H19L16 24Z" fill="#2b2b2b"/><path d="M11 23L13 25L14 22ZM18 22L19 25L21 23Z" fill="#f2e6c7"/>
+</svg>

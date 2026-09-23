@@ -1,9 +1,127 @@
-let matchId=null,playerId=1;
-const $=id=>document.getElementById(id);
-async function api(path,options={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...options});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||d.error||'Falha');return d}
-async function refresh(){const view=await api(`/matches/${matchId}/view?player_id=${playerId}`);playerId=view.active_player_id||playerId;const actions=await api(`/matches/${matchId}/actions?player_id=${playerId}`);const events=await api(`/matches/${matchId}/events`);$('status').textContent=`Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id??'—'}`;$('players').innerHTML=view.players.map(p=>`<div class="player ${p.id===view.active_player_id?'active':''}">J${p.id} ${p.name} — ${p.people}<br>Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic}</div>`).join('');$('units').innerHTML=view.board.units.map(u=>`<div class="unit">${u.id} · ${u.house} · ${u.life}/${u.life_max}</div>`).join('')||'<em>Nenhuma</em>';$('actions').innerHTML='';actions.forEach(a=>{const b=document.createElement('button');b.className='action';b.textContent=`${a.label} ${Object.values(a.params).join(' · ')}`;b.onclick=()=>act(a);$('actions').appendChild(b)});$('events').innerHTML=events.slice(-12).reverse().map(e=>`<div class="event">${e.type}</div>`).join('')||'<em>Nenhum</em>'}
-async function act(action){try{await api(`/matches/${matchId}/actions`,{method:'POST',body:JSON.stringify(action)});$('message').textContent='';await refresh()}catch(e){$('message').textContent=e.message}}
-async function enter(id){matchId=id;$('start').hidden=true;$('game').hidden=false;await refresh()}
-$('create').onclick=async()=>enter((await api('/matches',{method:'POST',body:JSON.stringify({seed:+$('seed').value})})).match_id);
-$('load').onclick=async()=>enter((await api('/matches/load',{method:'POST',body:JSON.stringify({save_id:$('saveId').value})})).match_id);
-$('save').onclick=async()=>{const d=await api(`/matches/${matchId}/save`,{method:'POST',body:'{}'});$('message').textContent=`Save: ${d.save_id}`};
+let matchId = null;
+let playerId = 1;
+const $ = id => document.getElementById(id);
+const ICON_ROOT = "/assets/visual-direction-v0.2/icons/";
+const PEOPLE_ICON = {humanos:"humanos", anoes:"anoes", orcs:"orcs", fadas:"fadas", vampiros:"vampiros", lobisomens:"lobisomens", gigantes:"gigantes", mortos_vivos:"mortos-vivos", filhos_floresta:"filhos-floresta", gnomos_duendes:"gnomos-duendes", dragoes:"dragoes", demonios:"demonios"};
+const HOUSE_NAMES = {center:"Centro", city_1:"Cidade 1 (Norte)", city_2:"Cidade 2 (Leste)", city_3:"Cidade 3 (Sul)", city_4:"Cidade 4 (Oeste)"};
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {headers:{"Content-Type":"application/json"}, ...options});
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || data.error || "Falha");
+  return data;
+}
+
+const unitName = unit => unit.hero_id || unit.archetype || unit.id;
+function publicStates(unit) {
+  const states = Object.entries(unit.statuses || {}).map(([key, value]) => `${key}: ${value}`);
+  if (unit.resistance_stacks) states.push(`resistência: ${unit.resistance_stacks}`);
+  if (unit.double_damage) states.push("dano dobrado");
+  return states;
+}
+function describeUnit(unit, player, people) {
+  const states = publicStates(unit);
+  return `${unitName(unit)}; ${player?.name || `Jogador ${unit.owner_id}`}; ${people}; ${unit.kind === "hero" ? "herói" : "tropa"}; ${HOUSE_NAMES[unit.house] || unit.house}; vida ${unit.life} de ${unit.life_max}${states.length ? `; ${states.join(", ")}` : ""}`;
+}
+function showUnit(unit, player, people) {
+  const states = publicStates(unit);
+  $("unitDetails").replaceChildren();
+  [unitName(unit), `${player?.name || `Jogador ${unit.owner_id}`} · ${people}`, `${unit.kind === "hero" ? "Herói" : "Tropa"} · ${HOUSE_NAMES[unit.house] || unit.house}`, `Vida ${unit.life}/${unit.life_max}`, states.length ? states.join(" · ") : "Sem estados públicos"].forEach((text, index) => {
+    const node = document.createElement(index === 0 ? "strong" : "span");
+    node.textContent = text;
+    $("unitDetails").appendChild(node);
+  });
+}
+function renderMap(view) {
+  const players = new Map(view.players.map(player => [player.id, player]));
+  document.querySelectorAll(".house-units").forEach(node => node.replaceChildren());
+  [...view.board.units].sort((a,b) => a.owner_id-b.owner_id || Number(b.kind === "hero")-Number(a.kind === "hero") || a.id.localeCompare(b.id)).forEach(unit => {
+    const player = players.get(unit.owner_id);
+    const people = player?.people || "povo desconhecido";
+    const house = document.querySelector(`[data-house="${CSS.escape(unit.house)}"] .house-units`);
+    if (!house) return;
+    const marker = document.createElement("button");
+    marker.type = "button";
+    marker.className = `unit-marker ${unit.kind === "hero" ? "hero" : "troop"}`;
+    marker.setAttribute("aria-label", describeUnit(unit, player, people));
+    marker.title = describeUnit(unit, player, people);
+    if (PEOPLE_ICON[people]) {
+      const image = document.createElement("img");
+      image.src = `${ICON_ROOT}people-${PEOPLE_ICON[people]}-32.svg`;
+      image.alt = "";
+      marker.appendChild(image);
+    } else {
+      const fallback = document.createElement("span");
+      fallback.className = "unknown-icon";
+      fallback.textContent = "?";
+      marker.appendChild(fallback);
+    }
+    const life = document.createElement("span");
+    life.className = "unit-life";
+    life.textContent = `${unit.life}/${unit.life_max}`;
+    marker.appendChild(life);
+    ["focus", "mouseenter", "click"].forEach(event => marker.addEventListener(event, () => showUnit(unit, player, people)));
+    house.appendChild(marker);
+  });
+  document.querySelectorAll(".house").forEach(house => {
+    const count = house.querySelectorAll(".unit-marker").length;
+    house.querySelector("h3").dataset.count = count ? ` · ${count}` : " · vazia";
+  });
+}
+function actionDetails(action) {
+  const p = action.params;
+  if (action.type === "collect_resources") return `${p.gold} Ouro + ${p.magic} Magia`;
+  if (action.type === "raise_city_life") return `${p.times} aumento(s)`;
+  if (action.type === "summon_troop") return `${p.archetype} · vida ${p.life} · ${HOUSE_NAMES[p.house] || p.house}`;
+  if (action.type === "summon_hero") return p.hero_id || "herói escolhido";
+  if (action.type === "move_unit") return `${p.unit_id} → ${HOUSE_NAMES[p.destination] || p.destination}`;
+  return "";
+}
+function renderActions(actions) {
+  const root = $("actions");
+  root.replaceChildren();
+  const grouped = actions.reduce((map, action) => map.set(action.type, [...(map.get(action.type) || []), action]), new Map());
+  grouped.forEach((items, type) => {
+    const group = document.createElement("details");
+    group.className = "action-group";
+    group.open = ["collect_resources", "end_turn"].includes(type);
+    const summary = document.createElement("summary");
+    summary.textContent = `${items[0].label} (${items.length})`;
+    group.appendChild(summary);
+    items.forEach(action => {
+      const button = document.createElement("button");
+      button.className = "action";
+      button.textContent = actionDetails(action) || action.label;
+      button.onclick = () => act(action);
+      group.appendChild(button);
+    });
+    root.appendChild(group);
+  });
+}
+function renderEvents(events) {
+  $("events").innerHTML = events.slice(-12).reverse().map(event => `<div class="event"><strong>${event.type}</strong><br><small>Turno ${event.turn} · ${event.phase}</small></div>`).join("") || "<em>Nenhum</em>";
+}
+async function refresh() {
+  const view = await api(`/matches/${matchId}/view?player_id=${playerId}`);
+  playerId = view.active_player_id || playerId;
+  const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events`)]);
+  $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
+  $("players").innerHTML = view.players.map(p => `<div class="player ${p.id === view.active_player_id ? "active" : ""}">J${p.id} ${p.name} — ${p.people}<br>Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic}</div>`).join("");
+  renderMap(view); renderActions(actions); renderEvents(events);
+}
+async function act(action) {
+  if (action.type === "end_turn" && !confirm("Encerrar a janela deste jogador?")) return;
+  try {
+    document.querySelectorAll("#actions button").forEach(button => button.disabled = true);
+    await api(`/matches/${matchId}/actions`, {method:"POST", body:JSON.stringify(action)});
+    $("message").textContent = "Ação concluída.";
+    await refresh();
+  } catch (error) {
+    $("message").textContent = error.message;
+    document.querySelectorAll("#actions button").forEach(button => button.disabled = false);
+  }
+}
+async function enter(id) { matchId=id; $("start").hidden=true; $("game").hidden=false; await refresh(); }
+$("create").onclick = async () => enter((await api("/matches", {method:"POST", body:JSON.stringify({seed:+$("seed").value})})).match_id);
+$("load").onclick = async () => enter((await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})})).match_id);
+$("save").onclick = async () => { const data=await api(`/matches/${matchId}/save`, {method:"POST", body:"{}"}); $("message").textContent=`Save: ${data.save_id}`; };

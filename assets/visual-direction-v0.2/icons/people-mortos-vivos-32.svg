@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Mortos-vivos">
+<title>Mortos-vivos</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7c4a4" stroke-width="2"/>
+<path d="M8 5L13 3H19L24 5L27 11V19L22 25V29H10V25L5 19V11Z" fill="#ddd8bf"/><path d="M7 13L13 11L15 18L10 19ZM25 13L19 11L17 18L22 19Z" fill="#343742"/><path d="M14 19L18 19L16 23Z" fill="#65666c"/><path d="M10 24H22V27H10Z" fill="#eee8d1"/><path d="M13 24V27 M16 24V27 M19 24V27" fill="none" stroke="#62636a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="15" r="1" fill="#76a2a7"/><circle cx="21" cy="15" r="1" fill="#76a2a7"/>
+</svg>

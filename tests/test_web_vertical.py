@@ -20,6 +20,11 @@ def _request(base, path, method="GET", body=None):
         return response.status, json.loads(response.read())
 
 
+def _raw(base, path):
+    with urllib.request.urlopen(base + path) as response:
+        return response.status, response.headers.get_content_type(), response.read()
+
+
 def test_http_vertical_action_view_events_and_autosave():
     old_saves = server.SAVES
     with tempfile.TemporaryDirectory() as tmp:
@@ -40,13 +45,26 @@ def test_http_vertical_action_view_events_and_autosave():
             assert result["success"] is True
             assert events[-1]["type"] == "resources_collected"
             assert (Path(tmp) / f"{match_id}.json").is_file()
+            status, mime, icon = _raw(base, "/assets/visual-direction-v0.2/icons/people-humanos-32.svg")
+            assert status == 200 and mime == "image/svg+xml" and b"<svg" in icon
         finally:
             httpd.shutdown()
             server.SAVES = old_saves
 
 
+def test_all_people_icons_and_map_template_exist():
+    root = Path(__file__).resolve().parents[1] / "assets"
+    files = ("humanos", "anoes", "orcs", "fadas", "vampiros", "lobisomens",
+             "gigantes", "mortos-vivos", "filhos-floresta", "gnomos-duendes",
+             "dragoes", "demonios")
+    assert all((root / "visual-direction-v0.2" / "icons" / f"people-{name}-32.svg").is_file()
+               for name in files)
+    assert (root / "visual-direction-v0.1" / "map" / "minimap-template-cross-v0.1.svg").is_file()
+
+
 def run_all():
-    tests = [test_http_vertical_action_view_events_and_autosave]
+    tests = [test_http_vertical_action_view_events_and_autosave,
+             test_all_people_icons_and_map_template_exist]
     passed = failed = 0
     for test in tests:
         try:

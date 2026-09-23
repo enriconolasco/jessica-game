@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Gnomos e duendes">
+<title>Gnomos e duendes</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6aa7c" stroke-width="2"/>
+<path d="M5 13L11 5L22 5L27 13L24 15H8Z" fill="#754868"/><path d="M8 14L3 12L5 20L9 20ZM24 14L29 12L27 20L23 20Z" fill="#9dac72"/><path d="M9 14H23V22L19 27H13L9 22Z" fill="#a6b47b"/><circle cx="12" cy="18" r="2" fill="#f2e6c7"/><circle cx="20" cy="18" r="2" fill="#f2e6c7"/><circle cx="12" cy="18" r="0.9" fill="#18202b"/><circle cx="20" cy="18" r="0.9" fill="#18202b"/><path d="M14 20L19 20L18 23H14Z" fill="#c88d56"/><path d="M13 25Q16 27 20 24" fill="none" stroke="#485a3e" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
