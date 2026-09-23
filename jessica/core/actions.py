@@ -608,6 +608,8 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     elif sp.spell_id == "ressonancia_magica":
         cooldown = _spell_ressonancia_magica(state, player, choice)
         no_cooldown = not cooldown
+    elif sp.spell_id == "sacrificio_de_demonio":
+        _spell_sacrificio_demonio(state, player, choice)
     else:
         raise ActionError(f"Feitico {sp.spell_id} sem implementacao.")
 
@@ -617,6 +619,49 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     bump_stat(state, player_id, "spells_cast")
     record_action(state, player_id, "cast_spell", spell=sp.spell_id)
     peoples.on_action_performed(state, player_id, "play_artifact")
+
+
+def _spell_sacrificio_demonio(state: GameState, player, choice: dict) -> None:
+    hero = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                 and u.hero_id == player.chosen_hero_id), None)
+    if hero is None:
+        raise ActionError("Seu Heroi principal precisa estar vivo.")
+    selected = choice.get("artifacts", [])
+    if not selected:
+        raise ActionError("Escolha ao menos um Artefato.")
+    hand = list(player.hand)
+    fields = list(player.field_artifacts)
+    resolved = []
+    for item in selected:
+        if not isinstance(item, dict) or item.get("zone") not in ("hand", "field"):
+            raise ActionError("Selecao de Artefato invalida.")
+        card_id = item.get("card_id")
+        pool = hand if item["zone"] == "hand" else fields
+        match = next((x for x in pool
+                      if (x == card_id if item["zone"] == "hand" else x.card_id == card_id)), None)
+        if match is None:
+            raise ActionError(f"Artefato {card_id} indisponivel em {item['zone']}.")
+        pool.remove(match)
+        resolved.append((item["zone"], match))
+    hero.statuses["life_at_death"] = hero.life
+    hero.life = 0
+    for zone, artifact in resolved:
+        if zone == "hand":
+            player.hand.remove(artifact)
+            state.shop.return_card(artifact)
+        else:
+            artifacts_effects.cease_artifact_effect(state, player.id, artifact)
+            player.field_artifacts.remove(artifact)
+            state.shop.return_card(artifact.card_id)
+    state.rng.shuffle(state.shop.deck)
+    for _ in resolved:
+        if state.shop.is_empty():
+            break
+        player.hand.append(state.shop.draw_random(state.rng))
+        peoples.on_artifact_obtained(state, player.id)
+    from .combat import _cleanup_dead
+    _cleanup_dead(state)
+    log(state, f"{player.name}: Sacrificio de Demonio reembaralhou {len(resolved)} Artefato(s).")
 
 
 def _spell_resistencia(state, player, choice):

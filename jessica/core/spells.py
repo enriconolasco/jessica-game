@@ -56,6 +56,10 @@ SPELL_CATALOG: dict[str, SpellDefinition] = {
         "ressonancia_magica", "dragoes", "Ressonancia Magica",
         "Adiciona, remove ou troca Artefato da Canastra.",
     ),
+    "sacrificio_de_demonio": SpellDefinition(
+        "sacrificio_de_demonio", "demonios", "Sacrificio de Demonio",
+        "Sacrifique seu Heroi e reembaralhe Artefatos escolhidos.",
+    ),
 }
 
 

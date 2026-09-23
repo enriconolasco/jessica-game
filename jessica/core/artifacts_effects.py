@@ -70,6 +70,7 @@ def on_play(state: GameState, player_id: int, card_id: str, choice: dict) -> Non
         else:
             player.city.life_max += 1
         log(state, f"{player.name} jogou Kh Aquilombar.")
+        peoples.enforce_demon_pact_penalties(state)
         return
     if card_id == "K_D":
         log(state, f"{player.name} jogou Kd Balanca.")
@@ -184,6 +185,10 @@ def on_play(state: GameState, player_id: int, card_id: str, choice: dict) -> Non
             raise ValueError("Jc nao pode ter jogador eliminado.")
         target.skip_night_turn = state.turn
         target.skip_day_turn = state.turn + 1 if target.has_played_day_this_turn else state.turn
+        for a in player.field_artifacts:
+            if a.card_id == "J_C" and "target_player_id" not in a.extra:
+                a.extra["target_player_id"] = target_id
+                break
         log(state, f"{player.name} jogou Jc em {target.name}.")
         return
     if card_id == "Q_C":
@@ -233,6 +238,63 @@ def _find_any_unit(state: GameState, unit_id: str) -> Unit | None:
     return None
 
 
+def cease_artifact_effect(state: GameState, owner_id: int,
+                          artifact: ArtifactOnField) -> None:
+    """Desfaz imediatamente o efeito ainda ativo de um artefato removido."""
+    owner = get_player(state, owner_id)
+    card_id = artifact.card_id
+    if card_id == "K_C":
+        target = _find_any_unit(state, artifact.extra.get("target_unit_id", ""))
+        if target is not None:
+            target.double_damage = False
+            target.resistance_stacks = max(0, target.resistance_stacks - 1)
+    elif card_id in ("J_H", "J_S"):
+        key = "hero_unit_id" if card_id == "J_H" else "troop_unit_id"
+        target = _find_any_unit(state, artifact.extra.get(key, ""))
+        if target is not None:
+            target.statuses["life_at_death"] = target.life
+            target.life = 0
+    elif card_id == "J_D":
+        state.pending_effects = [e for e in state.pending_effects
+                                 if not (e.get("kind") == "J_D"
+                                         and e.get("player_id") == owner_id)]
+        if owner.pending_artifact_choice and owner.pending_artifact_choice.get("kind") == "J_D":
+            for card in owner.pending_artifact_choice.get("cards", []):
+                state.shop.return_card(card)
+            owner.pending_artifact_choice = None
+    elif card_id == "J_C":
+        target_id = artifact.extra.get("target_player_id")
+        if target_id is not None:
+            target = get_player(state, target_id)
+            target.skip_day_turn = None
+            target.skip_night_turn = None
+    elif card_id == "Q_C":
+        unit_id = artifact.extra.get("target_unit_id")
+        for controller in state.players:
+            unit = next((u for u in controller.units if u.id == unit_id), None)
+            if unit is None or unit.original_owner_id is None:
+                continue
+            original = get_player(state, unit.original_owner_id)
+            controller.units.remove(unit)
+            original.units.append(unit)
+            unit.owner_id = original.id
+            unit.original_owner_id = None
+            sync_house_priority(state, unit.house)
+            break
+    elif card_id == "K_H":
+        base = peoples.dragon_base(owner)
+        if base is not None:
+            base.life_max = max(1, base.life_max - 1)
+            peoples.sync_dragon_base_city(owner)
+        else:
+            owner.city.life_max = max(1, owner.city.life_max - 1)
+    elif card_id == "Q_H":
+        owner.invulnerable_until_end_turn = False
+        owner.no_city_attacks_until_end_turn = False
+    elif card_id == "Q_S":
+        owner.double_damage_until_end_night = False
+
+
 def on_player_day_start(state: GameState, player_id: int) -> None:
     triggered = []
     for e in state.pending_effects:
@@ -260,6 +322,7 @@ def on_night_start(state: GameState) -> None:
     from . import peoples
     peoples.apply_cova_rasa(state)
     peoples.apply_presenca_magnetica(state)
+    peoples.apply_belial_night_start(state)
 
     by_house_max: dict[str, int] = {}
     for p in state.players:
@@ -366,6 +429,7 @@ def _process_dain_kills(state: GameState) -> None:
         if found is not None:
             found.statuses["life_at_death"] = found.life
             found.life = 0
+            peoples.on_any_unit_death(state, found)
             log(state, f"  {found.id} morreu por atacar Dain (fim da noite).")
     state.dain_kills = remaining
     for p in state.players:

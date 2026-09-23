@@ -33,6 +33,8 @@ def start_turn(state: GameState) -> list[tuple[int, int]]:
     peoples.apply_lua_cheia_effects(state)
     peoples.apply_filhos_bonus(state)
     peoples.apply_dragon_turn_start(state)
+    peoples.enforce_demon_pact_penalties(state)
+    peoples.resolve_pending_demon_rewards(state)
     _reset_gnomos_bets_e_sorteio(state)
     # Guarari possui dois movimentos normais em todo turno.
     for player in state.players:

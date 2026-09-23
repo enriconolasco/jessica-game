@@ -138,6 +138,9 @@ class Player:
     canastra_moves_turn: int = -1
     canastra_moved_cards: list[str] = field(default_factory=list)
 
+    # Demonios
+    demon_pact_offers: list[dict] = field(default_factory=list)
+
 
 @dataclass
 class GameState:
@@ -165,6 +168,7 @@ class GameState:
     # Ordem de declaracao por local, fotografada no inicio do turno.
     # Cada lista contem ids de jogadores, nunca ids de unidades.
     night_priority_by_house: dict[str, list[int]] = field(default_factory=dict)
+    demon_pacts: list[dict] = field(default_factory=list)
 
     def alive_players(self) -> list[Player]:
         return [p for p in self.players if p.city.is_alive()]

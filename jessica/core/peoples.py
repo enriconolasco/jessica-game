@@ -20,6 +20,17 @@ PEOPLE_MORTOS_VIVOS = "mortos_vivos"
 PEOPLE_FILHOS = "filhos_floresta"
 PEOPLE_GNOMOS = "gnomos_duendes"
 PEOPLE_DRAGOES = "dragoes"
+PEOPLE_DEMONIOS = "demonios"
+
+DEMON_PACTS = {
+    "sacrifique_futuro": "Sacrifique seu Futuro",
+    "sacrifique_militar": "Sacrifique sua capacidade Militar",
+    "sacrifique_mente": "Sacrifique a Mente de suas Tropas",
+    "cabecas_herois": "Ofereca cabecas de herois de cada povo",
+    "banho_sangue": "Ofereca um banho de sangue",
+    "vida_lider": "Ofereca a vida de um lider",
+}
+DEMON_SACRIFICE_PACTS = {"sacrifique_futuro", "sacrifique_militar", "sacrifique_mente"}
 
 
 ACTION_TO_BET = {
@@ -188,8 +199,24 @@ def on_action_performed(state: GameState, actor_id: int, action: str) -> None:
                    f"(Total: {gnomo.correct_bets} corretas)")
 
 
-def on_unit_summoned(state: GameState, actor_id: int) -> None:
+def on_unit_summoned(state: GameState, actor_id: int, unit: Unit | None = None) -> None:
     on_action_performed(state, actor_id, "unit_summoned")
+    if isinstance(unit, Hero) and unit.hero_id == "rogue_devil":
+        get_player(state, actor_id).demon_pact_offers.append({
+            "source": "rogue_devil", "demon_player_id": actor_id,
+            "unit_id": unit.id, "turn": state.turn,
+        })
+    if isinstance(unit, Hero) and unit.hero_id == "tuza":
+        unit.resistance_stacks += 1
+        unit.statuses["tuza_resistance"] = True
+
+
+def demon_mind_pact_active(state: GameState, player_id: int) -> bool:
+    return active_demon_pact(state, player_id, "sacrifique_mente") is not None
+
+
+def demon_military_pact_active(state: GameState, player_id: int) -> bool:
+    return active_demon_pact(state, player_id, "sacrifique_militar") is not None
 
 
 def on_artifact_obtained(state: GameState, actor_id: int) -> None:
@@ -199,6 +226,199 @@ def on_artifact_obtained(state: GameState, actor_id: int) -> None:
 def on_base_life_gained(state: GameState, actor_id: int, amount: int) -> None:
     if amount > 0:
         on_action_performed(state, actor_id, "base_life_gained")
+    enforce_demon_pact_penalties(state)
+
+
+def enforce_demon_pact_penalties(state: GameState) -> None:
+    for pact in state.demon_pacts:
+        if pact["pact_id"] != "sacrifique_futuro" or pact.get("released"):
+            continue
+        owner = get_player(state, pact["owner_id"])
+        base = dragon_base(owner)
+        if base is not None:
+            base.life_max = 4
+            base.life = min(base.life, 4)
+            sync_dragon_base_city(owner)
+        else:
+            owner.city.life_max = 4
+            owner.city.life = min(owner.city.life, 4)
+
+
+def active_demon_pact(state: GameState, player_id: int, pact_id: str) -> dict | None:
+    return next((p for p in state.demon_pacts
+                 if p["owner_id"] == player_id and p["pact_id"] == pact_id
+                 and not p.get("released", False)), None)
+
+
+def available_demon_pacts(state: GameState) -> list[str]:
+    used = {p["pact_id"] for p in state.demon_pacts}
+    return [pact_id for pact_id in DEMON_PACTS if pact_id not in used]
+
+
+def _demon_pact_reward(state: GameState, pact: dict) -> None:
+    if pact.get("rewarded"):
+        return
+    owner = get_player(state, pact["owner_id"])
+    if state.shop.is_empty():
+        pact["reward_pending"] = True
+        return
+    card = state.shop.draw_random(state.rng)
+    owner.hand.append(card)
+    pact["rewarded"] = True
+    pact["reward_pending"] = False
+    on_artifact_obtained(state, owner.id)
+    log(state, f"{owner.name}: pacto {DEMON_PACTS[pact['pact_id']]} concedeu {card}.")
+
+
+def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
+                     pact_id: str, rogue_buff: str | None = None) -> dict:
+    demon = get_player(state, demon_player_id)
+    owner = get_player(state, owner_id)
+    if demon.people != PEOPLE_DEMONIOS or not demon.city.is_alive():
+        raise ValueError("Jogador de Demonios indisponivel.")
+    if pact_id not in available_demon_pacts(state):
+        raise ValueError("Pacto indisponivel.")
+    pact = {"pact_id": pact_id, "demon_player_id": demon_player_id,
+            "owner_id": owner_id, "turn": state.turn, "completed": False,
+            "rewarded": False, "released": False}
+    if pact_id == "sacrifique_futuro":
+        base = dragon_base(owner)
+        pact["old_life_max"] = base.life_max if base is not None else owner.city.life_max
+        if base is not None:
+            base.life_max = 4
+            base.life = min(base.life, 4)
+            sync_dragon_base_city(owner)
+        else:
+            owner.city.life_max = 4
+            owner.city.life = min(owner.city.life, 4)
+    elif pact_id == "cabecas_herois":
+        pact["required_peoples"] = sorted({p.people for p in state.players
+                                            if p.people != PEOPLE_DEMONIOS})
+        pact["killed_peoples"] = []
+    elif pact_id == "banho_sangue":
+        pact["blood_turn"] = -1
+        pact["blood_count"] = 0
+    if rogue_buff is not None:
+        if owner_id != demon_player_id or rogue_buff not in ("invisibilidade", "execucao"):
+            raise ValueError("Buff de Rogue Devil invalido.")
+        rogue = next((u for u in owner.units if isinstance(u, Hero) and u.is_alive()
+                      and u.hero_id == "rogue_devil"), None)
+        if rogue is None:
+            raise ValueError("Rogue Devil nao esta vivo.")
+        if rogue_buff == "invisibilidade":
+            rogue.statuses["invisivel_until_turn"] = state.turn
+        else:
+            rogue.statuses["demon_execute_weaker"] = True
+        pact["rogue_buff"] = rogue_buff
+    state.demon_pacts.append(pact)
+    if pact_id in DEMON_SACRIFICE_PACTS:
+        pact["completed"] = True
+        _demon_pact_reward(state, pact)
+    log(state, f"{owner.name} firmou {DEMON_PACTS[pact_id]} com {demon.name}.")
+    return pact
+
+
+def release_demon_pacts(state: GameState, demon_player_id: int) -> None:
+    for pact in state.demon_pacts:
+        if pact["demon_player_id"] != demon_player_id or pact.get("released"):
+            continue
+        owner = get_player(state, pact["owner_id"])
+        if pact["pact_id"] == "sacrifique_futuro":
+            base = dragon_base(owner)
+            if base is not None:
+                base.life_max = max(base.life_max, pact.get("old_life_max", 4))
+                sync_dragon_base_city(owner)
+            else:
+                owner.city.life_max = max(owner.city.life_max, pact.get("old_life_max", 4))
+        pact["released"] = True
+
+
+def can_take_tuza_pact(state: GameState, player_id: int) -> int | None:
+    if state.phase.value != "day":
+        return None
+    if player_id == state.curuna_id:
+        return None
+    demon = get_player(state, state.curuna_id)
+    if demon.people != PEOPLE_DEMONIOS or not demon.city.is_alive():
+        return None
+    if not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "tuza"
+               for u in demon.units):
+        return None
+    return demon.id
+
+
+def resolve_pending_demon_rewards(state: GameState) -> None:
+    for pact in state.demon_pacts:
+        if pact.get("reward_pending"):
+            _demon_pact_reward(state, pact)
+
+
+def on_any_unit_death(state: GameState, dead_unit: Unit) -> None:
+    for demon in state.players:
+        if demon.people == PEOPLE_DEMONIOS and demon.city.is_alive():
+            demon.city.magic += 1
+            log(state, f"{demon.name} (Banco de Almas): +1 Magia.")
+    killer_id = dead_unit.killed_by_player_id
+    if killer_id is None:
+        return
+    killer = get_player(state, killer_id)
+    if isinstance(dead_unit, Hero):
+        victim_people = get_player(state, dead_unit.owner_id).people
+        for pact in state.demon_pacts:
+            if (pact["owner_id"] == killer_id and pact["pact_id"] == "cabecas_herois"
+                    and not pact.get("completed")):
+                killed = set(pact.get("killed_peoples", []))
+                killed.add(victim_people)
+                pact["killed_peoples"] = sorted(killed)
+                if set(pact["required_peoples"]).issubset(killed):
+                    pact["completed"] = True
+                    _demon_pact_reward(state, pact)
+    if isinstance(dead_unit, Troop) and state.phase.value == "night":
+        for pact in state.demon_pacts:
+            if (pact["owner_id"] == killer_id and pact["pact_id"] == "banho_sangue"
+                    and not pact.get("completed")):
+                if pact.get("blood_turn") != state.turn:
+                    pact["blood_turn"], pact["blood_count"] = state.turn, 0
+                pact["blood_count"] += 1
+                if pact["blood_count"] >= 3:
+                    pact["completed"] = True
+                    _demon_pact_reward(state, pact)
+
+
+def on_city_destroyed_for_pacts(state: GameState, destroyer_id: int) -> None:
+    for pact in state.demon_pacts:
+        if (pact["owner_id"] == destroyer_id and pact["pact_id"] == "vida_lider"
+                and not pact.get("completed")):
+            pact["completed"] = True
+            _demon_pact_reward(state, pact)
+
+
+def apply_belial_night_start(state: GameState) -> None:
+    any_death = False
+    for demon in state.players:
+        belial = next((u for u in demon.units if isinstance(u, Hero) and u.is_alive()
+                       and u.hero_id == "belial"), None)
+        if demon.people != PEOPLE_DEMONIOS or belial is None:
+            continue
+        for player in state.players:
+            for unit in player.units:
+                if (not unit.is_alive() or unit.house != belial.house
+                        or unit.statuses.get("dragon_base")):
+                    continue
+                if player.id == demon.id:
+                    unit.life = min(unit.life_max, unit.life + 1)
+                else:
+                    before = unit.life
+                    unit.life = max(0, unit.life - 1)
+                    if not unit.is_alive():
+                        unit.statuses["life_at_death"] = before
+                        unit.killed_by_player_id = demon.id
+                        unit.killed_by_unit_id = belial.id
+                        any_death = True
+        log(state, f"{demon.name}: Belial espalhou as Chamas no inicio da Noite.")
+    if any_death:
+        from .combat import _cleanup_dead
+        _cleanup_dead(state)
 
 
 def sao_tome_has_aposta_em(player: Player, target_id: int) -> bool:
@@ -389,13 +609,14 @@ def _roca_dano(state: GameState, player: Player) -> None:
         log(state, "  Dano: sem inimigos na Cidade.")
         return
     for u in enemies:
+        before = u.life
         u.life = max(0, u.life - 1)
+        if not u.is_alive():
+            u.statuses["life_at_death"] = before
+            u.killed_by_player_id = player.id
         log(state, f"  1 dano em {u.id}: {u.life}/{u.life_max}.")
-    for other in state.players:
-        dead = [u for u in other.units if not u.is_alive()]
-        for d in dead:
-            log(state, f"  {d.id} morreu (Roca).")
-        other.units = [u for u in other.units if u.is_alive()]
+    from .combat import _cleanup_dead
+    _cleanup_dead(state)
 
 
 def on_unit_moved(state: GameState, player_id: int, unit: Unit) -> None:
@@ -421,6 +642,16 @@ def on_unit_killed_by(state: GameState, killer_player_id: int,
                       dead_unit: Unit, killer_unit: Unit | None = None) -> None:
     killer_player = get_player(state, killer_player_id)
     victim_owner = get_player(state, dead_unit.owner_id)
+
+    if isinstance(killer_unit, Hero) and isinstance(dead_unit, Hero):
+        for demon in state.players:
+            if (demon.people == PEOPLE_DEMONIOS and demon.city.is_alive()
+                    and any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "belial"
+                            for u in demon.units)):
+                killer_player.demon_pact_offers.append({
+                    "source": "belial", "demon_player_id": demon.id,
+                    "turn": state.turn,
+                })
 
     if (isinstance(killer_unit, Hero)
             and killer_unit.hero_id == "miyamoto"):

@@ -251,6 +251,7 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         "players": players,
         "board": board,
         "shop": {"size": state.shop.size()},
+        "demon_pacts": deepcopy(state.demon_pacts),
         "self": {
             "hand": list(viewer.hand),
             "pending_choice": deepcopy(viewer.pending_artifact_choice),
@@ -261,6 +262,7 @@ def view_for_player(state: GameState, player_id: int) -> dict:
                 "S": viewer.bet_S_target,
             },
             "correct_bets": viewer.correct_bets,
+            "demon_pact_offers": deepcopy(viewer.demon_pact_offers),
         },
         # event_log atual mistura texto público e privado; não é exposto.
         "events": [],

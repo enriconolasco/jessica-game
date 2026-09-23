@@ -92,6 +92,12 @@ HERO_CATALOG: dict[str, HeroDefinition] = {
         ("crescimento_matinhas_pares", "invisibilidade")),
     "valtherion": HeroDefinition("valtherion", "dragoes", "Valtherion, o Pai da Primeira Aurora", 20,
         ("dragon_base", "chamado")),
+    "belial": HeroDefinition("belial", "demonios", "Belial, Senhor das Chamas", 1,
+        ("chamas_noturnas", "pacto_por_duelo_de_herois")),
+    "tuza": HeroDefinition("tuza", "demonios", "Tuza, o Espectro Imortal", 6,
+        ("resistencia_permanente", "pactos_no_turno_curuna")),
+    "rogue_devil": HeroDefinition("rogue_devil", "demonios", "Rogue Devil", 3,
+        ("pacto_na_invocacao",)),
 }
 
 SEVEN_DWARVES_ORDER = ["buin", "dain", "bein", "boin", "tintin", "don", "din"]
@@ -136,6 +142,9 @@ LEGACY_NAMES: dict[str, str] = {
     "Púrpura": "purpura",
     "Purpura": "purpura",
     "Valtherion": "valtherion",
+    "Belial": "belial",
+    "Tuza": "tuza",
+    "Rogue Devil": "rogue_devil",
 }
 
 
@@ -148,6 +157,8 @@ def heroes_for_people(people: str) -> list[HeroDefinition]:
         return [HERO_CATALOG[h] for h in ("guarari", "aiquara", "baoba_ba")]
     if people == "gnomos_duendes":
         return [HERO_CATALOG[h] for h in ("bimbo_do_mal", "sao_tome", "zebum")]
+    if people == "demonios":
+        return [HERO_CATALOG[h] for h in ("belial", "tuza", "rogue_devil")]
     if people == "dragoes":
         return [HERO_CATALOG[h] for h in ("barba_negra", "purpura", "valtherion")]
     return [h for h in HERO_CATALOG.values()

@@ -50,7 +50,7 @@ console = Console()
 
 PEOPLES = ["humanos", "anoes", "orcs", "fadas",
            "vampiros", "lobisomens", "gigantes", "mortos_vivos",
-           "filhos_floresta", "gnomos_duendes", "dragoes"]
+           "filhos_floresta", "gnomos_duendes", "dragoes", "demonios"]
 
 HEROES_BY_PEOPLE = {
     "humanos": ["Miyamoto Musashi", "Besouro Mangangá", "Iúna"],
@@ -64,6 +64,7 @@ HEROES_BY_PEOPLE = {
     "filhos_floresta": ["Guarari", "Aiquara", "Baoba-bá"],
     "gnomos_duendes": ["Bimbo do Mal", "São Tomé", "Zebum"],
     "dragoes": ["Barba Negra", "Púrpura", "Valtherion"],
+    "demonios": ["Belial", "Tuza", "Rogue Devil"],
 }
 
 PASSIVA_DESC = {
@@ -78,6 +79,7 @@ PASSIVA_DESC = {
     "filhos_floresta": "Florescimento Exuberante: Cidade comeca com 1 vida; no turno 13 recebe +2 Vida, +2 Ouro, +2 Magia.",
     "gnomos_duendes": "Continue Apostando: 4 apostas (H/C/D/S) alocadas em outros jogadores no inicio do turno.",
     "dragoes": "Envolvimento Cosmologico: ate 1 Artefato por naipe na Canastra fortalece Herois Dragoes.",
+    "demonios": "Banco de Almas: +1 Magia sempre que qualquer unidade morre.",
 }
 
 FEITICO_DESC = {
@@ -92,6 +94,7 @@ FEITICO_DESC = {
     "decompor": "Decompor: sacrifica um elemento seu por Magia (Heroi +4 / Tropa vida+2 / Muralha -1vida +3).",
     "imitacao_gnomerica": "Imitacao Gnomerica: copia o feitico sorteado do dia.",
     "ressonancia_magica": "Ressonancia Magica: adiciona, remove ou troca Artefato da Canastra.",
+    "sacrificio_de_demonio": "Sacrificio de Demonio: mate seu Heroi e troque Artefatos escolhidos.",
 }
 
 HERO_ABILITY_DESC = {
@@ -135,6 +138,9 @@ HERO_ABILITY_DESC = {
     "barba_negra": "Base movel. Mar de Chamas e modo Heroi por uma Noite.",
     "purpura": "Cresce conforme manhas pares passadas. Pode ficar Invisivel.",
     "valtherion": "Base movel que combate como Heroi. Chamado invoca Tropas Dragao.",
+    "belial": "Chamas: 1 dano em inimigos e cura 1 em aliados proximos no inicio da Noite.",
+    "tuza": "Tem Resistencia. Inimigos podem firmar pactos no turno Curuna dos Demonios.",
+    "rogue_devil": "Ao ser invocado, pode firmar pacto e escolher Invisibilidade ou Execucao.",
 }
 
 
@@ -1035,6 +1041,40 @@ def _dragon_resonance_ui(player):
     return {"action": "swap", "old_card_id": old, "new_card_id": new}
 
 
+def _demon_pact_ui(state, player, demon_player_id, rogue=False):
+    pact_ids = peoples.available_demon_pacts(state)
+    if not pact_ids:
+        raise ActionError("Todos os pactos demoníacos já foram escolhidos.")
+    labels = [peoples.DEMON_PACTS[p] for p in pact_ids] + ["Não fazer pacto"]
+    idx = pick_index("Pacto demoníaco", labels)
+    if idx == len(pact_ids):
+        return False
+    buff = None
+    if rogue:
+        buffs = ["Invisibilidade até o fim do turno", "Executar inimigos com vida menor"]
+        buff = ("invisibilidade", "execucao")[pick_index("Buff de Rogue Devil", buffs)]
+    peoples.make_demon_pact(state, demon_player_id, player.id, pact_ids[idx], buff)
+    console.print(f"[green]Pacto firmado: {labels[idx]}.[/green]")
+    return True
+
+
+def _sacrificio_demonio_ui(player):
+    available = ([{"zone": "hand", "card_id": c} for c in player.hand]
+                 + [{"zone": "field", "card_id": a.card_id}
+                    for a in player.field_artifacts])
+    selected = []
+    while available:
+        labels = [f"{item['zone']}: {card_display(item['card_id'])}" for item in available]
+        labels.append("Concluir seleção")
+        idx = pick_index("Reembaralhar", labels)
+        if idx == len(available):
+            break
+        selected.append(available.pop(idx))
+    if not selected:
+        raise ActionError("Escolha ao menos um Artefato.")
+    return {"artifacts": selected}
+
+
 def _escolher_imitacao(state, player):
     sp_id = player.spell_copia_id
     if not sp_id:
@@ -1512,6 +1552,11 @@ def _get_actions(state, player) -> list[tuple[str, str, str]]:
 
     if player.pending_heals > 0:
         r.append(("Especiais", "h", f"Usar cura pendente ({player.pending_heals})"))
+    if player.demon_pact_offers and peoples.available_demon_pacts(state):
+        r.append(("Especiais", "D", "Escolher pacto demoníaco disponível"))
+    demon_pid = peoples.can_take_tuza_pact(state, player.id)
+    if demon_pid is not None and peoples.available_demon_pacts(state):
+        r.append(("Especiais", "E", "Firmar pacto com Tuza"))
 
     r.append(("Info", "i", "Informacoes"))
     r.append(("Info", "m", "Mapa"))
@@ -1858,7 +1903,7 @@ def show_active_artifacts(state) -> None:
 TODOS_POVOS = [
     "humanos", "anoes", "orcs", "fadas", "vampiros",
     "lobisomens", "gigantes", "mortos_vivos",
-    "filhos_floresta", "gnomos_duendes", "dragoes",
+    "filhos_floresta", "gnomos_duendes", "dragoes", "demonios",
 ]
 
 
@@ -2362,6 +2407,15 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         _bimbo_ui(state, pid)
     elif choice == "g":
         _zebum_ui(state, pid)
+    elif choice == "D":
+        offer = player.demon_pact_offers.pop(0)
+        _demon_pact_ui(state, player, offer["demon_player_id"],
+                       rogue=offer.get("source") == "rogue_devil")
+    elif choice == "E":
+        demon_pid = peoples.can_take_tuza_pact(state, pid)
+        if demon_pid is None:
+            raise ActionError("Tuza não oferece pacto agora.")
+        _demon_pact_ui(state, player, demon_pid)
     elif choice == "f":
         sp = spells_mod.spell_for_people(player.people)
         if sp is None:
@@ -2433,6 +2487,8 @@ def _do_action(state, pid: int, choice: str) -> str | None:
                 choice_data["flip_cards"] = [player.hand[idx]]
         elif sp.spell_id == "ressonancia_magica":
             choice_data = _dragon_resonance_ui(player)
+        elif sp.spell_id == "sacrificio_de_demonio":
+            choice_data = _sacrificio_demonio_ui(player)
         cast_spell(state, pid, choice_data)
         console.print(f"[green]{sp.name} lancado.[/green]")
     elif choice == "h":
@@ -2545,11 +2601,13 @@ def prompt_attack(state, unit, targets) -> Attack | None:
         console.print(f"  [yellow]{unit.id} nao pode atacar (Espoliou com Arken).[/yellow]")
         return None
     console.print(f"  [cyan]{unit.id}[/cyan] (vida {unit.life}) em {house_short(state, unit.house)}")
-    options = ["Nao atacar"] + [t[2] for t in targets]
+    forced = peoples.demon_mind_pact_active(state, unit.owner_id) and bool(targets)
+    options = [t[2] for t in targets] if forced else ["Nao atacar"] + [t[2] for t in targets]
     idx = pick_index("Acao", options)
-    if idx == 0:
+    if not forced and idx == 0:
         return None
-    return Attack(unit.id, targets[idx - 1][0], targets[idx - 1][1])
+    target_idx = idx if forced else idx - 1
+    return Attack(unit.id, targets[target_idx][0], targets[target_idx][1])
 
 def _try_ainai_teleport(state, player) -> bool:
     ainai = next((u for u in player.units

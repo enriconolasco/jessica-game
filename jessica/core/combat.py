@@ -82,6 +82,7 @@ def _award_city_destruction(state: GameState, destroyer_id: int) -> None:
     if reward == 0:
         return
     destroyer = get_player(state, destroyer_id)
+    peoples.on_city_destroyed_for_pacts(state, destroyer_id)
     for _ in range(reward):
         if state.shop.is_empty():
             break
@@ -112,6 +113,7 @@ def _cleanup_dead(state: GameState) -> None:
         if u.house not in state.deaths_this_night:
             state.deaths_this_night.append(u.house)
         artifacts_effects.on_unit_death(state, u)
+        peoples.on_any_unit_death(state, u)
         if u.killed_by_player_id is not None:
             killer_unit = None
             if u.killed_by_unit_id is not None:
@@ -139,6 +141,8 @@ def _cleanup_dead(state: GameState) -> None:
         if not player.city.is_alive() and player.units:
             log(state, f"  {player.name} eliminado.")
             player.units = []
+        if player.people == peoples.PEOPLE_DEMONIOS and not player.city.is_alive():
+            peoples.release_demon_pacts(state, player.id)
     from .victory import check_victory
     check_victory(state)
 
@@ -166,7 +170,10 @@ def _compute_attack_damage(state: GameState, attacker: Unit, base: int,
         roll = state.rng.randint(1, 4)
         log(state, f"    [ROLL] Iuna: 1d4 = {roll}")
         base = roll
-    return base * _attack_multiplier(state, attacker, target)
+    damage = base * _attack_multiplier(state, attacker, target)
+    if peoples.demon_mind_pact_active(state, attacker.owner_id):
+        damage += 1
+    return damage
 
 
 def _apply_vovo_bonus(state: GameState, attacker: Unit, dmg: int,
@@ -313,16 +320,21 @@ def _luarado_infecta(state: GameState, attacker: Unit, target: Unit, dmg: int) -
 
 
 def _try_execute_hero(state: GameState, executor: Unit, victim: Unit) -> bool:
-    if not _hero_has(executor, "execute_weak_targets"):
+    rogue_executes = bool(executor.statuses.get("demon_execute_weaker"))
+    if not _hero_has(executor, "execute_weak_targets") and not rogue_executes:
         return False
     if not victim.is_alive():
         return False
-    aliados = [
-        u for u in get_player(state, victim.owner_id).units
-        if u.house == victim.house and u.is_alive() and u.id != victim.id
-    ]
-    if aliados:
-        return False
+    if rogue_executes:
+        if victim.life >= executor.life:
+            return False
+    else:
+        aliados = [
+            u for u in get_player(state, victim.owner_id).units
+            if u.house == victim.house and u.is_alive() and u.id != victim.id
+        ]
+        if aliados:
+            return False
     victim.statuses["life_at_death"] = victim.life
     victim.life = 0
     victim.killed_by_player_id = executor.owner_id
@@ -470,6 +482,9 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
         raise CombatError(f"{attacker_name} nao pode atacar Cidades (Qh).")
 
     if attack.target_type == "city":
+        if isinstance(attacker, Troop) and peoples.demon_military_pact_active(
+                state, attacker.owner_id):
+            raise CombatError("Tropa sob pacto militar ataca como Heroi e nao ataca Base.")
         can_hero_attack_city = attacker.hero_can_attack_city
         if (isinstance(attacker, Hero) and not can_hero_attack_city
                 and attacker_player.people == peoples.PEOPLE_DRAGOES
