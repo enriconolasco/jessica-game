@@ -152,6 +152,7 @@ class GameState:
     turn: int = 1
     phase: Phase = Phase.DAY
     curuna_id: int = 1
+    active_player_id: Optional[int] = None
     event_log: list[str] = field(default_factory=list)
     action_log: list[dict] = field(default_factory=list)
     game_over: bool = False

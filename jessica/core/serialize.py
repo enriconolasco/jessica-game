@@ -208,6 +208,7 @@ def state_to_dict(s: GameState) -> dict:
         "shop": {"deck": list(s.shop.deck)},
         "turn": s.turn, "phase": s.phase.value,
         "curuna_id": s.curuna_id,
+        "active_player_id": s.active_player_id,
         "event_log": list(s.event_log),
         "action_log": list(s.action_log),
         "game_over": s.game_over, "winner_id": s.winner_id,
@@ -236,6 +237,7 @@ def state_from_dict(d: dict) -> GameState:
     state.turn = d["turn"]
     state.phase = Phase(d["phase"])
     state.curuna_id = d["curuna_id"]
+    state.active_player_id = d.get("active_player_id")
     state.event_log = list(d["event_log"])
     state.action_log = list(d["action_log"])
     state.game_over = d["game_over"]

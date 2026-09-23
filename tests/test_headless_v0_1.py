@@ -69,7 +69,7 @@ def test_legal_actions_enumerates_collect_splits_without_mutation():
     state = make_state()
     before = state_to_dict(state)
     actions = legal_actions(state, 1)
-    assert [a["params"] for a in actions] == [
+    assert [a["params"] for a in actions if a["type"] == "collect_resources"] == [
         {"gold": 0, "magic": 2},
         {"gold": 1, "magic": 1},
         {"gold": 2, "magic": 0},
@@ -302,6 +302,19 @@ def test_terminal_summons_use_engine_port():
     assert [a["type"] for a in calls] == ["summon_troop", "summon_hero"]
 
 
+def test_end_turn_advances_active_player_and_enters_night_after_last():
+    state = make_state()
+    state.active_player_id = 1
+    for expected in (2, 3, 4, None):
+        action = next(a for a in legal_actions(state, state.active_player_id)
+                      if a["type"] == "end_turn")
+        result = apply_action(state, action)
+        assert result["success"] is True
+        assert result["events"][0]["type"] == "player_turn_ended"
+        assert state.active_player_id == expected
+    assert state.phase.value == "night"
+
+
 def run_all():
     tests = [
         test_legal_actions_enumerates_collect_splits_without_mutation,
@@ -320,6 +333,7 @@ def run_all():
         test_summon_actions_match_core_and_project_event,
         test_terminal_summons_use_engine_port,
         test_move_action_matches_core_and_projects_event,
+        test_end_turn_advances_active_player_and_enters_night_after_last,
     ]
     passed = failed = 0
     for test in tests:

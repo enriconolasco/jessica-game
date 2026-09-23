@@ -1,0 +1,25 @@
+# Cliente web vertical
+
+Prova local da comunicação navegador → porta headless → motor → eventos → tela.
+
+## Executar
+
+Na raiz do projeto:
+
+```powershell
+python -m jessica.web.server
+```
+
+Abra `http://127.0.0.1:8765`. Não há dependências web externas.
+
+## Corte atual
+
+- cria e carrega partidas locais;
+- entrega `PlayerView` e ações legais com rótulos;
+- executa coleta, cidade, monumento, invocação, movimento e fim da janela do jogador;
+- atualiza a tela sem recarga e apresenta eventos recentes;
+- salva manualmente e faz autosave após cada ação aceita;
+- rejeita versões incompatíveis de save.
+
+Ao terminar as quatro janelas do Dia, a partida entra na Noite. Combate, feitiços e
+artefatos ainda permanecem no terminal nesta prova vertical.

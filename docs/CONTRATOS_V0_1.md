@@ -19,6 +19,7 @@ migração deve ser explícita e não faz parte da primeira prova.
 Action = {
     "version": "action-v0.1",
     "type": str,
+    "label": str,
     "player_id": int,
     "params": dict,
 }
@@ -116,7 +117,7 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
 - Reutiliza a função existente do core; não replica a regra mecânica.
 - Captura erros de domínio em códigos estáveis e produz eventos estruturados.
 - Despacha `collect_resources`, `raise_city_life`, `build_monument`,
-  `summon_troop`, `summon_hero` e `move_unit`; tipos ainda não adaptados retornam
+  `summon_troop`, `summon_hero`, `move_unit` e `end_turn`; tipos ainda não adaptados retornam
   `unsupported_action` sem mutação.
 - O `GameState` continua sendo alterado in-place nesta versão.
 
@@ -132,7 +133,7 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
 - Aplica somente eventos visíveis ao observador, sem acessar o `GameState` completo.
 - Não altera a visão original.
 - Reconstrói os efeitos públicos de `resources_collected`, `city_life_raised`,
-  `monument_built`, `unit_summoned` e `unit_moved`.
+  `monument_built`, `unit_summoned`, `unit_moved` e `player_turn_ended`.
 
 ## Invariantes da prova
 

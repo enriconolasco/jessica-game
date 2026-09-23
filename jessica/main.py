@@ -2967,6 +2967,7 @@ def _run_one_game() -> None:
         i = 0
         while i < len(day_players):
             pid = day_players[i]
+            state.active_player_id = pid
             player = get_player(state, pid)
             snapshots[pid] = state_to_dict(state)
             console.rule(f"[bold]Vez de {player.name}[/bold]")
@@ -2994,6 +2995,7 @@ def _run_one_game() -> None:
                 console.print(f"[yellow]Mola: {get_player(state, prev).name} refaz.[/yellow]")
                 continue
             i += 1
+        state.active_player_id = None
         end_day(state)
         night_skipped = [p.name for p in state.players
                          if p.city.is_alive() and p.skip_night_turn == state.turn]

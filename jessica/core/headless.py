@@ -8,6 +8,7 @@ from .constants import (CENTER, CITY_HOUSES, CITY_LIFE_COST_GOLD, MONUMENT_COST_
                         RESOURCES_PER_DAY, TROOP_MAX_LIFE, TroopArchetype)
 from .models import GameState, Hero, Troop, Unit
 from .state import get_player
+from .turn import day_order, end_day, start_player_day
 from . import peoples
 
 
@@ -15,6 +16,15 @@ ACTION_VERSION = "action-v0.1"
 EVENT_VERSION = "event-v0.1"
 VIEW_VERSION = "view-v0.1"
 SAVE_VERSION = "save-v0.1"
+ACTION_LABELS = {
+    "collect_resources": "Coletar recursos",
+    "raise_city_life": "Aumentar vida da cidade",
+    "build_monument": "Construir monumento",
+    "summon_troop": "Invocar tropa",
+    "summon_hero": "Invocar herói",
+    "move_unit": "Mover unidade",
+    "end_turn": "Encerrar turno",
+}
 
 PUBLIC_STATUS_KEYS = {
     "amaldicoado_until_turn",
@@ -34,6 +44,7 @@ def _action(action_type: str, player_id: int, **params) -> dict:
     return {
         "version": ACTION_VERSION,
         "type": action_type,
+        "label": ACTION_LABELS[action_type],
         "player_id": player_id,
         "params": params,
     }
@@ -45,7 +56,8 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
         player = get_player(state, player_id)
     except ValueError:
         return []
-    if state.game_over or state.phase != Phase.DAY or not player.city.is_alive():
+    if (state.game_over or state.phase != Phase.DAY or not player.city.is_alive()
+            or state.active_player_id not in (None, player_id)):
         return []
     actions = []
     if not player.has_collected_this_turn:
@@ -111,6 +123,7 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
             except (ActionError, ValueError):
                 continue
             actions.append(candidate)
+    actions.append(_action("end_turn", player_id))
     return actions
 
 
@@ -129,7 +142,7 @@ def apply_action(state: GameState, action: dict) -> dict:
         return _error("unsupported_action_version", "Versão de ação não suportada.")
     action_type = action.get("type")
     if action_type not in {"collect_resources", "raise_city_life", "build_monument",
-                           "summon_troop", "summon_hero", "move_unit"}:
+                           "summon_troop", "summon_hero", "move_unit", "end_turn"}:
         return _error("unsupported_action", "Tipo de ação ainda não adaptado.",
                       action_type=action.get("type"))
 
@@ -141,7 +154,8 @@ def apply_action(state: GameState, action: dict) -> dict:
                 "raise_city_life": {"times"}, "build_monument": set(),
                 "summon_troop": {"archetype", "life", "house"},
                 "summon_hero": set(),
-                "move_unit": {"unit_id", "destination"}}[action_type]
+                "move_unit": {"unit_id", "destination"},
+                "end_turn": set()}[action_type]
     if action_type == "summon_hero" and isinstance(params, dict) and set(params) == {"hero_id"}:
         expected = {"hero_id"}
     if not isinstance(params, dict) or set(params) != expected:
@@ -174,8 +188,19 @@ def apply_action(state: GameState, action: dict) -> dict:
                                     params["life"], params["house"])
         elif action_type == "summon_hero":
             summoned = summon_hero(state, player_id, force_hero_id=params.get("hero_id"))
-        else:
+        elif action_type == "move_unit":
             move_unit(state, player_id, params["unit_id"], params["destination"])
+        else:
+            player = get_player(state, player_id)
+            player.has_played_day_this_turn = True
+            order = day_order(state)
+            index = order.index(player_id)
+            if index + 1 < len(order):
+                state.active_player_id = order[index + 1]
+                start_player_day(state, state.active_player_id)
+            else:
+                state.active_player_id = None
+                end_day(state)
     except (ActionError, ValueError) as exc:
         return _error("domain_error", str(exc))
 
@@ -184,7 +209,8 @@ def apply_action(state: GameState, action: dict) -> dict:
                    "build_monument": "monument_built",
                    "summon_troop": "unit_summoned",
                    "summon_hero": "unit_summoned",
-                   "move_unit": "unit_moved"}
+                   "move_unit": "unit_moved",
+                   "end_turn": "player_turn_ended"}
     after = get_player(state, player_id).city
     data = {"player_id": player_id}
     if action_type == "collect_resources":
@@ -200,6 +226,8 @@ def apply_action(state: GameState, action: dict) -> dict:
     elif action_type == "move_unit":
         data.update(unit_id=moved.id, origin=origin, destination=moved.house,
                     moves_this_turn=moved.moves_this_turn)
+    elif action_type == "end_turn":
+        data.update(next_player_id=state.active_player_id, phase_after=state.phase.value)
     event = {
         "version": EVENT_VERSION,
         "type": event_types[action_type],
@@ -272,6 +300,7 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         "turn": state.turn,
         "phase": state.phase.value,
         "curuna_id": state.curuna_id,
+        "active_player_id": state.active_player_id,
         "game_over": state.game_over,
         "winner_id": state.winner_id,
         "players": players,
@@ -312,7 +341,7 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
 
     projected = deepcopy(view)
     if event.get("type") in {"resources_collected", "city_life_raised", "monument_built",
-                              "unit_summoned", "unit_moved"}:
+                              "unit_summoned", "unit_moved", "player_turn_ended"}:
         data = event["data"]
         player = next((p for p in projected["players"]
                        if p["id"] == data["player_id"]), None)
@@ -338,6 +367,9 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
                 raise ValueError("Unidade movida não existe na visão.")
             unit["house"] = data["destination"]
             unit["moves_this_turn"] = data["moves_this_turn"]
+        elif event["type"] == "player_turn_ended":
+            projected["active_player_id"] = data["next_player_id"]
+            projected["phase"] = data["phase_after"]
     else:
         raise ValueError("Tipo de evento ainda não projetável.")
     projected["events"].append(deepcopy(event))
