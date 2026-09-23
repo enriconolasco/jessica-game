@@ -390,6 +390,8 @@ def show_hud(state) -> None:
         if not p.city.is_alive():
             console.print(f"[{c}]{p.name} ({p.people}) - ELIMINADO[/{c}]")
             continue
+        chosen_str = "livre" if p.people == "mortos_vivos" and not p.chosen_hero_id else (
+            _hero_short(p.chosen_hero_id) if p.chosen_hero_id else "-")
         hero_str = "-"
         for u in p.units:
             if isinstance(u, Hero) and u.is_alive():
@@ -401,7 +403,7 @@ def show_hud(state) -> None:
             f"[{c}]{name_pad} {povo_pad}[/{c}] "
             f"vida {p.city.life}/{p.city.life_max}  "
             f"ouro {p.city.gold}  magia {p.city.magic}  "
-            f"mao {len(p.hand)}  heroi {hero_str}"
+            f"mao {len(p.hand)}  escolha {chosen_str}  em campo {hero_str}"
         )
     console.print()
 
@@ -420,7 +422,7 @@ def show_board(state) -> None:
                 if isinstance(u, Hero):
                     kind = heroes.hero_name(u.hero_id)
                 else:
-                    kind = f"Tropa {u.archetype.value}"
+                    kind = _troop_display(u.archetype)
                 flags = []
                 if u.double_damage:
                     flags.append("2xdano")
@@ -847,7 +849,7 @@ def _menu_especiais(state, pid: int) -> str | None:
         opts.append("Luide Vampa: movimento noturno")
         keys.append("z")
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "guarari" for u in player.units):
-        opts.append("Guarari: transformar tropa em Centauro (2 Magia)")
+        opts.append("Guarari: transformar tropa em Centauro (1 Magia)")
         keys.append("q")
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara" for u in player.units):
         opts.append("Aiquara: controlar inimigo")
@@ -867,6 +869,22 @@ def _menu_especiais(state, pid: int) -> str | None:
     if player.pending_heals > 0:
         opts.append(f"Usar cura pendente ({player.pending_heals})")
         keys.append("h")
+    purpura = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                    and u.hero_id == "purpura"), None)
+    if purpura and purpura.statuses.get("purpura_cooldown_until_turn", -1) <= state.turn:
+        opts.append("Purpura: ficar invisivel")
+        keys.append("u")
+    valtherion = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                       and u.hero_id == "valtherion"), None)
+    if valtherion and valtherion.statuses.get("chamado_cooldown_until_turn", -1) <= state.turn:
+        opts.append("Valtherion: Chamado")
+        keys.append("v")
+    if player.demon_pact_offers and peoples.available_demon_pacts(state):
+        opts.append("Escolher pacto demoniaco disponivel")
+        keys.append("D")
+    if peoples.can_take_tuza_pact(state, player.id) is not None and peoples.available_demon_pacts(state):
+        opts.append("Firmar pacto com Tuza")
+        keys.append("E")
     if not opts:
         console.print("[dim]Sem acoes especiais disponiveis.[/dim]")
         return None
@@ -1487,77 +1505,6 @@ def _get_actions(state, player) -> list[tuple[str, str, str]]:
     r.append(("Turno", "4", "Especiais (herois, habilidades)"))
 
 
-    miyamoto_atks = peoples.miyamoto_attacks_remaining(state, player)
-    if miyamoto_atks > 0:
-        r.append(("Especiais", "d", f"Miyamoto: atacar de Dia ({miyamoto_atks})"))
-
-    arken = next((u for u in player.units
-                  if isinstance(u, Hero) and u.is_alive() and u.hero_id == "arken"), None)
-    if arken is not None and player.arken_espolia_used_turn != state.turn:
-        r.append(("Especiais", "e", "Arken: Espoliar"))
-
-    tintin = next((u for u in player.units
-                   if isinstance(u, Hero) and u.is_alive() and u.hero_id == "tintin"), None)
-    if tintin is not None:
-        cd = tintin.statuses.get("tintin_cooldown_until_turn", -1)
-        if cd <= state.turn:
-            r.append(("Especiais", "t", "Tin Tin: ficar Invisivel"))
-
-    dandara = next((u for u in player.units
-                    if isinstance(u, Hero) and u.is_alive() and u.hero_id == "dandara"), None)
-    if dandara is not None:
-        cd = dandara.statuses.get("dandara_cooldown_until_turn", -1)
-        if cd <= state.turn:
-            r.append(("Especiais", "y", "Dandara: invisibilidade do grupo"))
-
-    luide = next((u for u in player.units
-                  if isinstance(u, Hero) and u.is_alive() and u.hero_id == "luide_vampa"), None)
-    if luide is not None and not player.has_cast_spell_this_turn:
-        r.append(("Especiais", "z", "Luide Vampa: ativar movimento noturno"))
-
-    if player.people == "gnomos_duendes" and player.bets_need_realocacao:
-        r.append(("Gnomos", "A", "Alocar apostas do turno"))
-
-    if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "guarari"
-           for u in player.units):
-        r.append(("Especiais", "q", "Guarari: aliado -> Centauro (1 Magia)"))
-    purpura = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
-                    and u.hero_id == "purpura"), None)
-    if purpura and purpura.statuses.get("purpura_cooldown_until_turn", -1) <= state.turn:
-        r.append(("Especiais", "u", "Purpura: ficar Invisivel"))
-    valtherion = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
-                       and u.hero_id == "valtherion"), None)
-    if valtherion and valtherion.statuses.get("chamado_cooldown_until_turn", -1) <= state.turn:
-        r.append(("Especiais", "v", "Valtherion: Chamado"))
-    if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"
-           for u in player.units):
-        r.append(("Especiais", "c", "Aiquara: controlar inimigo"))  # v5v10 #22
-    if (player.people == "filhos_floresta"
-            and player.chosen_hero_id == "baoba_ba"  # v5v10 #10
-            and not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "baoba_ba"
-                        for u in player.units)):
-        r.append(("Especiais", "b", f"Baoba-ba: pagar Magia ({player.baoba_pagamentos}/3)"))
-    if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "bimbo_do_mal"
-           for u in player.units):
-        r.append(("Especiais", "p", f"Bimbo ({player.correct_bets} apostas corretas)"))
-    if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "zebum"
-           for u in player.units):
-        r.append(("Especiais", "g", "Zebum: invocar/reinvocar heroi"))
-
-    besouro = next((u for u in player.units
-                    if isinstance(u, Hero) and u.is_alive() and u.hero_id == "besouro"), None)
-    if besouro is not None and player.besouro_mandinga_used_turn != state.turn and player.hand:
-        # Mandinga e na Noite, mas por simplicidade deixamos como opcao no Dia tambem.
-        pass
-
-    if player.pending_heals > 0:
-        r.append(("Especiais", "h", f"Usar cura pendente ({player.pending_heals})"))
-    if player.demon_pact_offers and peoples.available_demon_pacts(state):
-        r.append(("Especiais", "D", "Escolher pacto demoníaco disponível"))
-    demon_pid = peoples.can_take_tuza_pact(state, player.id)
-    if demon_pid is not None and peoples.available_demon_pacts(state):
-        r.append(("Especiais", "E", "Firmar pacto com Tuza"))
-
     r.append(("Info", "i", "Informacoes"))
     r.append(("Info", "m", "Mapa"))
     r.append(("Info", "p", "Panorama (Board)"))
@@ -1712,7 +1659,7 @@ def show_state_for_player(state, pid: int) -> None:
             if isinstance(u, Hero):
                 kind = f"Heroi {heroes.hero_name(u.hero_id)}"
             else:
-                kind = f"Tropa {u.archetype.value}"
+                kind = _troop_display(u.archetype)
             flags = []
             if u.double_damage: flags.append("2xdano")
             if u.resistance_stacks: flags.append(f"Resx{u.resistance_stacks}")
@@ -2290,20 +2237,30 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         _apply_simple_engine_action(state, action)
         console.print("[green]Heroi ok.[/green]")
     elif choice == "5":
-        units = [u for u in player.units if not u.has_moved_this_turn and u.moves_this_turn < u.max_moves_this_turn]
+        alive = [u for u in player.units if u.is_alive()]
+        units = [u for u in alive if not u.has_moved_this_turn
+                 and u.moves_this_turn < u.max_moves_this_turn
+                 and not (u.statuses.get("summoned_turn") == state.turn
+                          and not (isinstance(u, Hero) and u.hero_id == "guarari"))]
         if not units:
+            if any(u.statuses.get("summoned_turn") == state.turn for u in alive):
+                raise ActionError("Unidade recém invocada não pode se movimentar.")
             raise ActionError("Sem unidades.")
-        idx = pick_index("Unidade", [f"{u.id} ({house_short(state, u.house)}, {u.life})" for u in units])
+        labels = [f"{u.id} ({house_short(state, u.house)}, {u.life})" for u in units] + ["Cancelar"]
+        idx = pick_index("Unidade", labels)
+        if idx == len(units):
+            console.print("[yellow]Movimento cancelado.[/yellow]")
+            return None
         unit = units[idx]
         dests = valid_destinations(state, unit)
         if not dests:
             raise ActionError("Sem destinos.")
-        labels = ["Cancelar"] + [house_short(state, d) for d in dests]
-        idx2 = pick_index("Destino", labels)
-        if idx2 == 0:
-            console.print("[yellow]Movimento cancelado.[/yellow]")
-            return None
-        move_unit(state, pid, unit.id, dests[idx2 - 1])
+        destination = dests[0] if unit.house.startswith("city_") else dests[
+            pick_index("Destino", [house_short(state, d) for d in dests])]
+        _apply_simple_engine_action(state, next(
+            a for a in legal_actions(state, pid)
+            if a["type"] == "move_unit"
+            and a["params"] == {"unit_id": unit.id, "destination": destination}))
         console.print("[green]Movimento ok.[/green]")
     elif choice == "6":
         actions = [a for a in legal_actions(state, pid) if a["type"] == "build_monument"]
@@ -2736,7 +2693,7 @@ def _mostrar_resumo_local(state, house: str) -> None:
                 continue
             any_unit = True
             tipo = (f"Heroi {heroes.hero_name(u.hero_id)}"
-                    if isinstance(u, Hero) else f"Tropa {u.archetype.value}")
+                    if isinstance(u, Hero) else _troop_display(u.archetype))
             syms = _unit_symbols(state, u)
             syms_str = f" {syms}" if syms else ""
             console.print(f"  {p.name}: {u.id} ({tipo}) {u.life}/{u.life_max}{syms_str}")
@@ -2757,11 +2714,23 @@ def _resolver_qd_pendente(state) -> None:
                 console.print(f"[red]Erro Q_D: {e}[/red]")
 
 
+def _night_info_prompt(state) -> None:
+    while True:
+        opt = Prompt.ask("Noite: [m]apa / [p]anorama / [Enter] continuar", default="")
+        if opt.lower() == "m":
+            show_map(state)
+        elif opt.lower() == "p":
+            show_board(state)
+        else:
+            return
+
+
 def _declarar_casa(state, house: str, pids_declaram: list[int],
                    processed_houses=None, allow_luide: bool = True) -> None:
     if processed_houses is None:
         processed_houses = set()
     for pid in pids_declaram:
+        _night_info_prompt(state)
         player = get_player(state, pid)
         if allow_luide:
             _luide_janela_noturna(state, pid, house, processed_houses)
@@ -2894,16 +2863,6 @@ def run_night_phase(state) -> None:
     console.rule("[bold]NOITE[/bold]")
     show_hud(state)
     show_map(state)
-    while True:
-        opt = Prompt.ask(
-            "Antes das declaracoes: [m]apa / [v] estudar campo / [Enter] continuar",
-            default="")
-        if opt == "m":
-            show_map(state)
-        elif opt == "v":
-            estudar_campo(state)
-        else:
-            break
     _ask_vovo_position(state)
 
     all_pids = list(day_order(state))
@@ -2941,6 +2900,13 @@ def run_night_phase(state) -> None:
             processed_houses.add(house)
             continue
         pids_here = _order_players_for_house(state, pids_here, house)
+        if house == CENTER:
+            console.rule("[bold]Combate no Centro iniciado[/bold]")
+        else:
+            owner = get_player(state, int(house.split("_")[1]))
+            console.rule(f"[bold]Combate na Cidade de {owner.people} — {owner.name} (Jogador {owner.id})[/bold]")
+        order = " -> ".join(f"{get_player(state, pid).name} (J{pid})" for pid in pids_here)
+        console.print(f"[cyan]Ordem das declarações de combate: {order}[/cyan]")
         _declarar_casa(state, house, pids_here, processed_houses)
         processed_houses.add(house)
         _ainai_prompt_all(state, all_pids, processed_houses)

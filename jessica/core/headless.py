@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from .actions import (ActionError, build_monument, collect_resources,
+from .actions import (ActionError, build_monument, collect_resources, move_unit,
                       raise_city_life, summon_hero, summon_troop)
-from .constants import (CITY_LIFE_COST_GOLD, MONUMENT_COST_GOLD, Phase,
+from .constants import (CENTER, CITY_HOUSES, CITY_LIFE_COST_GOLD, MONUMENT_COST_GOLD, Phase,
                         RESOURCES_PER_DAY, TROOP_MAX_LIFE, TroopArchetype)
 from .models import GameState, Hero, Troop, Unit
 from .state import get_player
@@ -98,6 +98,19 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
         except (ActionError, ValueError):
             continue
         actions.append(candidate)
+    for unit in player.units:
+        if not unit.is_alive():
+            continue
+        destinations = [CENTER] if unit.house.startswith("city_") else list(CITY_HOUSES)
+        for destination in destinations:
+            candidate = _action("move_unit", player_id, unit_id=unit.id,
+                                destination=destination)
+            trial = deepcopy(state)
+            try:
+                move_unit(trial, player_id, unit.id, destination)
+            except (ActionError, ValueError):
+                continue
+            actions.append(candidate)
     return actions
 
 
@@ -116,7 +129,7 @@ def apply_action(state: GameState, action: dict) -> dict:
         return _error("unsupported_action_version", "Versão de ação não suportada.")
     action_type = action.get("type")
     if action_type not in {"collect_resources", "raise_city_life", "build_monument",
-                           "summon_troop", "summon_hero"}:
+                           "summon_troop", "summon_hero", "move_unit"}:
         return _error("unsupported_action", "Tipo de ação ainda não adaptado.",
                       action_type=action.get("type"))
 
@@ -127,7 +140,8 @@ def apply_action(state: GameState, action: dict) -> dict:
     expected = {"collect_resources": {"gold", "magic"},
                 "raise_city_life": {"times"}, "build_monument": set(),
                 "summon_troop": {"archetype", "life", "house"},
-                "summon_hero": set()}[action_type]
+                "summon_hero": set(),
+                "move_unit": {"unit_id", "destination"}}[action_type]
     if action_type == "summon_hero" and isinstance(params, dict) and set(params) == {"hero_id"}:
         expected = {"hero_id"}
     if not isinstance(params, dict) or set(params) != expected:
@@ -143,6 +157,12 @@ def apply_action(state: GameState, action: dict) -> dict:
 
     try:
         before = deepcopy(get_player(state, player_id).city)
+        moved = None
+        origin = None
+        if action_type == "move_unit":
+            moved = next(u for u in get_player(state, player_id).units
+                         if u.id == params["unit_id"])
+            origin = moved.house
         if action_type == "collect_resources":
             collect_resources(state, player_id, params["gold"], params["magic"])
         elif action_type == "raise_city_life":
@@ -152,8 +172,10 @@ def apply_action(state: GameState, action: dict) -> dict:
         elif action_type == "summon_troop":
             summoned = summon_troop(state, player_id, TroopArchetype(params["archetype"]),
                                     params["life"], params["house"])
-        else:
+        elif action_type == "summon_hero":
             summoned = summon_hero(state, player_id, force_hero_id=params.get("hero_id"))
+        else:
+            move_unit(state, player_id, params["unit_id"], params["destination"])
     except (ActionError, ValueError) as exc:
         return _error("domain_error", str(exc))
 
@@ -161,7 +183,8 @@ def apply_action(state: GameState, action: dict) -> dict:
                    "raise_city_life": "city_life_raised",
                    "build_monument": "monument_built",
                    "summon_troop": "unit_summoned",
-                   "summon_hero": "unit_summoned"}
+                   "summon_hero": "unit_summoned",
+                   "move_unit": "unit_moved"}
     after = get_player(state, player_id).city
     data = {"player_id": player_id}
     if action_type == "collect_resources":
@@ -174,6 +197,9 @@ def apply_action(state: GameState, action: dict) -> dict:
     if action_type in {"summon_troop", "summon_hero"}:
         data.update(unit=_unit_view(summoned), city_gold_after=after.gold,
                     city_magic_after=after.magic)
+    elif action_type == "move_unit":
+        data.update(unit_id=moved.id, origin=origin, destination=moved.house,
+                    moves_this_turn=moved.moves_this_turn)
     event = {
         "version": EVENT_VERSION,
         "type": event_types[action_type],
@@ -286,7 +312,7 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
 
     projected = deepcopy(view)
     if event.get("type") in {"resources_collected", "city_life_raised", "monument_built",
-                              "unit_summoned"}:
+                              "unit_summoned", "unit_moved"}:
         data = event["data"]
         player = next((p for p in projected["players"]
                        if p["id"] == data["player_id"]), None)
@@ -305,6 +331,13 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
             player["city"]["gold"] = data["city_gold_after"]
             player["city"]["magic"] = data["city_magic_after"]
             projected["board"]["units"].append(deepcopy(data["unit"]))
+        elif event["type"] == "unit_moved":
+            unit = next((u for u in projected["board"]["units"]
+                         if u["id"] == data["unit_id"]), None)
+            if unit is None:
+                raise ValueError("Unidade movida não existe na visão.")
+            unit["house"] = data["destination"]
+            unit["moves_this_turn"] = data["moves_this_turn"]
     else:
         raise ValueError("Tipo de evento ainda não projetável.")
     projected["events"].append(deepcopy(event))

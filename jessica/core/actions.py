@@ -782,13 +782,14 @@ def _spell_levantar_mortos(state, player, choice):
             raise ActionError(f"Arquetipo {arq_name} nao disponivel (precisa Zoia viva).")
         arq = TroopArchetype(arq_name)
         n = sum(1 for u in player.units if isinstance(u, Troop))
-        unit_id = f"p{player.id}_raised_{arq.value}_{n}"
+        unit_id = f"p{player.id}_troop_{arq.value}_{n}"
+        max_life = TROOP_MAX_LIFE[arq.value]
         troop = Troop(id=unit_id, owner_id=player.id, house=f"city_{player.id}",
-                      life=1, life_max=1, archetype=arq,
+                      life=1, life_max=max_life, archetype=arq,
                       has_moved_this_turn=True, moves_this_turn=1)
         player.units.append(troop)
         mark_summoned(state, player, troop)
-        log(state, f"{player.name} levantou {arq.value} com 1 de vida.")
+        log(state, f"{player.name} levantou tropa {arq.value} com 1/{max_life} de vida.")
 
 
 # =============================================================

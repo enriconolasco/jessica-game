@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import tempfile
+from copy import deepcopy
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -10,7 +11,9 @@ from jessica.core.headless import (
     ACTION_VERSION, apply_action, apply_event_to_view, legal_actions,
     view_for_player,
 )
-from jessica.core.actions import build_monument, collect_resources, raise_city_life
+from jessica.core.actions import (build_monument, collect_resources, move_unit,
+                                  raise_city_life, summon_troop)
+from jessica.core.constants import TroopArchetype
 from jessica.core.serialize import load_from_file, save_to_file, state_to_dict
 from jessica.core.setup import run_setup
 
@@ -34,6 +37,32 @@ def make_state():
         turn_order=[1, 2, 3, 4],
     )
     return state
+
+
+def _state_with_movable_unit():
+    state = make_state()
+    state.players[0].city.gold = state.players[0].city.magic = 20
+    unit = summon_troop(state, 1, TroopArchetype.LIGHT, 1, "city_1")
+    unit.statuses.pop("summoned_turn", None)
+    unit.moves_this_turn = 0
+    unit.has_moved_this_turn = False
+    return state, unit
+
+
+def test_move_action_matches_core_and_projects_event():
+    state, unit = _state_with_movable_unit()
+    direct = deepcopy(state)
+    before_view = view_for_player(state, 2)
+    action = next(a for a in legal_actions(state, 1)
+                  if a["type"] == "move_unit" and a["params"]["unit_id"] == unit.id)
+    result = apply_action(state, action)
+    move_unit(direct, 1, unit.id, "center")
+    assert result["success"] is True
+    assert result["events"][0]["type"] == "unit_moved"
+    assert state_to_dict(state) == state_to_dict(direct)
+    projected = apply_event_to_view(before_view, result["events"][0])
+    viewed = next(u for u in projected["board"]["units"] if u["id"] == unit.id)
+    assert viewed["house"] == "center"
 
 
 def test_legal_actions_enumerates_collect_splits_without_mutation():
@@ -290,6 +319,7 @@ def run_all():
         test_terminal_economic_actions_use_engine_port,
         test_summon_actions_match_core_and_project_event,
         test_terminal_summons_use_engine_port,
+        test_move_action_matches_core_and_projects_event,
     ]
     passed = failed = 0
     for test in tests:
