@@ -321,7 +321,10 @@ def move_unit(state: GameState, player_id: int, unit_id: str, destination: str) 
     if unit is None:
         raise ActionError(f"Unidade {unit_id} nao encontrada.")
     summoned_now = unit.statuses.get("summoned_turn") == state.turn
-    if summoned_now and not (isinstance(unit, Hero) and unit.hero_id == "guarari"):
+    can_move_when_summoned = (
+        isinstance(unit, Hero) and unit.hero_id == "guarari"
+    ) or unit.statuses.get("morcego_until_turn", -1) >= state.turn
+    if summoned_now and not can_move_when_summoned:
         raise ActionError("Unidade invocada neste turno nao pode se mover.")
     if unit.moves_this_turn >= unit.max_moves_this_turn:
         raise ActionError("Unidade ja se moveu o maximo.")
@@ -421,7 +424,7 @@ def arken_espolia(state: GameState, player_id: int) -> None:
     log(state, f"{player.name} (Arken): +{gold} Ouro.")
     enemy_houses = {f"city_{pid}" for pid in occupied_pids}
     for u in player.units:
-        if isinstance(u, Troop) and u.is_alive() and u.house in enemy_houses:
+        if u.is_alive() and u.house in enemy_houses:
             healed = min(1, u.life_max - u.life)
             if healed > 0:
                 u.life += healed
@@ -541,7 +544,9 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     city = player.city
     if not city.is_alive():
         raise ActionError("Cidade destruida.")
-    if state.turn < player.spell_cooldown_until_turn:
+    resonance_continues = (player.people == peoples.PEOPLE_DRAGOES
+                           and player.canastra_moves_turn == state.turn)
+    if state.turn < player.spell_cooldown_until_turn and not resonance_continues:
         raise ActionError(f"Feitico em recarga.")
     is_resonance = player.people == peoples.PEOPLE_DRAGOES
     if player.has_cast_spell_this_turn and not is_resonance:
@@ -571,8 +576,9 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
             for cid in cards:
                 if cid not in player.hand:
                     raise ActionError(f"Nao tem {cid} na mao.")
+            artifact_choices = choice.get("artifact_choices", [])
             from . import artifacts_effects as _ae  # v5v10c #15
-            for cid in list(cards):
+            for index, cid in enumerate(list(cards)):
                 new_card = peoples.sonho_lucido_flip(cid)
                 if new_card == cid:
                     log(state, f"Sonho Lucido: {card_display(cid)} nao mudou de naipe.")
@@ -580,11 +586,11 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
                 player.hand.remove(cid)
                 player.hand.append(new_card)
                 log(state, f"Sonho Lucido: {card_display(cid)} -> {card_display(new_card)}.")
-                if _ae.needs_choice(new_card):
-                    log(state, f"  {card_display(new_card)} precisa de escolha: ficou na mao.")
-                    continue
+                artifact_choice = artifact_choices[index] if index < len(artifact_choices) else {}
+                if _ae.needs_choice(new_card) and not artifact_choice:
+                    raise ActionError(f"{card_display(new_card)} precisa de escolha imediata.")
                 try:
-                    play_artifact(state, player.id, new_card)
+                    play_artifact(state, player.id, new_card, choice=artifact_choice)
                     log(state, f"  jogado: {card_display(new_card)}.")
                 except ActionError as e:
                     player.hand.remove(new_card)
@@ -964,6 +970,12 @@ def _spell_ressonancia_magica(state: GameState, player, choice: dict) -> bool:
     if player.canastra_moves_turn != state.turn:
         player.canastra_moves_turn = state.turn
         player.canastra_moved_cards = []
+        player.canastra_resonance_uses = 0
+    planned = ([choice.get("card_id")] if action in ("add", "remove")
+               else [choice.get("old_card_id"), choice.get("new_card_id")]
+               if action == "swap" else [])
+    if any(card and player.canastra_moved_cards.count(card) >= 2 for card in planned):
+        raise ActionError("Ressonancia: o mesmo Artefato so pode ser movido 2 vezes por turno.")
     if action == "add":
         card_id = choice.get("card_id")
         _dragon_canastra_enter(state, player, card_id)
@@ -991,10 +1003,9 @@ def _spell_ressonancia_magica(state: GameState, player, choice: dict) -> bool:
         moved.extend([old_card, new_card])
     else:
         raise ActionError("Ressonancia: use add, remove ou swap.")
-    previous = list(player.canastra_moved_cards)
     player.canastra_moved_cards.extend(moved)
-    repeated = any(card in previous for card in moved)
-    cooldown = repeated or len(player.canastra_moved_cards) > 1
+    player.canastra_resonance_uses += 1
+    cooldown = player.canastra_resonance_uses >= 2
     _dragon_refresh_canastra_buffs(state, player)
     log(state, f"{player.name}: Ressonancia {action} ({', '.join(moved)}).")
     return cooldown

@@ -137,6 +137,7 @@ class Player:
     canastra: list[str] = field(default_factory=list)
     canastra_moves_turn: int = -1
     canastra_moved_cards: list[str] = field(default_factory=list)
+    canastra_resonance_uses: int = 0
 
     # Demonios
     demon_pact_offers: list[dict] = field(default_factory=list)
