@@ -10,13 +10,14 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
 - compra, transmutação e venda de Artefatos;
 - eventos públicos/privados, minimapa responsivo e painel privado;
 - save manual, autosave, load e validação da versão do save.
+- setup local com nomes, parâmetros iniciais, 12 povos e heróis válidos vindos do catálogo do motor.
 
 ## Passos restantes
 
 1. **Sincronizar o motor atual:** transportar seletivamente os patches validados do
    terminal, preservar servidor/assets e comprovar paridade pelas mesmas seeds.
-2. **Setup completo:** nomes, configurações, 12 povos, consulta de regras, escolha de
-   heróis e modo local de passagem do dispositivo entre jogadores.
+2. **Finalizar setup e passagem local:** consulta detalhada de regras e ocultação da
+   tela durante a passagem do dispositivo entre jogadores.
 3. **Completar o Dia:** jogar Artefatos, escolhas pendentes, feitiços, habilidades,
    curas, apostas e demais ações especiais usando contratos estruturados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,

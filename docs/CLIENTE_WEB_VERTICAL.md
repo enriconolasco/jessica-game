@@ -15,6 +15,7 @@ Abra `http://127.0.0.1:8765`. Não há dependências web externas.
 ## Corte atual
 
 - cria e carrega partidas locais;
+- configura nomes, recursos iniciais, quatro povos distintos e heróis pelo catálogo do motor;
 - entrega `PlayerView` e ações legais com rótulos;
 - executa coleta, cidade, monumento, invocação, movimento, mercado de artefatos e fim da janela do jogador;
 - atualiza a tela sem recarga e apresenta eventos recentes;

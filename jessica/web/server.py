@@ -7,6 +7,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from ..core import heroes, spells
+from ..core.constants import (DEFAULT_CITY_LIFE_MAX, DEFAULT_CITY_LIFE_START,
+                              DEFAULT_STARTING_GOLD, DEFAULT_STARTING_MAGIC)
 from ..core.headless import SAVE_VERSION, apply_action, legal_actions, view_for_player
 from ..core.serialize import state_from_dict, state_to_dict
 from ..core.setup import run_setup
@@ -19,15 +22,82 @@ ASSETS = ROOT.parent.parent / "assets"
 SAVES = ROOT.parent.parent / "saves" / "web"
 MATCHES: dict[str, dict] = {}
 LOCK = threading.RLock()
+PEOPLES = ("humanos", "anoes", "orcs", "fadas", "vampiros", "lobisomens",
+           "gigantes", "mortos_vivos", "filhos_floresta", "gnomos_duendes",
+           "dragoes", "demonios")
+PEOPLE_NAMES = {
+    "humanos": "Humanos", "anoes": "Anões", "orcs": "Orcs", "fadas": "Fadas",
+    "vampiros": "Vampiros", "lobisomens": "Lobisomens", "gigantes": "Gigantes",
+    "mortos_vivos": "Mortos-vivos", "filhos_floresta": "Filhos da Floresta",
+    "gnomos_duendes": "Gnomos e Duendes", "dragoes": "Dragões", "demonios": "Demônios",
+}
 
 
-def _new_state(seed: int):
-    peoples = ["humanos", "anoes", "orcs", "fadas"]
-    heroes = {"humanos": ["miyamoto"], "anoes": ["ori"],
-              "orcs": ["arken"], "fadas": ["ainai"]}
-    choices = {i + 1: {"povo": people, "heroi": heroes[people][0]}
-               for i, people in enumerate(peoples)}
-    state, _ = run_setup(peoples, heroes, choices, seed, turn_order=[1, 2, 3, 4])
+def _catalog() -> dict:
+    entries = []
+    for people in PEOPLES:
+        spell = spells.spell_for_people(people)
+        entries.append({
+            "id": people,
+            "label": PEOPLE_NAMES[people],
+            "heroes": [{"id": hero.hero_id, "name": hero.name, "life": hero.life,
+                        "abilities": list(hero.abilities)}
+                       for hero in heroes.heroes_for_people(people)],
+            "spell": None if spell is None else {
+                "id": spell.spell_id, "name": spell.name,
+                "description": spell.description,
+            },
+        })
+    return {"peoples": entries, "defaults": {
+        "city_life": DEFAULT_CITY_LIFE_START, "city_life_max": DEFAULT_CITY_LIFE_MAX,
+        "gold": DEFAULT_STARTING_GOLD, "magic": DEFAULT_STARTING_MAGIC,
+    }}
+
+
+def _new_state(seed: int, player_setup: list[dict] | None = None,
+               config: dict | None = None):
+    if player_setup is None:
+        player_setup = [
+            {"name": "Jogador 1", "people": "humanos", "hero_id": "miyamoto"},
+            {"name": "Jogador 2", "people": "anoes", "hero_id": "ori"},
+            {"name": "Jogador 3", "people": "orcs", "hero_id": "arken"},
+            {"name": "Jogador 4", "people": "fadas", "hero_id": "ainai"},
+        ]
+    if len(player_setup) != 4:
+        raise ValueError("A partida local requer exatamente quatro jogadores.")
+    selected = [str(item.get("people", "")) for item in player_setup]
+    if any(people not in PEOPLES for people in selected):
+        raise ValueError("Há um povo desconhecido na configuração.")
+    if len(set(selected)) != 4:
+        raise ValueError("Cada jogador deve escolher um povo diferente.")
+    choices = {}
+    names = {}
+    heroes_by_people = {people: [hero.hero_id for hero in heroes.heroes_for_people(people)]
+                        for people in PEOPLES}
+    for player_id, item in enumerate(player_setup, 1):
+        people = selected[player_id - 1]
+        name = str(item.get("name", "")).strip()
+        if not name or len(name) > 40:
+            raise ValueError("Cada jogador precisa de um nome com até 40 caracteres.")
+        hero_id = "" if people == "mortos_vivos" else str(item.get("hero_id", ""))
+        if people != "mortos_vivos" and hero_id not in heroes_by_people[people]:
+            raise ValueError(f"Herói inválido para {PEOPLE_NAMES[people]}.")
+        names[player_id] = name
+        choices[player_id] = {"povo": people, "heroi": hero_id}
+    config = config or {}
+    values = {
+        "city_life": int(config.get("city_life", DEFAULT_CITY_LIFE_START)),
+        "city_life_max": int(config.get("city_life_max", DEFAULT_CITY_LIFE_MAX)),
+        "gold_start": int(config.get("gold", DEFAULT_STARTING_GOLD)),
+        "magic_start": int(config.get("magic", DEFAULT_STARTING_MAGIC)),
+    }
+    if (values["city_life"] < 1 or values["city_life_max"] < values["city_life"]
+            or values["gold_start"] < 0 or values["magic_start"] < 0):
+        raise ValueError("Configuração inicial inválida.")
+    state, _ = run_setup(list(PEOPLES), heroes_by_people, choices, seed,
+                         turn_order=[1, 2, 3, 4], **values)
+    for player in state.players:
+        player.name = names[player.id]
     start_turn(state)
     state.active_player_id = state.curuna_id
     start_player_day(state, state.active_player_id)
@@ -62,6 +132,8 @@ class Handler(BaseHTTPRequestHandler):
         parts = self._parts()
         if not parts:
             return self._file("index.html", "text/html; charset=utf-8")
+        if parts == ["catalog"]:
+            return self._json(200, _catalog())
         if parts[0] == "static" and len(parts) == 2:
             mime = "text/css" if parts[1].endswith(".css") else "text/javascript"
             return self._file(parts[1], mime)
@@ -100,9 +172,13 @@ class Handler(BaseHTTPRequestHandler):
         body = self._body()
         with LOCK:
             if parts == ["matches"]:
+                try:
+                    state = _new_state(int(body.get("seed", 20260923)),
+                                       body.get("players"), body.get("config"))
+                except (TypeError, ValueError) as exc:
+                    return self._json(422, {"error": str(exc)})
                 match_id = uuid.uuid4().hex[:12]
-                MATCHES[match_id] = {"state": _new_state(int(body.get("seed", 20260923))),
-                                     "events": []}
+                MATCHES[match_id] = {"state": state, "events": []}
                 _save(match_id)
                 return self._json(201, {"match_id": match_id})
             if parts == ["matches", "load"]:

@@ -1,5 +1,6 @@
 let matchId = null;
 let playerId = 1;
+let catalog = null;
 const $ = id => document.getElementById(id);
 const ICON_ROOT = "/assets/visual-direction-v0.2/icons/";
 const PEOPLE_ICON = {humanos:"humanos", anoes:"anoes", orcs:"orcs", fadas:"fadas", vampiros:"vampiros", lobisomens:"lobisomens", gigantes:"gigantes", mortos_vivos:"mortos-vivos", filhos_floresta:"filhos-floresta", gnomos_duendes:"gnomos-duendes", dragoes:"dragoes", demonios:"demonios"};
@@ -160,6 +161,59 @@ async function act(action) {
   }
 }
 async function enter(id) { matchId=id; $("start").hidden=true; $("game").hidden=false; await refresh(); }
-$("create").onclick = async () => enter((await api("/matches", {method:"POST", body:JSON.stringify({seed:+$("seed").value})})).match_id);
+function updateHeroSelect(row, peopleId) {
+  const people = catalog.peoples.find(item => item.id === peopleId);
+  const select = row.querySelector(".setup-hero");
+  select.replaceChildren();
+  if (peopleId === "mortos_vivos") {
+    select.appendChild(new Option("Escolha feita durante a partida", ""));
+    select.disabled = true;
+  } else {
+    people.heroes.forEach(hero => select.appendChild(new Option(`${hero.name} · ${hero.life} vida`, hero.id)));
+    select.disabled = false;
+  }
+}
+function updatePeopleAvailability() {
+  const selected = [...document.querySelectorAll(".setup-people")].map(select => select.value);
+  document.querySelectorAll(".setup-people").forEach(select => [...select.options].forEach(option => {
+    option.disabled = option.value !== select.value && selected.includes(option.value);
+  }));
+}
+function renderSetup() {
+  const root = $("setupPlayers");
+  root.replaceChildren();
+  const defaults = ["humanos", "anoes", "orcs", "fadas"];
+  defaults.forEach((defaultPeople, index) => {
+    const row = document.createElement("section");
+    row.className = "setup-player";
+    row.innerHTML = `<h3>Jogador ${index + 1}</h3><label>Nome <input class="setup-name" maxlength="40" value="Jogador ${index + 1}"></label><label>Povo <select class="setup-people"></select></label><label>Herói <select class="setup-hero"></select></label>`;
+    const peopleSelect = row.querySelector(".setup-people");
+    catalog.peoples.forEach(people => peopleSelect.appendChild(new Option(people.label, people.id)));
+    peopleSelect.value = defaultPeople;
+    peopleSelect.onchange = () => { updateHeroSelect(row, peopleSelect.value); updatePeopleAvailability(); };
+    updateHeroSelect(row, defaultPeople);
+    root.appendChild(row);
+  });
+  updatePeopleAvailability();
+}
+function setupPayload() {
+  return {
+    seed: +$("seed").value,
+    players: [...document.querySelectorAll(".setup-player")].map(row => ({
+      name: row.querySelector(".setup-name").value,
+      people: row.querySelector(".setup-people").value,
+      hero_id: row.querySelector(".setup-hero").value,
+    })),
+    config: {city_life:+$("cityLife").value, city_life_max:+$("cityLifeMax").value,
+             gold:+$("goldStart").value, magic:+$("magicStart").value},
+  };
+}
+$("create").onclick = async () => {
+  try {
+    $("setupMessage").textContent = "";
+    await enter((await api("/matches", {method:"POST", body:JSON.stringify(setupPayload())})).match_id);
+  } catch (error) { $("setupMessage").textContent = error.message; }
+};
 $("load").onclick = async () => enter((await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})})).match_id);
 $("save").onclick = async () => { const data=await api(`/matches/${matchId}/save`, {method:"POST", body:"{}"}); $("message").textContent=`Save: ${data.save_id}`; };
+api("/catalog").then(data => { catalog = data; renderSetup(); }).catch(error => { $("setupMessage").textContent = error.message; });
