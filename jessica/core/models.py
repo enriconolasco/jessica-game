@@ -111,6 +111,7 @@ class Player:
     zebum_herois: list[str] = field(default_factory=list)
     spell_copia_id: Optional[str] = None
     spell_copia_turn: int = -1
+    spell_copia_rerolled_turn: int = -1
     bets_need_realocacao: bool = False
     zebum_seven_dwarves: bool = False
 

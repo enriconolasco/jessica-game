@@ -83,7 +83,7 @@ HERO_CATALOG: dict[str, HeroDefinition] = {
     "bimbo_do_mal": HeroDefinition("bimbo_do_mal", "gnomos_duendes", "Bimbo do Mal", 2,
         ("gastar_aposta",)),
     "sao_tome": HeroDefinition("sao_tome", "gnomos_duendes", "Sao Tome, Morador de Piramide", 4,
-        ("passivas_dos_alvos", "duas_determinacoes")),
+        ("passivas_dos_alvos", "rerrolar_feitico_copiado")),
     "zebum": HeroDefinition("zebum", "gnomos_duendes", "Zebum, o Mistico Viajante", 3,
         ("invocar_heroi_estrangeiro",)),
     "barba_negra": HeroDefinition("barba_negra", "dragoes", "Barba Negra, o Rei do Mundo", 2,

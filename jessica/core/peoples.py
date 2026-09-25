@@ -609,6 +609,38 @@ def draw_spell_copia(state: GameState, player: Player) -> None:
     log(state, f"{player.name} (Gnomos): feitico copiado sorteado: {player.spell_copia_id}.")
 
 
+def reroll_spell_copia(state: GameState, player_id: int) -> str:
+    player = get_player(state, player_id)
+    if player.people != PEOPLE_GNOMOS:
+        raise ValueError("Apenas Gnomos podem rerrolar a Imitacao.")
+    if not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "sao_tome"
+               for u in player.units):
+        raise ValueError("Sao Tome precisa estar vivo.")
+    if player.spell_copia_turn != state.turn or not player.spell_copia_id:
+        raise ValueError("Nenhum feitico deste turno para rerrolar.")
+    if player.spell_copia_rerolled_turn == state.turn:
+        raise ValueError("Sao Tome ja rerrolou neste turno.")
+    if player.has_cast_spell_this_turn:
+        raise ValueError("O feitico ja foi usado neste turno.")
+    from . import spells as spells_mod
+    candidates = []
+    for other in state.players:
+        if other.people and other.people != PEOPLE_GNOMOS:
+            spell = spells_mod.spell_for_people(other.people)
+            if spell is not None and spell.spell_id not in candidates:
+                candidates.append(spell.spell_id)
+    alternatives = [spell_id for spell_id in candidates
+                    if spell_id != player.spell_copia_id]
+    pool = alternatives or candidates
+    if not pool:
+        raise ValueError("Nao ha outro feitico disponivel.")
+    previous = player.spell_copia_id
+    player.spell_copia_id = state.rng.choice(pool)
+    player.spell_copia_rerolled_turn = state.turn
+    log(state, f"{player.name}: Sao Tome rerrolou {previous} -> {player.spell_copia_id}.")
+    return player.spell_copia_id
+
+
 def on_player_morning(state: GameState, player_id: int) -> None:
     player = get_player(state, player_id)
     p = player.people

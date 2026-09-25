@@ -570,11 +570,14 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     city = player.city
     if not city.is_alive():
         raise ActionError("Cidade destruida.")
-    resonance_continues = (player.people == peoples.PEOPLE_DRAGOES
+    copied_resonance = (player.people == peoples.PEOPLE_GNOMOS
+                        and player.spell_copia_id == "ressonancia_magica")
+    resonance_continues = ((player.people == peoples.PEOPLE_DRAGOES
+                            or copied_resonance)
                            and player.canastra_moves_turn == state.turn)
     if state.turn < player.spell_cooldown_until_turn and not resonance_continues:
         raise ActionError(f"Feitico em recarga.")
-    is_resonance = player.people == peoples.PEOPLE_DRAGOES
+    is_resonance = player.people == peoples.PEOPLE_DRAGOES or copied_resonance
     if player.has_cast_spell_this_turn and not is_resonance:
         raise ActionError("Ja usou feitico.")
 
@@ -635,8 +638,7 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     elif sp.spell_id == "decompor":
         spell_decompor(state, player_id, choice)
     elif sp.spell_id == "imitacao_gnomerica":
-        spell_imitacao_gnomerica(state, player_id, choice)
-        no_cooldown = True
+        no_cooldown = spell_imitacao_gnomerica(state, player_id, choice)
     elif sp.spell_id == "ressonancia_magica":
         cooldown = _spell_ressonancia_magica(state, player, choice)
         no_cooldown = not cooldown
@@ -654,10 +656,13 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
 
 
 def _spell_sacrificio_demonio(state: GameState, player, choice: dict) -> None:
+    hero_id = choice.get("hero_id")
     hero = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
-                 and u.hero_id == player.chosen_hero_id), None)
+                 and (u.id == hero_id or u.hero_id == hero_id)), None) if hero_id else next(
+        (u for u in player.units if isinstance(u, Hero) and u.is_alive()
+         and u.hero_id == player.chosen_hero_id), None)
     if hero is None:
-        raise ActionError("Seu Heroi principal precisa estar vivo.")
+        raise ActionError("Escolha um Heroi vivo para o Sacrificio.")
     selected = choice.get("artifacts", [])
     if not selected:
         raise ActionError("Escolha ao menos um Artefato.")
@@ -872,7 +877,7 @@ def spell_decompor(state: GameState, player_id: int, choice: dict) -> None:
 # Feitico: Imitacao Gnomerica
 # =============================================================
 
-def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> None:
+def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> bool:
     player = get_player(state, player_id)
     sp_id = player.spell_copia_id
     if not sp_id:
@@ -893,6 +898,9 @@ def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> 
         _spell_licantropo(state, player, choice)
     elif sp_id == "linhagem_ancestral":
         _spell_linhagem_ancestral(state, player, choice)
+        if choice.get("hero_id") == "caroco":
+            log(state, f"{player.name}: Imitacao Gnomerica usou {sp.name}.")
+            return True
     elif sp_id == "levantar_mortos":
         _spell_levantar_mortos(state, player, choice)
     elif sp_id == "decompor":
@@ -900,7 +908,9 @@ def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> 
     elif sp_id == "ressonancia_magica":
         if peoples.PEOPLE_DRAGOES not in peoples.sao_tome_effective_peoples(state, player):
             raise ActionError("Ressonancia exige Sao Tome e uma aposta ativa em Dragoes.")
-        _spell_ressonancia_magica(state, player, choice)
+        cooldown = _spell_ressonancia_magica(state, player, choice)
+        log(state, f"{player.name}: Imitacao Gnomerica usou {sp.name}.")
+        return not cooldown
     elif sp_id == "sacrificio_de_demonio":
         _spell_sacrificio_demonio(state, player, choice)
     elif sp_id == "imitacao_gnomerica":
@@ -908,6 +918,7 @@ def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> 
     else:
         raise ActionError(f"Feitico {sp_id} nao imitavel.")
     log(state, f"{player.name}: Imitacao Gnomerica usou {sp.name}.")
+    return False
 
 
 # =============================================================

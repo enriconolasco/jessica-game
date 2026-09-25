@@ -133,7 +133,7 @@ HERO_ABILITY_DESC = {
     "aiquara": "Ninfa: controla inimigo da casa (mover no Dia, atacar na Noite).",
     "baoba_ba": "Anciao: 1 Magia x 3 turnos para invocar. Tropas aliadas na casa dele.",
     "bimbo_do_mal": "Gastar aposta: invisivel (1) ou artefato da Loja (5).",
-    "sao_tome": "Passivas dos alvos das apostas. 2 determinacoes por dia.",
+    "sao_tome": "Herda passivas dos jogadores apostados e pode rerrolar o feitico copiado.",
     "zebum": "Mistico: apostas corretas compram herois estrangeiros.",
     "barba_negra": "Base movel. Mar de Chamas e modo Heroi por uma Noite.",
     "purpura": "Cresce conforme manhas pares passadas. Pode ficar Invisivel.",
@@ -890,6 +890,15 @@ def _menu_especiais(state, pid: int) -> str | None:
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "zebum" for u in player.units):
         opts.append("Zebum: invocar/reinvocar heroi")
         keys.append("g")
+    if (player.people == "gnomos_duendes"
+            and player.spell_copia_id
+            and player.spell_copia_turn == state.turn
+            and player.spell_copia_rerolled_turn != state.turn
+            and not player.has_cast_spell_this_turn
+            and any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "sao_tome"
+                    for u in player.units)):
+        opts.append(f"São Tomé: rerrolar feitiço ({player.spell_copia_id})")
+        keys.append("R")
     if player.pending_heals > 0:
         opts.append(f"Usar cura pendente ({player.pending_heals})")
         keys.append("h")
@@ -1117,6 +1126,12 @@ def _demon_pact_ui(state, player, demon_player_id, rogue=False):
 
 
 def _sacrificio_demonio_ui(player):
+    living_heroes = [u for u in player.units if isinstance(u, Hero) and u.is_alive()]
+    if not living_heroes:
+        raise ActionError("Sem Heroi vivo para sacrificar.")
+    hero = living_heroes[pick_index(
+        "Heroi sacrificado", [f"{heroes.hero_name(u.hero_id)} ({u.life}/{u.life_max})"
+                              for u in living_heroes])]
     available = ([{"zone": "hand", "card_id": c} for c in player.hand]
                  + [{"zone": "field", "card_id": a.card_id}
                     for a in player.field_artifacts])
@@ -1130,7 +1145,7 @@ def _sacrificio_demonio_ui(player):
         selected.append(available.pop(idx))
     if not selected:
         raise ActionError("Escolha ao menos um Artefato.")
-    return {"artifacts": selected}
+    return {"hero_id": hero.id, "artifacts": selected}
 
 
 def _escolher_imitacao(state, player):
@@ -2456,6 +2471,9 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         _bimbo_ui(state, pid)
     elif choice == "g":
         _zebum_ui(state, pid)
+    elif choice == "R":
+        new_spell = peoples.reroll_spell_copia(state, pid)
+        console.print(f"[green]Novo feitiço copiado: {new_spell}.[/green]")
     elif choice == "D":
         offer = player.demon_pact_offers.pop(0)
         _demon_pact_ui(state, player, offer["demon_player_id"],

@@ -3,7 +3,7 @@ import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from jessica.core import peoples
-from jessica.core.actions import summon_hero, spell_imitacao_gnomerica
+from jessica.core.actions import cast_spell, summon_hero, spell_imitacao_gnomerica
 from jessica.core.models import Hero, Troop
 from jessica.core.constants import TroopArchetype
 from jessica.core.setup import run_setup
@@ -95,12 +95,53 @@ def test_dragoes_canastra_retorna_para_mao_ao_perder_passiva():
     assert sao.life_max == base_life
 
 
+def test_feitico_copiado_entra_em_recarga_normal():
+    state = make_state("humanos")
+    p = state.players[0]
+    p.spell_copia_id = "resistencia"
+    sao = next(u for u in p.units if isinstance(u, Hero))
+    cast_spell(state, 1, {"unit_id": sao.id})
+    assert p.has_cast_spell_this_turn
+    assert p.spell_cooldown_until_turn == state.turn + 2
+
+
+def test_sacrificio_copiado_pode_escolher_outro_heroi():
+    state = make_state("demonios")
+    p = state.players[0]
+    p.hand.append("K_H")
+    other = Hero(id="outro", owner_id=1, house="city_1", life=3, life_max=3,
+                 hero_id="zebum")
+    p.units.append(other)
+    p.spell_copia_id = "sacrificio_de_demonio"
+    cast_spell(state, 1, {"hero_id": other.id,
+                          "artifacts": [{"zone": "hand", "card_id": "K_H"}]})
+    assert not any(u.id == "outro" for u in p.units)
+    assert any(u.hero_id == "sao_tome" for u in p.units if isinstance(u, Hero))
+
+
+def test_sao_tome_rerrola_uma_vez_e_substitui_resultado():
+    state = make_state("fadas")
+    p = state.players[0]
+    p.spell_copia_id = "sonho_lucido"
+    p.spell_copia_turn = state.turn
+    result = peoples.reroll_spell_copia(state, 1)
+    assert result != "sonho_lucido"
+    try:
+        peoples.reroll_spell_copia(state, 1)
+        raise AssertionError("Segunda rerrolagem deveria falhar")
+    except ValueError:
+        pass
+
+
 def run_all():
     tests = [test_fadas_valem_para_qualquer_unidade_e_heroi_gnomico,
              test_lobisomem_usa_lua_cheia_dos_gnomos_e_infecta,
              test_gigantes_dobra_todos_herois_gnomicos_permanentemente,
              test_mortos_vivos_libera_roster_e_remove_ao_perder_passiva,
-             test_dragoes_canastra_retorna_para_mao_ao_perder_passiva]
+             test_dragoes_canastra_retorna_para_mao_ao_perder_passiva,
+             test_feitico_copiado_entra_em_recarga_normal,
+             test_sacrificio_copiado_pode_escolher_outro_heroi,
+             test_sao_tome_rerrola_uma_vez_e_substitui_resultado]
     passed = failed = 0
     for test in tests:
         try:
