@@ -24,11 +24,26 @@ O fundo estrutural continua sendo
 
 ## Implementação
 
-- cinco casas fixas: centro, norte/cidade 1, leste/cidade 2, sul/cidade 3 e oeste/cidade 4;
+- cinco casas fixas, conforme `show_map` do terminal: centro, norte/cidade 3,
+  leste/cidade 2, sul/cidade 1 e oeste/cidade 4;
 - ordenação estável por jogador, heróis antes de tropas e identificador;
-- quebra de linha e rolagem interna sem sobreposição;
-- contagem explícita em cada casa;
+- geometria 3:2 e coordenadas percentuais do SVG, centralizadas em `map.css`;
+  o fundo não usa `cover`, e nenhuma casa muda de posição nos breakpoints;
+- acima de 1100 px, ícones agrupados por jogador dentro da casa, com rolagem;
+  em telas menores, cada casa mostra sua contagem e abre a lista ampliada abaixo;
+- contagem explícita por casa e por grupo; a lista ampliada conserva os tamanhos
+  32×32/64×64 e permite consultar individualmente todas as unidades;
 - foco, mouse ou toque abrem os mesmos detalhes públicos;
 - vida numérica sempre visível e fallback `?` com descrição textual para povo desconhecido.
+- seleção por clique/foco persistente; passar o mouse não desfaz uma seleção;
+- título da lista anuncia a troca de casa para leitores de tela.
+
+## Verificação reproduzível
+
+`python tools/preview_web_map.py` abre um servidor em `http://127.0.0.1:8766`.
+A prévia usa somente uma PlayerView pública sintética: 36 unidades, 28 no centro,
+heróis/tropas nas quatro cidades e um povo desconhecido para testar o fallback.
+Não cria partidas nem altera saves. Verificar 320, 390, 900 e 1280 px; orientação,
+contagens, seleção por teclado/toque, rolagem e vida legível.
 
 Os ícones permanecem em estágio `concept` conforme `assets/manifest.json`.

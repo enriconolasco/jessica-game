@@ -5,7 +5,10 @@ let pendingPlayerId = null;
 const $ = id => document.getElementById(id);
 const ICON_ROOT = "/assets/visual-direction-v0.2/icons/";
 const PEOPLE_ICON = {humanos:"humanos", anoes:"anoes", orcs:"orcs", fadas:"fadas", vampiros:"vampiros", lobisomens:"lobisomens", gigantes:"gigantes", mortos_vivos:"mortos-vivos", filhos_floresta:"filhos-floresta", gnomos_duendes:"gnomos-duendes", dragoes:"dragoes", demonios:"demonios"};
-const HOUSE_NAMES = {center:"Centro", city_1:"Cidade 1 (Norte)", city_2:"Cidade 2 (Leste)", city_3:"Cidade 3 (Sul)", city_4:"Cidade 4 (Oeste)"};
+const HOUSE_NAMES = {center:"Centro", city_1:"Cidade 1 (Sul)", city_2:"Cidade 2 (Leste)", city_3:"Cidade 3 (Norte)", city_4:"Cidade 4 (Oeste)"};
+const HOUSE_POSITIONS = {center:"center", city_1:"south", city_2:"east", city_3:"north", city_4:"west"};
+let selectedHouse = "center";
+let selectedUnitId = null;
 
 async function api(path, options = {}) {
   const response = await fetch(path, {headers:{"Content-Type":"application/json"}, ...options});
@@ -14,7 +17,10 @@ async function api(path, options = {}) {
   return data;
 }
 
-const unitName = unit => unit.hero_id || unit.archetype || unit.id;
+const peopleName = people => catalog?.peoples.find(item => item.id === people)?.label || people;
+const unitName = unit => catalog?.peoples.flatMap(item => item.heroes).find(hero => hero.id === unit.hero_id)?.name
+  || ({light:"Tropa pequena", medium:"Tropa média", heavy:"Tropa grande"})[unit.archetype]
+  || unit.hero_id || unit.archetype || unit.id;
 function publicStates(unit) {
   const states = Object.entries(unit.statuses || {}).map(([key, value]) => `${key}: ${value}`);
   if (unit.resistance_stacks) states.push(`resistência: ${unit.resistance_stacks}`);
@@ -25,7 +31,11 @@ function describeUnit(unit, player, people) {
   const states = publicStates(unit);
   return `${unitName(unit)}; ${player?.name || `Jogador ${unit.owner_id}`}; ${people}; ${unit.kind === "hero" ? "herói" : "tropa"}; ${HOUSE_NAMES[unit.house] || unit.house}; vida ${unit.life} de ${unit.life_max}${states.length ? `; ${states.join(", ")}` : ""}`;
 }
-function showUnit(unit, player, people) {
+function showUnit(unit, player, people, select = true) {
+  if (select) {
+    selectedUnitId = unit.id;
+    document.querySelectorAll(".unit-marker").forEach(marker => marker.setAttribute("aria-pressed", String(marker.dataset.unitId === unit.id)));
+  }
   const states = publicStates(unit);
   $("unitDetails").replaceChildren();
   [unitName(unit), `${player?.name || `Jogador ${unit.owner_id}`} · ${people}`, `${unit.kind === "hero" ? "Herói" : "Tropa"} · ${HOUSE_NAMES[unit.house] || unit.house}`, `Vida ${unit.life}/${unit.life_max}`, states.length ? states.join(" · ") : "Sem estados públicos"].forEach((text, index) => {
@@ -34,41 +44,120 @@ function showUnit(unit, player, people) {
     $("unitDetails").appendChild(node);
   });
 }
-function renderMap(view) {
-  const players = new Map(view.players.map(player => [player.id, player]));
-  document.querySelectorAll(".house-units").forEach(node => node.replaceChildren());
-  [...view.board.units].sort((a,b) => a.owner_id-b.owner_id || Number(b.kind === "hero")-Number(a.kind === "hero") || a.id.localeCompare(b.id)).forEach(unit => {
+function renderUnitGroups(root, units, players) {
+  root.replaceChildren();
+  const groups = new Map();
+  units.forEach(unit => {
     const player = players.get(unit.owner_id);
-    const people = player?.people || "povo desconhecido";
-    const house = document.querySelector(`[data-house="${CSS.escape(unit.house)}"] .house-units`);
-    if (!house) return;
+    const people = peopleName(player?.people || "Povo desconhecido");
+    if (!groups.has(unit.owner_id)) {
+      const group = document.createElement("section");
+      group.className = "unit-group";
+      const title = document.createElement("h4");
+      title.textContent = `J${unit.owner_id} · ${people} · ${units.filter(item => item.owner_id === unit.owner_id).length}`;
+      const items = document.createElement("div");
+      items.className = "unit-group-items";
+      group.append(title, items);
+      root.appendChild(group);
+      groups.set(unit.owner_id, items);
+    }
     const marker = document.createElement("button");
     marker.type = "button";
     marker.className = `unit-marker ${unit.kind === "hero" ? "hero" : "troop"}`;
     marker.setAttribute("aria-label", describeUnit(unit, player, people));
+    marker.dataset.unitId = unit.id;
+    marker.setAttribute("aria-pressed", String(unit.id === selectedUnitId));
     marker.title = describeUnit(unit, player, people);
-    if (PEOPLE_ICON[people]) {
+    const fallback = () => {
+      const text = document.createElement("span");
+      text.className = "unknown-icon";
+      text.textContent = "?";
+      text.title = people;
+      return text;
+    };
+    if (PEOPLE_ICON[player?.people]) {
       const image = document.createElement("img");
-      image.src = `${ICON_ROOT}people-${PEOPLE_ICON[people]}-32.svg`;
+      image.src = `${ICON_ROOT}people-${PEOPLE_ICON[player.people]}-32.svg`;
       image.alt = "";
+      image.onerror = () => image.replaceWith(fallback());
       marker.appendChild(image);
     } else {
-      const fallback = document.createElement("span");
-      fallback.className = "unknown-icon";
-      fallback.textContent = "?";
-      marker.appendChild(fallback);
+      marker.appendChild(fallback());
     }
     const life = document.createElement("span");
     life.className = "unit-life";
     life.textContent = `${unit.life}/${unit.life_max}`;
     marker.appendChild(life);
-    ["focus", "mouseenter", "click"].forEach(event => marker.addEventListener(event, () => showUnit(unit, player, people)));
-    house.appendChild(marker);
+    ["focus", "click"].forEach(event => marker.addEventListener(event, () => showUnit(unit, player, people)));
+    marker.addEventListener("mouseenter", () => { if (!selectedUnitId) showUnit(unit, player, people, false); });
+    groups.get(unit.owner_id).appendChild(marker);
   });
+}
+function renderMap(view) {
+  const players = new Map(view.players.map(player => [player.id, player]));
+  const units = [...view.board.units].sort((a,b) => a.owner_id-b.owner_id || Number(b.kind === "hero")-Number(a.kind === "hero") || a.id.localeCompare(b.id));
+  if (!units.some(unit => unit.id === selectedUnitId)) {
+    selectedUnitId = null;
+    $("unitDetails").textContent = "Selecione uma unidade para consultar vida e condições públicas.";
+  }
+  let roster = $("houseRoster");
+  if (!roster) {
+    roster = document.createElement("section");
+    roster.id = "houseRoster";
+    roster.className = "house-roster";
+    roster.setAttribute("aria-labelledby", "rosterTitle");
+    const title = document.createElement("h3");
+    title.id = "rosterTitle";
+    title.setAttribute("aria-live", "polite");
+    title.setAttribute("aria-atomic", "true");
+    const list = document.createElement("div");
+    list.className = "roster-units";
+    roster.append(title, list);
+    $("minimap").after(roster);
+  }
+  const renderRoster = () => {
+    const present = units.filter(unit => unit.house === selectedHouse);
+    const title = $("rosterTitle");
+    title.textContent = `${HOUSE_NAMES[selectedHouse]} · ${present.length} unidade${present.length === 1 ? "" : "s"}`;
+    const list = roster.querySelector(".roster-units");
+    renderUnitGroups(list, present, players);
+    if (!present.length) list.textContent = "Nenhuma unidade visível nesta casa.";
+    document.querySelectorAll(".house-inspect").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.house === selectedHouse)));
+  };
   document.querySelectorAll(".house").forEach(house => {
-    const count = house.querySelectorAll(".unit-marker").length;
-    house.querySelector("h3").dataset.count = count ? ` · ${count}` : " · vazia";
+    const id = house.dataset.house;
+    house.className = `house ${HOUSE_POSITIONS[id]}`;
+    const present = units.filter(unit => unit.house === id);
+    const player = view.players.find(player => id === `city_${player.id}`);
+    const button = document.createElement("button");
+    button.className = "house-inspect";
+    button.type = "button";
+    button.dataset.house = id;
+    button.setAttribute("aria-controls", "houseRoster");
+    button.setAttribute("aria-label", `${HOUSE_NAMES[id]}${player ? ` · ${player.name} · ${peopleName(player.people)}` : ""}: ${present.length} unidades visíveis. Consultar unidades.`);
+    button.textContent = id === "center" ? "Centro" : `Cidade ${player?.id || id.slice(-1)}`;
+    const caption = document.createElement("span");
+    caption.className = "house-caption";
+    caption.textContent = player ? peopleName(player.people) : "Encontro dos povos";
+    const count = document.createElement("span");
+    count.className = "house-count";
+    count.textContent = `${present.length} unidade${present.length === 1 ? "" : "s"}`;
+    button.append(caption, count);
+    button.onclick = () => {
+      if (selectedHouse !== id) {
+        selectedUnitId = null;
+        document.querySelectorAll(".unit-marker").forEach(marker => marker.setAttribute("aria-pressed", "false"));
+        $("unitDetails").textContent = "Selecione uma unidade desta casa para consultar seus detalhes.";
+      }
+      selectedHouse = id;
+      renderRoster();
+    };
+    house.querySelector("h3").replaceChildren(button);
+    renderUnitGroups(house.querySelector(".house-units"), present, players);
   });
+  renderRoster();
+  const selected = units.find(unit => unit.id === selectedUnitId);
+  if (selected) showUnit(selected, players.get(selected.owner_id), peopleName(players.get(selected.owner_id)?.people || "Povo desconhecido"));
 }
 function actionDetails(action) {
   const p = action.params;
