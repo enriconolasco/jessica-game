@@ -44,6 +44,13 @@ def test_http_vertical_action_view_events_and_autosave():
             assert view["active_player_id"] == 1
             assert result["success"] is True
             assert events[-1]["type"] == "resources_collected"
+            private = {"type": "artifact_obtained", "turn": 1, "phase": "day",
+                       "data": {"card_id": "K_H"},
+                       "visibility": {"kind": "private", "player_ids": [1]}}
+            server.MATCHES[match_id]["events"].append(private)
+            _, owner_events = _request(base, f"/matches/{match_id}/events?player_id=1")
+            _, rival_events = _request(base, f"/matches/{match_id}/events?player_id=2")
+            assert private in owner_events and private not in rival_events
             assert (Path(tmp) / f"{match_id}.json").is_file()
             status, mime, icon = _raw(base, "/assets/visual-direction-v0.2/icons/people-humanos-32.svg")
             assert status == 200 and mime == "image/svg+xml" and b"<svg" in icon

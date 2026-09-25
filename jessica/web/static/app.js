@@ -75,6 +75,7 @@ function actionDetails(action) {
   if (action.type === "summon_troop") return `${p.archetype} · vida ${p.life} · ${HOUSE_NAMES[p.house] || p.house}`;
   if (action.type === "summon_hero") return p.hero_id || "herói escolhido";
   if (action.type === "move_unit") return `${p.unit_id} → ${HOUSE_NAMES[p.destination] || p.destination}`;
+  if (action.type === "sell_artifact") return p.card_id;
   return "";
 }
 function renderActions(actions) {
@@ -121,6 +122,8 @@ function eventText(event) {
   if (event.type === "unit_summoned") return `J${d.player_id} invocou ${unitName(d.unit || {})}.`;
   if (event.type === "unit_moved") return `${d.unit_id} foi para ${HOUSE_NAMES[d.destination] || d.destination}.`;
   if (event.type === "player_turn_ended") return `J${d.player_id} encerrou sua janela do Dia.`;
+  if (event.type === "artifact_obtained") return d.pending_choice ? "Escolha de artefato pendente." : `Artefato obtido: ${d.card_id}.`;
+  if (event.type === "artifact_sold") return `J${d.player_id} vendeu ${d.card_id}.`;
   return event.type;
 }
 function renderEvents(events) {
@@ -136,7 +139,7 @@ function renderEvents(events) {
 async function refresh() {
   const view = await api(`/matches/${matchId}/view?player_id=${playerId}`);
   playerId = view.active_player_id || playerId;
-  const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events`)]);
+  const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
   $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
   $("players").innerHTML = view.players.map(p => `<div class="player ${p.id === view.active_player_id ? "active" : ""}">J${p.id} ${p.name} — ${p.people}<br>Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic}</div>`).join("");
   const hand = view.self.hand.length ? view.self.hand.join(" · ") : "vazia";

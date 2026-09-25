@@ -89,7 +89,10 @@ class Handler(BaseHTTPRequestHandler):
                 if resource == "actions":
                     return self._json(200, legal_actions(state, player_id))
                 if resource == "events":
-                    return self._json(200, match["events"])
+                    visible = [event for event in match["events"]
+                               if event.get("visibility", {}).get("kind") == "public"
+                               or player_id in event.get("visibility", {}).get("player_ids", [])]
+                    return self._json(200, visible)
         self._json(404, {"error": "Rota não encontrada."})
 
     def do_POST(self):

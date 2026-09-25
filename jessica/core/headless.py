@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from .actions import (ActionError, build_monument, collect_resources, move_unit,
-                      raise_city_life, summon_hero, summon_troop)
+from .actions import (ActionError, build_monument, buy_artifact_with_gold,
+                      collect_resources, move_unit, raise_city_life, sell_artifact,
+                      summon_hero, summon_troop, transmute_artifact_with_magic)
 from .constants import (CENTER, CITY_HOUSES, CITY_LIFE_COST_GOLD, MONUMENT_COST_GOLD, Phase,
                         RESOURCES_PER_DAY, TROOP_MAX_LIFE, TroopArchetype)
 from .models import GameState, Hero, Troop, Unit
@@ -23,6 +24,9 @@ ACTION_LABELS = {
     "summon_troop": "Invocar tropa",
     "summon_hero": "Invocar herói",
     "move_unit": "Mover unidade",
+    "buy_artifact_gold": "Comprar artefato com Ouro",
+    "transmute_artifact_magic": "Transmutar artefato com Magia",
+    "sell_artifact": "Vender artefato",
     "end_turn": "Encerrar turno",
 }
 
@@ -123,6 +127,22 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
             except (ActionError, ValueError):
                 continue
             actions.append(candidate)
+    for action_type, operation in (
+            ("buy_artifact_gold", buy_artifact_with_gold),
+            ("transmute_artifact_magic", transmute_artifact_with_magic)):
+        trial = deepcopy(state)
+        try:
+            operation(trial, player_id)
+        except (ActionError, ValueError):
+            continue
+        actions.append(_action(action_type, player_id))
+    for card_id in dict.fromkeys(player.hand):
+        trial = deepcopy(state)
+        try:
+            sell_artifact(trial, player_id, card_id)
+        except (ActionError, ValueError):
+            continue
+        actions.append(_action("sell_artifact", player_id, card_id=card_id))
     actions.append(_action("end_turn", player_id))
     return actions
 
@@ -142,7 +162,9 @@ def apply_action(state: GameState, action: dict) -> dict:
         return _error("unsupported_action_version", "Versão de ação não suportada.")
     action_type = action.get("type")
     if action_type not in {"collect_resources", "raise_city_life", "build_monument",
-                           "summon_troop", "summon_hero", "move_unit", "end_turn"}:
+                           "summon_troop", "summon_hero", "move_unit", "end_turn",
+                           "buy_artifact_gold", "transmute_artifact_magic",
+                           "sell_artifact"}:
         return _error("unsupported_action", "Tipo de ação ainda não adaptado.",
                       action_type=action.get("type"))
 
@@ -155,6 +177,9 @@ def apply_action(state: GameState, action: dict) -> dict:
                 "summon_troop": {"archetype", "life", "house"},
                 "summon_hero": set(),
                 "move_unit": {"unit_id", "destination"},
+                "buy_artifact_gold": set(),
+                "transmute_artifact_magic": set(),
+                "sell_artifact": {"card_id"},
                 "end_turn": set()}[action_type]
     if action_type == "summon_hero" and isinstance(params, dict) and set(params) == {"hero_id"}:
         expected = {"hero_id"}
@@ -190,6 +215,13 @@ def apply_action(state: GameState, action: dict) -> dict:
             summoned = summon_hero(state, player_id, force_hero_id=params.get("hero_id"))
         elif action_type == "move_unit":
             move_unit(state, player_id, params["unit_id"], params["destination"])
+        elif action_type == "buy_artifact_gold":
+            artifact = buy_artifact_with_gold(state, player_id)
+        elif action_type == "transmute_artifact_magic":
+            artifact = transmute_artifact_with_magic(state, player_id)
+        elif action_type == "sell_artifact":
+            artifact = params["card_id"]
+            sell_artifact(state, player_id, artifact)
         else:
             player = get_player(state, player_id)
             player.has_played_day_this_turn = True
@@ -210,6 +242,9 @@ def apply_action(state: GameState, action: dict) -> dict:
                    "summon_troop": "unit_summoned",
                    "summon_hero": "unit_summoned",
                    "move_unit": "unit_moved",
+                   "buy_artifact_gold": "artifact_obtained",
+                   "transmute_artifact_magic": "artifact_obtained",
+                   "sell_artifact": "artifact_sold",
                    "end_turn": "player_turn_ended"}
     after = get_player(state, player_id).city
     data = {"player_id": player_id}
@@ -228,6 +263,13 @@ def apply_action(state: GameState, action: dict) -> dict:
                     moves_this_turn=moved.moves_this_turn)
     elif action_type == "end_turn":
         data.update(next_player_id=state.active_player_id, phase_after=state.phase.value)
+    elif action_type in {"buy_artifact_gold", "transmute_artifact_magic"}:
+        data.update(card_id=artifact, pending_choice=artifact is None,
+                    gold_spent=before.gold - after.gold,
+                    magic_spent=before.magic - after.magic)
+    elif action_type == "sell_artifact":
+        data.update(card_id=artifact, gold_after=after.gold, magic_after=after.magic)
+    private = action_type in {"buy_artifact_gold", "transmute_artifact_magic"}
     event = {
         "version": EVENT_VERSION,
         "type": event_types[action_type],
@@ -235,7 +277,8 @@ def apply_action(state: GameState, action: dict) -> dict:
         "phase": state.phase.value,
         "participants": [player_id],
         "data": data,
-        "visibility": {"kind": "public", "player_ids": []},
+        "visibility": ({"kind": "private", "player_ids": [player_id]}
+                       if private else {"kind": "public", "player_ids": []}),
     }
     return {"success": True, "error": None, "events": [event]}
 

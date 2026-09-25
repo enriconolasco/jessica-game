@@ -315,6 +315,26 @@ def test_end_turn_advances_active_player_and_enters_night_after_last():
     assert state.phase.value == "night"
 
 
+def test_artifact_market_actions_use_core_and_private_event():
+    state, unit = _state_with_movable_unit()
+    unit.house = "center"
+    state.active_player_id = 1
+    buy = next(a for a in legal_actions(state, 1)
+               if a["type"] == "buy_artifact_gold")
+    result = apply_action(state, buy)
+    assert result["success"]
+    event = result["events"][0]
+    assert event["type"] == "artifact_obtained"
+    assert event["visibility"] == {"kind": "private", "player_ids": [1]}
+    card = event["data"]["card_id"]
+    assert card in state.players[0].hand
+    sell = next(a for a in legal_actions(state, 1)
+                if a["type"] == "sell_artifact" and a["params"]["card_id"] == card)
+    sold = apply_action(state, sell)
+    assert sold["success"] and sold["events"][0]["type"] == "artifact_sold"
+    assert card not in state.players[0].hand
+
+
 def run_all():
     tests = [
         test_legal_actions_enumerates_collect_splits_without_mutation,
@@ -334,6 +354,7 @@ def run_all():
         test_terminal_summons_use_engine_port,
         test_move_action_matches_core_and_projects_event,
         test_end_turn_advances_active_player_and_enters_night_after_last,
+        test_artifact_market_actions_use_core_and_private_event,
     ]
     passed = failed = 0
     for test in tests:
