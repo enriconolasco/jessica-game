@@ -83,8 +83,10 @@ def test_web_ui_expoe_area_privada_e_eventos_legiveis():
     html = (root / "index.html").read_text(encoding="utf-8")
     js = (root / "app.js").read_text(encoding="utf-8")
     assert 'id="self"' in html
+    assert 'id="handoff"' in html
     assert "function eventText" in js
     assert 'className = "action-select"' in js
+    assert "pendingPlayerId" in js
 
 
 def test_catalogo_e_setup_completo_da_partida_web():

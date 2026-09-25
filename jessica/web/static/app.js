@@ -1,6 +1,7 @@
 let matchId = null;
 let playerId = 1;
 let catalog = null;
+let pendingPlayerId = null;
 const $ = id => document.getElementById(id);
 const ICON_ROOT = "/assets/visual-direction-v0.2/icons/";
 const PEOPLE_ICON = {humanos:"humanos", anoes:"anoes", orcs:"orcs", fadas:"fadas", vampiros:"vampiros", lobisomens:"lobisomens", gigantes:"gigantes", mortos_vivos:"mortos-vivos", filhos_floresta:"filhos-floresta", gnomos_duendes:"gnomos-duendes", dragoes:"dragoes", demonios:"demonios"};
@@ -137,8 +138,17 @@ function renderEvents(events) {
   });
   if (!events.length) root.innerHTML = "<em>Nenhum acontecimento.</em>";
 }
-async function refresh() {
+async function refresh(allowPlayerSwitch = false) {
   const view = await api(`/matches/${matchId}/view?player_id=${playerId}`);
+  if (!allowPlayerSwitch && view.active_player_id && view.active_player_id !== playerId) {
+    pendingPlayerId = view.active_player_id;
+    const next = view.players.find(player => player.id === pendingPlayerId);
+    $("handoffText").textContent = `Entregue o aparelho a ${next?.name || `Jogador ${pendingPlayerId}`}. A área privada permanece oculta.`;
+    $("handoff").hidden = false;
+    $("game").inert = true;
+    $("revealPlayer").focus();
+    return;
+  }
   playerId = view.active_player_id || playerId;
   const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
   $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
@@ -216,4 +226,11 @@ $("create").onclick = async () => {
 };
 $("load").onclick = async () => enter((await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})})).match_id);
 $("save").onclick = async () => { const data=await api(`/matches/${matchId}/save`, {method:"POST", body:"{}"}); $("message").textContent=`Save: ${data.save_id}`; };
+$("revealPlayer").onclick = async () => {
+  playerId = pendingPlayerId;
+  pendingPlayerId = null;
+  $("handoff").hidden = true;
+  $("game").inert = false;
+  await refresh(true);
+};
 api("/catalog").then(data => { catalog = data; renderSetup(); }).catch(error => { $("setupMessage").textContent = error.message; });
