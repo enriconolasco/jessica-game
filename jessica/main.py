@@ -10,7 +10,7 @@ from rich import box
 
 from .core.setup import run_setup, roll_d20_order, horario_from
 from .core.state import (
-    make_rng, get_player, declaration_order_for_house, sync_house_priority,
+    make_rng, get_player, declaration_order_for_house, sync_house_priority, log,
 )
 from .core.actions import (
     raise_city_life, summon_troop, summon_hero,

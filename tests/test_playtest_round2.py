@@ -11,12 +11,28 @@ from jessica.core.constants import TroopArchetype
 from jessica.core.models import Hero
 from jessica.core.serialize import state_from_dict, state_to_dict
 from jessica.core.setup import run_setup
+from jessica.core.turn import start_turn
 
 
 def make_state(peoples, heroes, choices):
     state, _ = run_setup(peoples, heroes, choices, seed=24092026,
                          turn_order=list(range(1, len(peoples) + 1)))
     return state
+
+
+def test_log_de_mudancas_no_inicio_do_turno():
+    from jessica.main import _log_visible_state_changes, _visible_state_snapshot
+
+    state = make_state(["humanos", "orcs"],
+                       {"humanos": ["miyamoto"], "orcs": ["arken"]},
+                       {1: {"povo": "humanos", "heroi": "miyamoto"},
+                        2: {"povo": "orcs", "heroi": "arken"}})
+    before = _visible_state_snapshot(state)
+    start_turn(state)
+    state.players[0].city.gold += 1
+    _log_visible_state_changes(state, before, "início do turno")
+    assert any("[STATE] início do turno" in entry and "Ouro" in entry
+               for entry in state.event_log)
 
 
 def test_morcego_reabre_movimento_de_recem_invocado():
