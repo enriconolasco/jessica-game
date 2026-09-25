@@ -185,6 +185,32 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
     if not city.is_alive():
         raise ActionError("Cidade destruida.")
 
+    gnomo_undead = (player.people == peoples.PEOPLE_GNOMOS
+                    and peoples.PEOPLE_MORTOS_VIVOS in
+                    peoples.sao_tome_effective_peoples(state, player))
+    if gnomo_undead and force_hero_id is not None:
+        hid = heroes.normalize_hero_id(force_hero_id)
+        if hid not in ("bimbo_do_mal", "sao_tome", "zebum"):
+            raise ActionError("Passiva dos Mortos-Vivos libera apenas os 3 herois gnomos.")
+        if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == hid
+               for u in player.units):
+            raise ActionError(f"Heroi {hid} ja em campo.")
+        magic_cost = peoples.hero_summon_cost(player, state)
+        if city.magic < magic_cost:
+            raise ActionError(f"Magia insuficiente ({magic_cost}).")
+        city.magic -= magic_cost
+        hdef = heroes.get_hero(hid)
+        hero = Hero(id=f"p{player_id}_hero_{hid}", owner_id=player_id,
+                    house=f"city_{player_id}", life=hdef.life, life_max=hdef.life,
+                    hero_id=hid, has_moved_this_turn=True, moves_this_turn=1)
+        hero.statuses["sao_tome_undead_summon"] = True
+        player.units.append(hero)
+        mark_summoned(state, player, hero)
+        record_action(state, player_id, "summon_hero", hero_id=hid)
+        log(state, f"{player.name} invocou {hdef.name} pela passiva dos Mortos-Vivos.")
+        peoples.on_action_performed(state, player_id, "summon_hero")
+        return hero
+
     if player.people == peoples.PEOPLE_MORTOS_VIVOS:
         if force_hero_id is None:
             raise ActionError("Mortos-Vivos: escolha o heroi.")
@@ -871,6 +897,12 @@ def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> 
         _spell_levantar_mortos(state, player, choice)
     elif sp_id == "decompor":
         spell_decompor(state, player_id, choice)
+    elif sp_id == "ressonancia_magica":
+        if peoples.PEOPLE_DRAGOES not in peoples.sao_tome_effective_peoples(state, player):
+            raise ActionError("Ressonancia exige Sao Tome e uma aposta ativa em Dragoes.")
+        _spell_ressonancia_magica(state, player, choice)
+    elif sp_id == "sacrificio_de_demonio":
+        _spell_sacrificio_demonio(state, player, choice)
     elif sp_id == "imitacao_gnomerica":
         raise ActionError("Nao pode imitar a si mesmo.")
     else:
@@ -913,7 +945,7 @@ def transformar_em_centauro(state: GameState, player_id: int, unit_id: str) -> N
 def _dragon_refresh_canastra_buffs(state: GameState, player) -> None:
     has_heart = peoples.dragon_has_suit(player, "H")
     has_club = peoples.dragon_has_suit(player, "C")
-    for unit in peoples.dragon_heroes(player):
+    for unit in peoples.dragon_heroes(player, state):
         marked = unit.statuses.get("dragon_heart_resistance", False)
         if has_heart and not marked:
             unit.resistance_stacks += 1
@@ -934,7 +966,7 @@ def _dragon_canastra_leave(state: GameState, player, card_id: str) -> None:
         player.city.gold += jacks_before
         log(state, f"{player.name}: Acumulador +{jacks_before} Ouro ao retirar Valete.")
     if card_id.startswith("Q_"):
-        for unit in peoples.dragon_heroes(player):
+        for unit in peoples.dragon_heroes(player, state):
             unit.life_max = max(1, unit.life_max - 2)
     player.canastra.remove(card_id)
     player.hand.append(card_id)
@@ -952,7 +984,7 @@ def _dragon_canastra_enter(state: GameState, player, card_id: str) -> None:
     player.hand.remove(card_id)
     player.canastra.append(card_id)
     if card_id.startswith("Q_"):
-        for unit in peoples.dragon_heroes(player):
+        for unit in peoples.dragon_heroes(player, state):
             was_base = bool(unit.statuses.get("dragon_base"))
             unit.life_max += 2
             unit.life = min(unit.life_max, unit.life + 2)
@@ -1022,6 +1054,21 @@ def purpura_invisibilidade(state: GameState, player_id: int) -> None:
     purpura.statuses["invisivel_until_turn"] = state.turn
     purpura.statuses["purpura_cooldown_until_turn"] = state.turn + 2
     log(state, f"{player.name}: Purpura ficou invisivel.")
+
+
+def rogue_clock_move(state: GameState, player_id: int, destination: str) -> None:
+    player = get_player(state, player_id)
+    rogue = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                  and u.hero_id == "rogue_devil"
+                  and "relogio" in u.statuses.get("rogue_items", [])), None)
+    if rogue is None:
+        raise ActionError("Rogue Devil nao possui o Relogio de bolso.")
+    if state.phase != Phase.NIGHT:
+        raise ActionError("Relogio so pode ser usado antes do fim da Noite.")
+    if destination not in state.combats_this_night:
+        raise ActionError("Nesse local nao ocorreu combate nesta Noite.")
+    rogue.house = destination
+    log(state, f"{player.name}: Rogue Devil usou o Relogio e foi para {destination}.")
 
 
 def barba_mar_de_chamas(state: GameState, player_id: int) -> None:
@@ -1444,8 +1491,11 @@ def buy_artifact_with_gold(state, player_id):
         raise ActionError("Ja comprou com Ouro hoje.")
     if not _has_unit_at_center(state, player_id):
         raise ActionError("Precisa unidade no Centro.")
-    cost = 5 if (player.people == peoples.PEOPLE_DRAGOES
-                 and peoples.dragon_has_suit(player, "D")) else ARTIFACT_GOLD_COST
+    dragon_effect = (player.people == peoples.PEOPLE_DRAGOES
+                     or (player.people == peoples.PEOPLE_GNOMOS
+                         and peoples.PEOPLE_DRAGOES in
+                         peoples.sao_tome_effective_peoples(state, player)))
+    cost = 5 if (dragon_effect and peoples.dragon_has_suit(player, "D")) else ARTIFACT_GOLD_COST
     if city.gold < cost:
         raise ActionError(f"Ouro insuficiente ({cost}).")
     if state.shop.is_empty():
@@ -1474,8 +1524,11 @@ def transmute_artifact_with_magic(state, player_id):
         raise ActionError("Cidade destruida.")
     if player.artifacts_bought_magic_today >= ARTIFACT_MAX_BUYS_MAGIC_PER_DAY:
         raise ActionError("Ja transmutou hoje.")
-    cost = 5 if (player.people == peoples.PEOPLE_DRAGOES
-                 and peoples.dragon_has_suit(player, "D")) else ARTIFACT_MAGIC_COST
+    dragon_effect = (player.people == peoples.PEOPLE_DRAGOES
+                     or (player.people == peoples.PEOPLE_GNOMOS
+                         and peoples.PEOPLE_DRAGOES in
+                         peoples.sao_tome_effective_peoples(state, player)))
+    cost = 5 if (dragon_effect and peoples.dragon_has_suit(player, "D")) else ARTIFACT_MAGIC_COST
     if city.magic < cost:
         raise ActionError(f"Magia insuficiente ({cost}).")
     if state.shop.is_empty():

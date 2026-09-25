@@ -89,6 +89,10 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
     if player.people == "mortos_vivos":
         from .heroes import heroes_for_people
         hero_choices = [h.hero_id for h in heroes_for_people("mortos_vivos")]
+    elif (player.people == peoples.PEOPLE_GNOMOS
+          and peoples.PEOPLE_MORTOS_VIVOS in
+          peoples.sao_tome_effective_peoples(state, player)):
+        hero_choices = ["bimbo_do_mal", "sao_tome", "zebum"]
     for hero_id in hero_choices:
         params = {} if hero_id is None else {"hero_id": hero_id}
         candidate = _action("summon_hero", player_id, **params)

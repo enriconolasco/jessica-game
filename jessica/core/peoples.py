@@ -31,6 +31,7 @@ DEMON_PACTS = {
     "vida_lider": "Ofereca a vida de um lider",
 }
 DEMON_SACRIFICE_PACTS = {"sacrifique_futuro", "sacrifique_militar", "sacrifique_mente"}
+ROGUE_ITEMS = ("capa", "adaga", "relogio", "bracelete")
 
 
 ACTION_TO_BET = {
@@ -93,10 +94,12 @@ def dragon_has_suit(player: Player, suit: str) -> bool:
     return any(card_id.endswith(f"_{suit}") for card_id in player.canastra)
 
 
-def dragon_heroes(player: Player) -> list[Hero]:
+def dragon_heroes(player: Player, state: GameState | None = None) -> list[Hero]:
     return [u for u in player.units
             if isinstance(u, Hero) and u.is_alive()
-            and heroes.get_hero(u.hero_id).people == PEOPLE_DRAGOES]
+            and (heroes.get_hero(u.hero_id).people == PEOPLE_DRAGOES
+                 or (state is not None and player.people == PEOPLE_GNOMOS
+                     and PEOPLE_DRAGOES in sao_tome_effective_peoples(state, player)))]
 
 
 def dragon_base(player: Player) -> Hero | None:
@@ -115,9 +118,11 @@ def sync_dragon_base_city(player: Player) -> None:
     player.city.life_max = base.life_max
 
 
-def apply_dragon_canastra_to_hero(player: Player, unit: Hero) -> None:
+def apply_dragon_canastra_to_hero(state: GameState, player: Player, unit: Hero) -> None:
     """Aplica os efeitos persistentes da Canastra a um Dragao recem-invocado."""
-    if player.people != PEOPLE_DRAGOES:
+    inherits = (player.people == PEOPLE_GNOMOS
+                and PEOPLE_DRAGOES in sao_tome_effective_peoples(state, player))
+    if player.people != PEOPLE_DRAGOES and not inherits:
         return
     if dragon_has_suit(player, "H") and not unit.statuses.get("dragon_heart_resistance"):
         unit.resistance_stacks += 1
@@ -156,7 +161,10 @@ def clear_dwarf_impales_for_curuna(state: GameState) -> None:
 
 def apply_dragon_turn_start(state: GameState) -> None:
     for player in state.players:
-        if player.people != PEOPLE_DRAGOES or not player.city.is_alive():
+        inherits = (player.people == PEOPLE_GNOMOS
+                    and PEOPLE_DRAGOES in sao_tome_effective_peoples(state, player))
+        if ((player.people != PEOPLE_DRAGOES and not inherits)
+                or not player.city.is_alive()):
             continue
         kings = dragon_rank_count(player, "K")
         if kings:
@@ -165,7 +173,7 @@ def apply_dragon_turn_start(state: GameState) -> None:
                 {"pid": player.id, "kind": "Sangue Encantado", "magic": kings}
             )
             log(state, f"{player.name} (Dragoes): +{kings} Magia pela Canastra.")
-        for unit in dragon_heroes(player):
+        for unit in dragon_heroes(player, state):
             unit.max_moves_this_turn = 2 if dragon_has_suit(player, "C") else 1
             unit.has_moved_this_turn = unit.moves_this_turn >= unit.max_moves_this_turn
             if state.turn == 1 and unit.statuses.get("summoned_turn") == 1:
@@ -192,8 +200,11 @@ def on_action_performed(state: GameState, actor_id: int, action: str) -> None:
             continue
         if target != actor_id:
             continue
+        previous = sao_tome_effective_peoples(state, gnomo)
         gnomo.correct_bets += 1
         setattr(gnomo, f"bet_{suit}_target", None)
+        _sao_tome_passives_lost(state, gnomo,
+                                previous - sao_tome_effective_peoples(state, gnomo))
         actor = get_player(state, actor_id)
         log(state, f"{gnomo.name}: Aposta {suit} cumprida por {actor.name}. "
                    f"(Total: {gnomo.correct_bets} corretas)")
@@ -268,13 +279,33 @@ def _demon_pact_reward(state: GameState, pact: dict) -> None:
     pact["reward_pending"] = False
     on_artifact_obtained(state, owner.id)
     log(state, f"{owner.name}: pacto {DEMON_PACTS[pact['pact_id']]} concedeu {card}.")
+    item = pact.get("rogue_item")
+    if item:
+        rogue = next((u for u in owner.units if isinstance(u, Hero)
+                      and u.hero_id == "rogue_devil"), None)
+        if rogue is not None:
+            items = list(rogue.statuses.get("rogue_items", []))
+            if item not in items:
+                items.append(item)
+                rogue.statuses["rogue_items"] = items
+                rogue.life_max += 1
+                rogue.life += 1
+                if item == "adaga":
+                    rogue.statuses["demon_execute_weaker"] = True
+                elif item == "bracelete":
+                    rogue.life_max += 1
+                    rogue.life += 1
+                    rogue.statuses["rogue_resist_heroes"] = True
+                log(state, f"{owner.name}: Rogue Devil recebeu {item} e +1 Vida Maxima.")
 
 
 def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
                      pact_id: str, rogue_buff: str | None = None) -> dict:
     demon = get_player(state, demon_player_id)
     owner = get_player(state, owner_id)
-    if demon.people != PEOPLE_DEMONIOS or not demon.city.is_alive():
+    inherits = (demon.people == PEOPLE_GNOMOS
+                and PEOPLE_DEMONIOS in sao_tome_effective_peoples(state, demon))
+    if (demon.people != PEOPLE_DEMONIOS and not inherits) or not demon.city.is_alive():
         raise ValueError("Jogador de Demonios indisponivel.")
     if pact_id not in available_demon_pacts(state):
         raise ValueError("Pacto indisponivel.")
@@ -293,23 +324,23 @@ def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
             owner.city.life = min(owner.city.life, 4)
     elif pact_id == "cabecas_herois":
         pact["required_peoples"] = sorted({p.people for p in state.players
-                                            if p.people != PEOPLE_DEMONIOS})
+                                            if p.id != owner_id and p.city.is_alive()})
         pact["killed_peoples"] = []
     elif pact_id == "banho_sangue":
         pact["blood_turn"] = -1
         pact["blood_count"] = 0
     if rogue_buff is not None:
-        if owner_id != demon_player_id or rogue_buff not in ("invisibilidade", "execucao"):
-            raise ValueError("Buff de Rogue Devil invalido.")
-        rogue = next((u for u in owner.units if isinstance(u, Hero) and u.is_alive()
+        aliases = {"invisibilidade": "capa", "execucao": "adaga"}
+        rogue_item = aliases.get(rogue_buff, rogue_buff)
+        if owner_id != demon_player_id or rogue_item not in ROGUE_ITEMS:
+            raise ValueError("Item de Rogue Devil invalido.")
+        rogue = next((u for u in owner.units if isinstance(u, Hero)
                       and u.hero_id == "rogue_devil"), None)
         if rogue is None:
-            raise ValueError("Rogue Devil nao esta vivo.")
-        if rogue_buff == "invisibilidade":
-            rogue.statuses["invisivel_until_turn"] = state.turn
-        else:
-            rogue.statuses["demon_execute_weaker"] = True
-        pact["rogue_buff"] = rogue_buff
+            raise ValueError("Rogue Devil nao esta em campo.")
+        if rogue_item in rogue.statuses.get("rogue_items", []):
+            raise ValueError("Rogue Devil ja possui este item.")
+        pact["rogue_item"] = rogue_item
     state.demon_pacts.append(pact)
     if pact_id in DEMON_SACRIFICE_PACTS:
         pact["completed"] = True
@@ -339,7 +370,9 @@ def can_take_tuza_pact(state: GameState, player_id: int) -> int | None:
     if player_id == state.curuna_id:
         return None
     demon = get_player(state, state.curuna_id)
-    if demon.people != PEOPLE_DEMONIOS or not demon.city.is_alive():
+    inherits = (demon.people == PEOPLE_GNOMOS
+                and PEOPLE_DEMONIOS in sao_tome_effective_peoples(state, demon))
+    if (demon.people != PEOPLE_DEMONIOS and not inherits) or not demon.city.is_alive():
         return None
     if not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "tuza"
                for u in demon.units):
@@ -354,8 +387,17 @@ def resolve_pending_demon_rewards(state: GameState) -> None:
 
 
 def on_any_unit_death(state: GameState, dead_unit: Unit) -> None:
+    if isinstance(dead_unit, Hero) and dead_unit.hero_id == "sao_tome":
+        owner = get_player(state, dead_unit.owner_id)
+        inherited = {
+            other.people for other in state.players
+            if other.id != owner.id and sao_tome_has_aposta_em(owner, other.id)
+        }
+        _sao_tome_passives_lost(state, owner, inherited)
     for demon in state.players:
-        if demon.people == PEOPLE_DEMONIOS and demon.city.is_alive():
+        inherits = (demon.people == PEOPLE_GNOMOS
+                    and PEOPLE_DEMONIOS in sao_tome_effective_peoples(state, demon))
+        if (demon.people == PEOPLE_DEMONIOS or inherits) and demon.city.is_alive():
             demon.city.magic += 1
             log(state, f"{demon.name} (Banco de Almas): +1 Magia.")
     killer_id = dead_unit.killed_by_player_id
@@ -373,7 +415,7 @@ def on_any_unit_death(state: GameState, dead_unit: Unit) -> None:
                 if set(pact["required_peoples"]).issubset(killed):
                     pact["completed"] = True
                     _demon_pact_reward(state, pact)
-    if isinstance(dead_unit, Troop) and state.phase.value == "night":
+    if isinstance(dead_unit, (Troop, Hero)) and state.phase.value == "night":
         for pact in state.demon_pacts:
             if (pact["owner_id"] == killer_id and pact["pact_id"] == "banho_sangue"
                     and not pact.get("completed")):
@@ -398,7 +440,9 @@ def apply_belial_night_start(state: GameState) -> None:
     for demon in state.players:
         belial = next((u for u in demon.units if isinstance(u, Hero) and u.is_alive()
                        and u.hero_id == "belial"), None)
-        if demon.people != PEOPLE_DEMONIOS or belial is None:
+        inherits = (demon.people == PEOPLE_GNOMOS
+                    and PEOPLE_DEMONIOS in sao_tome_effective_peoples(state, demon))
+        if (demon.people != PEOPLE_DEMONIOS and not inherits) or belial is None:
             continue
         for player in state.players:
             for unit in player.units:
@@ -450,6 +494,40 @@ def sao_tome_effective_peoples(state: GameState, player: Player) -> set[str]:
     return result
 
 
+def _sao_tome_passives_lost(state: GameState, player: Player,
+                            lost: set[str]) -> None:
+    if PEOPLE_DRAGOES in lost and player.canastra:
+        queens = dragon_rank_count(player, "Q")
+        if queens:
+            for unit in [u for u in player.units
+                         if isinstance(u, Hero) and u.is_alive()]:
+                unit.life_max = max(1, unit.life_max - 2 * queens)
+        player.hand.extend(player.canastra)
+        player.canastra.clear()
+        for unit in [u for u in player.units if isinstance(u, Hero) and u.is_alive()]:
+            if unit.statuses.pop("dragon_heart_resistance", False):
+                unit.resistance_stacks = max(0, unit.resistance_stacks - 1)
+            unit.max_moves_this_turn = 1
+            unit.has_moved_this_turn = unit.moves_this_turn >= 1
+        log(state, f"{player.name}: perdeu Envolvimento Cosmologico; Canastra voltou a mao.")
+    if PEOPLE_MORTOS_VIVOS in lost:
+        removed = [u for u in player.units
+                   if isinstance(u, Hero) and u.hero_id != "sao_tome"
+                   and u.statuses.get("sao_tome_undead_summon")]
+        if removed:
+            player.units = [u for u in player.units if u not in removed]
+            log(state, f"{player.name}: perdeu a passiva dos Mortos-Vivos; "
+                       f"{len(removed)} heroi(s) invocado(s) por ela desapareceram.")
+
+
+def sao_tome_target_eliminated(state: GameState, target_id: int) -> None:
+    target_people = get_player(state, target_id).people
+    for player in state.players:
+        if (player.people == PEOPLE_GNOMOS
+                and sao_tome_has_aposta_em(player, target_id)):
+            _sao_tome_passives_lost(state, player, {target_people})
+
+
 def sao_tome_dano_lobisomem(state: GameState, attacker) -> bool:
     if not (isinstance(attacker, Hero) and attacker.hero_id == "sao_tome"):
         return False
@@ -475,7 +553,9 @@ def apply_filhos_bonus(state: GameState) -> None:
     if state.turn != FILHOS_BONUS_TURN:
         return
     for p in state.players:
-        if p.people != PEOPLE_FILHOS:
+        inherits = (p.people == PEOPLE_GNOMOS
+                    and PEOPLE_FILHOS in sao_tome_effective_peoples(state, p))
+        if p.people != PEOPLE_FILHOS and not inherits:
             continue
         if not p.city.is_alive():
             continue
@@ -496,10 +576,13 @@ def reset_gnomos_bets(state: GameState) -> None:
             continue
         if not p.city.is_alive():
             continue
+        previous = sao_tome_effective_peoples(state, p)
         p.bet_H_target = None
         p.bet_C_target = None
         p.bet_D_target = None
         p.bet_S_target = None
+        _sao_tome_passives_lost(state, p,
+                                previous - sao_tome_effective_peoples(state, p))
         p.bets_need_realocacao = True
         log(state, f"{p.name} (Gnomos): apostas serao re-alocadas.")
 
@@ -628,12 +711,11 @@ def on_unit_moved(state: GameState, player_id: int, unit: Unit) -> None:
         record_action(state, player_id, "trigger",
                       source="asas_encantadas", magic=1, unit_id=unit.id)
         return
-    if (player.people == PEOPLE_GNOMOS
-            and isinstance(unit, Hero) and unit.hero_id == "sao_tome"):
+    if player.people == PEOPLE_GNOMOS:
         effective = sao_tome_effective_peoples(state, player)
         if PEOPLE_FAE in effective:
             player.city.magic += 1
-            log(state, f"{player.name} (Sao Tome herda Fadas): +1 Magia ao mover (Asas Encantadas).")
+            log(state, f"{player.name} (Sao Tome herda Fadas): +1 Magia ao mover {unit.id}.")
             record_action(state, player_id, "trigger",
                           source="asas_encantadas_sao_tome", magic=1, unit_id=unit.id)
 
@@ -643,9 +725,16 @@ def on_unit_killed_by(state: GameState, killer_player_id: int,
     killer_player = get_player(state, killer_player_id)
     victim_owner = get_player(state, dead_unit.owner_id)
 
+    if (isinstance(killer_unit, Hero) and killer_unit.hero_id == "rogue_devil"
+            and "capa" in killer_unit.statuses.get("rogue_items", [])):
+        killer_unit.statuses["invisivel_until_turn"] = state.turn
+        log(state, f"  {killer_unit.id} ficou invisivel pela Capa.")
+
     if isinstance(killer_unit, Hero) and isinstance(dead_unit, Hero):
         for demon in state.players:
-            if (demon.people == PEOPLE_DEMONIOS and demon.city.is_alive()
+            inherits = (demon.people == PEOPLE_GNOMOS
+                        and PEOPLE_DEMONIOS in sao_tome_effective_peoples(state, demon))
+            if ((demon.people == PEOPLE_DEMONIOS or inherits) and demon.city.is_alive()
                     and any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "belial"
                             for u in demon.units)):
                 killer_player.demon_pact_offers.append({
@@ -670,7 +759,9 @@ def on_unit_killed_by(state: GameState, killer_player_id: int,
             victim_owner.dwarf_empalados.append(entry)
             log(state, f"  {dead_unit.id} empalado por Soneca ate os Anoes serem Curuna.")
 
-    if (killer_player.people == PEOPLE_FAE
+    inherits_fae = (killer_player.people == PEOPLE_GNOMOS
+                    and PEOPLE_FAE in sao_tome_effective_peoples(state, killer_player))
+    if ((killer_player.people == PEOPLE_FAE or inherits_fae)
             and isinstance(killer_unit, Hero)
             and isinstance(dead_unit, Hero)):
         if not state.shop.is_empty():
@@ -680,7 +771,10 @@ def on_unit_killed_by(state: GameState, killer_player_id: int,
             log(state, f"{killer_player.name} (Fadas): {killer_unit.id} matou "
                        f"Heroi {dead_unit.id} e ganhou {card}.")
 
-    if killer_player.people == PEOPLE_LOBISOMENS:
+    inherits_wolf = (killer_player.people == PEOPLE_GNOMOS
+                     and PEOPLE_LOBISOMENS in sao_tome_effective_peoples(
+                         state, killer_player))
+    if killer_player.people == PEOPLE_LOBISOMENS or inherits_wolf:
         if add_infection(killer_player, dead_unit):
             log(state, f"  {dead_unit.id} infectado pela Maldicao da Lua.")
 
@@ -719,17 +813,13 @@ def on_unit_killed_by(state: GameState, killer_player_id: int,
                     })
                     log(state, f"  Espectro agendado: {dead_unit.hero_id} em {dead_unit.house}.")
 
-    if (isinstance(killer_unit, Hero) and killer_unit.hero_id == "sao_tome"
-            and killer_player.people == PEOPLE_GNOMOS):
+    if killer_player.people == PEOPLE_GNOMOS and killer_unit is not None:
         effective = sao_tome_effective_peoples(state, killer_player)
         if PEOPLE_VAMPIRES in effective:
             before = killer_unit.life
             killer_unit.life = min(killer_unit.life_max, killer_unit.life + 2)
             if killer_unit.life != before:
                 log(state, f"  Sao Tome curou +{killer_unit.life - before} (Sede de Sangue).")
-        if PEOPLE_LOBISOMENS in effective:
-            if add_infection(killer_player, dead_unit):
-                log(state, f"  {dead_unit.id} infectado por Sao Tome (Maldicao da Lua).")
 
     bump_stat(state, killer_player_id, "kills")
     on_action_performed(state, killer_player_id, "kill")
@@ -782,6 +872,9 @@ def is_lobisomem_ativo(state: GameState, unit: Unit) -> bool:
     if unit.statuses.get("lobisomem_until_turn", -1) >= state.turn:
         return True
     owner = get_player(state, unit.owner_id)
+    if (owner.people == PEOPLE_GNOMOS
+            and PEOPLE_LOBISOMENS in sao_tome_effective_peoples(state, owner)):
+        return is_lua_cheia(state, owner.id)
     if owner.people != PEOPLE_LOBISOMENS:
         return False
     return is_lua_cheia(state, owner.id)
@@ -789,7 +882,9 @@ def is_lobisomem_ativo(state: GameState, unit: Unit) -> bool:
 
 def apply_lua_cheia_effects(state: GameState) -> None:
     for p in state.players:
-        if p.people != PEOPLE_LOBISOMENS:
+        inherits = (p.people == PEOPLE_GNOMOS
+                    and PEOPLE_LOBISOMENS in sao_tome_effective_peoples(state, p))
+        if p.people != PEOPLE_LOBISOMENS and not inherits:
             continue
         if not p.city.is_alive():
             continue
@@ -953,6 +1048,12 @@ def hero_summon_cost(player: Player, state: GameState | None = None) -> int:
         return 4
     if player.people == PEOPLE_MORTOS_VIVOS:
         return 2
+    if player.people == PEOPLE_GNOMOS and state is not None:
+        effective = sao_tome_effective_peoples(state, player)
+        if PEOPLE_MORTOS_VIVOS in effective:
+            return 2
+        if PEOPLE_GIGANTES in effective:
+            return 4
     return max(0, 3 - magic_cost_reduction(player, state))
 
 

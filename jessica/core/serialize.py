@@ -215,6 +215,7 @@ def state_to_dict(s: GameState) -> dict:
         "game_over": s.game_over, "winner_id": s.winner_id,
         "pending_effects": [dict(e) for e in s.pending_effects],
         "deaths_this_night": list(s.deaths_this_night),
+        "combats_this_night": list(s.combats_this_night),
         "dain_kills": [dict(e) for e in s.dain_kills],
         "espectros_pendentes": [dict(e) for e in s.espectros_pendentes],
         "lobisomens_transformados": [dict(e) for e in s.lobisomens_transformados],
@@ -244,6 +245,7 @@ def state_from_dict(d: dict) -> GameState:
     state.winner_id = d["winner_id"]
     state.pending_effects = [dict(e) for e in d.get("pending_effects", [])]
     state.deaths_this_night = list(d.get("deaths_this_night", []))
+    state.combats_this_night = list(d.get("combats_this_night", []))
     state.dain_kills = [dict(e) for e in d.get("dain_kills", [])]
     state.espectros_pendentes = [dict(e) for e in d.get("espectros_pendentes", [])]
     state.lobisomens_transformados = [dict(e) for e in d.get("lobisomens_transformados", [])]

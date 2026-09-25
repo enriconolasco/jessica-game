@@ -96,7 +96,7 @@ HERO_CATALOG: dict[str, HeroDefinition] = {
         ("chamas_noturnas", "pacto_por_duelo_de_herois")),
     "tuza": HeroDefinition("tuza", "demonios", "Tuza, o Espectro Imortal", 6,
         ("resistencia_permanente", "pactos_no_turno_curuna")),
-    "rogue_devil": HeroDefinition("rogue_devil", "demonios", "Rogue Devil", 3,
+    "rogue_devil": HeroDefinition("rogue_devil", "demonios", "Rogue Devil do Inferno", 0,
         ("pacto_na_invocacao",)),
 }
 

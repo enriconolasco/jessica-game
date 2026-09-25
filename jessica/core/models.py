@@ -159,6 +159,7 @@ class GameState:
     winner_id: Optional[int] = None
     pending_effects: list[dict] = field(default_factory=list)
     deaths_this_night: list[str] = field(default_factory=list)
+    combats_this_night: list[str] = field(default_factory=list)
     dain_kills: list[dict] = field(default_factory=list)
     espectros_pendentes: list[dict] = field(default_factory=list)
     lobisomens_transformados: list[dict] = field(default_factory=list)

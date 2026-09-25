@@ -19,7 +19,7 @@ from .core.actions import (
     resolve_pending_artifact_choice, use_heal, cast_spell, arken_espolia,
     besouro_mandinga, use_or_give_pena, tintin_ficar_invisivel,
     dandara_invisibilidade, luide_vampa_mover, ActionError,
-    transformar_em_centauro, aiquara_mover, aiquara_atacar,
+    transformar_em_centauro, aiquara_mover, aiquara_atacar, rogue_clock_move,
     baoba_pagar_magia, bimbo_invisibilidade, bimbo_gastar_5,
     zebum_invocar_heroi, zebum_reinvocar, zebum_invocar_proximo_anao,
     gnomo_alocar_aposta, purpura_invisibilidade, barba_mar_de_chamas,
@@ -140,7 +140,7 @@ HERO_ABILITY_DESC = {
     "valtherion": "Base movel que combate como Heroi. Chamado invoca Tropas Dragao.",
     "belial": "Chamas: 1 dano em inimigos e cura 1 em aliados proximos no inicio da Noite.",
     "tuza": "Tem Resistencia. Inimigos podem firmar pactos no turno Curuna dos Demonios.",
-    "rogue_devil": "Ao ser invocado, pode firmar pacto e escolher Invisibilidade ou Execucao.",
+    "rogue_devil": "Vida 0. Ao firmar/completar pactos, conquista Capa, Adaga, Relogio e Bracelete; com os 4 ataca Bases.",
 }
 
 
@@ -1051,6 +1051,10 @@ def _spell_choice_ui(state, player, spell_id):
         cd["archetypes"] = [labels[i1], labels[i2]]
     elif spell_id == "decompor":
         return _escolher_decompor(state, player)
+    elif spell_id == "ressonancia_magica":
+        return _dragon_resonance_ui(player)
+    elif spell_id == "sacrificio_de_demonio":
+        return _sacrificio_demonio_ui(player)
     elif spell_id == "imitacao_gnomerica":
         raise ActionError("Nao pode imitar a si mesmo.")
     return cd
@@ -1093,8 +1097,20 @@ def _demon_pact_ui(state, player, demon_player_id, rogue=False):
         return False
     buff = None
     if rogue:
-        buffs = ["Invisibilidade até o fim do turno", "Executar inimigos com vida menor"]
-        buff = ("invisibilidade", "execucao")[pick_index("Buff de Rogue Devil", buffs)]
+        rogue_unit = next((u for u in player.units if isinstance(u, Hero)
+                           and u.hero_id == "rogue_devil"), None)
+        owned = set(rogue_unit.statuses.get("rogue_items", [])) if rogue_unit else set()
+        available_items = [i for i in peoples.ROGUE_ITEMS if i not in owned]
+        if not available_items:
+            raise ActionError("Rogue Devil ja possui os quatro itens.")
+        labels_items = {
+            "capa": "Capa — fica invisível ao derrotar inimigo",
+            "adaga": "Adaga — executa inimigos menores isolados",
+            "relogio": "Relógio — transporte antes do fim da Noite",
+            "bracelete": "Bracelete — resistência a heróis e +1 Vida",
+        }
+        buff = available_items[pick_index(
+            "Item de Rogue Devil", [labels_items[i] for i in available_items])]
     peoples.make_demon_pact(state, demon_player_id, player.id, pact_ids[idx], buff)
     console.print(f"[green]Pacto firmado: {labels[idx]}.[/green]")
     return True
@@ -1583,7 +1599,7 @@ def _show_people_selection_help(peoples_available) -> None:
     table.add_column("Feitiço")
     for people in peoples_available:
         spell = spells_mod.spell_for_people(people)
-        table.add_row(people, PEOPLE_DESCRIPTIONS.get(people, "—"),
+        table.add_row(people, PASSIVA_DESC.get(people, "—"),
                       f"{spell.name}: {spell.description}" if spell else "—")
     console.print(table)
 
@@ -1665,7 +1681,10 @@ def setup_ui():
             console.print(f"[bold]{names[pid]}[/bold] (Mortos-Vivos): sem escolha de heroi.\n")
             choices[pid]["heroi"] = ""
             continue
-        herois = HEROES_BY_PEOPLE[povo]
+        # Ent permanece fora da selecao enquanto aguarda rework.
+        herois = [name for name in HEROES_BY_PEOPLE[povo]
+                  if name.strip().lower() != "ent"
+                  and heroes.normalize_hero_id(name) != "ent"]
         console.print(f"Vez de [bold]{names[pid]}[/bold] ({povo}).")
         while True:
             options = list(herois) + ["Consultar o que os heróis fazem"]
@@ -2289,6 +2308,17 @@ def _do_action(state, pid: int, choice: str) -> str | None:
     elif choice == "4":
         if player.people == "mortos_vivos":
             hid = _escolher_heroi_mv()
+            params = {"hero_id": hid}
+        elif (player.people == "gnomos_duendes"
+              and peoples.PEOPLE_MORTOS_VIVOS in
+              peoples.sao_tome_effective_peoples(state, player)):
+            ids = ["bimbo_do_mal", "sao_tome", "zebum"]
+            available = [hid for hid in ids if not any(
+                isinstance(u, Hero) and u.is_alive() and u.hero_id == hid
+                for u in player.units)]
+            if not available:
+                raise ActionError("Os 3 herois gnomos ja estao vivos.")
+            hid = available[pick_index("Heroi", [heroes.hero_name(h) for h in available])]
             params = {"hero_id": hid}
         else:
             params = {}
@@ -3030,6 +3060,19 @@ def run_night_phase(state) -> None:
         _ainai_prompt_all(state, all_pids, processed_houses)
 
     _ainai_prompt_all(state, all_pids, processed_houses)
+
+    for pid in all_pids:
+        player = get_player(state, pid)
+        rogue = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                      and u.hero_id == "rogue_devil"
+                      and "relogio" in u.statuses.get("rogue_items", [])), None)
+        if (rogue is not None and state.combats_this_night
+                and Prompt.ask(f"{player.name}: usar Relógio de bolso?",
+                               choices=["s", "n"], default="n") == "s"):
+            houses = list(state.combats_this_night)
+            destination = houses[pick_index(
+                "Destino", [house_short(state, h) for h in houses])]
+            rogue_clock_move(state, pid, destination)
 
 def show_victory(state) -> None:
     if state.winner_id:

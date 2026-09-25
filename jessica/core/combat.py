@@ -141,7 +141,10 @@ def _cleanup_dead(state: GameState) -> None:
         if not player.city.is_alive() and player.units:
             log(state, f"  {player.name} eliminado.")
             player.units = []
-        if player.people == peoples.PEOPLE_DEMONIOS and not player.city.is_alive():
+        if (player.people == peoples.PEOPLE_DEMONIOS
+                or (player.people == peoples.PEOPLE_GNOMOS
+                    and any(p["demon_player_id"] == player.id
+                            for p in state.demon_pacts))) and not player.city.is_alive():
             peoples.release_demon_pacts(state, player.id)
     from .victory import check_victory
     check_victory(state)
@@ -158,8 +161,6 @@ def _attack_multiplier(state: GameState, attacker: Unit, target: Unit | None = N
         if target.life >= attacker.life:
             mult *= 2
     if peoples.is_lobisomem_ativo(state, attacker):
-        mult *= 2
-    if peoples.sao_tome_dano_lobisomem(state, attacker):
         mult *= 2
     return mult
 
@@ -204,6 +205,10 @@ def _apply_defense(state: GameState, defender: Unit, dmg: int,
             and isinstance(attacker, Hero)):
         notes.append("Dengoso invulneravel contra Heroi -> 0")
         return 0, notes
+    if (defender.statuses.get("rogue_resist_heroes")
+            and isinstance(attacker, Hero)):
+        dmg = dmg // 2
+        notes.append("Bracelete: resistencia contra Heroi")
     if _hero_has(defender, "takes_1_damage_when_attacked") and not is_city_retaliation:
         if dmg > 0:
             dmg = min(dmg, 1)
@@ -285,7 +290,10 @@ def _compute_bein_sleep_until(state: GameState, attacker_owner_id: int) -> int:
 def _apply_vampiro_after_round(state: GameState, self_unit: Unit, other: Unit,
                                self_life_before: int, other_life_before: int) -> None:
     sp = get_player(state, self_unit.owner_id)
-    if sp.people != peoples.PEOPLE_VAMPIRES:
+    inherits = (sp.people == peoples.PEOPLE_GNOMOS
+                and peoples.PEOPLE_VAMPIRES in
+                peoples.sao_tome_effective_peoples(state, sp))
+    if sp.people != peoples.PEOPLE_VAMPIRES and not inherits:
         return
     empatou = (self_life_before == other_life_before and self_life_before > 0)
     matou = not other.is_alive()
@@ -464,6 +472,8 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
     attacker = _find_unit(state, attack.attacker_unit_id)
     if attacker is None:
         raise CombatError(f"Atacante {attack.attacker_unit_id} nao encontrado.")
+    if attacker.house not in state.combats_this_night:
+        state.combats_this_night.append(attacker.house)
     # A alianca efetiva e o owner_id atual. Controles temporarios mudam esse
     # valor, portanto podem atacar o time original, mas nunca a si/aliados.
     if attack.target_type != "city":
@@ -486,11 +496,18 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
                 state, attacker.owner_id):
             raise CombatError("Tropa sob pacto militar ataca como Heroi e nao ataca Base.")
         can_hero_attack_city = attacker.hero_can_attack_city
+        dragon_effect = (attacker_player.people == peoples.PEOPLE_DRAGOES
+                         or (attacker_player.people == peoples.PEOPLE_GNOMOS
+                             and peoples.PEOPLE_DRAGOES in
+                             peoples.sao_tome_effective_peoples(state, attacker_player)))
         if (isinstance(attacker, Hero) and not can_hero_attack_city
-                and attacker_player.people == peoples.PEOPLE_DRAGOES
-                and peoples.dragon_has_suit(attacker_player, "S")):
+                and dragon_effect and peoples.dragon_has_suit(attacker_player, "S")):
             can_hero_attack_city = True
         if isinstance(attacker, Hero) and not can_hero_attack_city:
+            if (attacker.hero_id == "rogue_devil"
+                    and set(attacker.statuses.get("rogue_items", []))
+                    == set(peoples.ROGUE_ITEMS)):
+                can_hero_attack_city = True
             if _hero_has(attacker, "dwarves_can_attack_cities"):
                 can_hero_attack_city = True
             elif _hero_has(attacker, "veu_da_lua"):
@@ -536,6 +553,7 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
         log(state, f"  {attacker.id} ({attacker_name}) atacou Cidade de "
                    f"{target_player.name}: {life_before} -> {city.life}.")
         if life_before > 0 and city.life == 0:
+            peoples.sao_tome_target_eliminated(state, target_pid)
             if city.has_monument:
                 log(state, f"  A Cidade de {target_player.name} ruiu - Monumento tambem.")
             else:
