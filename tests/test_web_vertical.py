@@ -62,9 +62,19 @@ def test_all_people_icons_and_map_template_exist():
     assert (root / "visual-direction-v0.1" / "map" / "minimap-template-cross-v0.1.svg").is_file()
 
 
+def test_web_ui_expoe_area_privada_e_eventos_legiveis():
+    root = Path(__file__).resolve().parents[1] / "jessica" / "web" / "static"
+    html = (root / "index.html").read_text(encoding="utf-8")
+    js = (root / "app.js").read_text(encoding="utf-8")
+    assert 'id="self"' in html
+    assert "function eventText" in js
+    assert 'className = "action-select"' in js
+
+
 def run_all():
     tests = [test_http_vertical_action_view_events_and_autosave,
-             test_all_people_icons_and_map_template_exist]
+             test_all_people_icons_and_map_template_exist,
+             test_web_ui_expoe_area_privada_e_eventos_legiveis]
     passed = failed = 0
     for test in tests:
         try:

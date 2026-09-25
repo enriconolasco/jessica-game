@@ -88,7 +88,22 @@ function renderActions(actions) {
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
-    items.forEach(action => {
+    if (items.length > 1) {
+      const select = document.createElement("select");
+      select.className = "action-select";
+      select.setAttribute("aria-label", items[0].label);
+      items.forEach((action, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = actionDetails(action) || action.label;
+        select.appendChild(option);
+      });
+      const button = document.createElement("button");
+      button.className = "action action-submit";
+      button.textContent = "Executar";
+      button.onclick = () => act(items[Number(select.value)]);
+      group.append(select, button);
+    } else items.forEach(action => {
       const button = document.createElement("button");
       button.className = "action";
       button.textContent = actionDetails(action) || action.label;
@@ -98,8 +113,25 @@ function renderActions(actions) {
     root.appendChild(group);
   });
 }
+function eventText(event) {
+  const d = event.data || {};
+  if (event.type === "resources_collected") return `J${d.player_id} recebeu ${d.gold} Ouro e ${d.magic} Magia.`;
+  if (event.type === "city_life_raised") return `J${d.player_id} aumentou a Cidade de ${d.life_before} para ${d.life_after}.`;
+  if (event.type === "monument_built") return `J${d.player_id} construiu um Monumento.`;
+  if (event.type === "unit_summoned") return `J${d.player_id} invocou ${unitName(d.unit || {})}.`;
+  if (event.type === "unit_moved") return `${d.unit_id} foi para ${HOUSE_NAMES[d.destination] || d.destination}.`;
+  if (event.type === "player_turn_ended") return `J${d.player_id} encerrou sua janela do Dia.`;
+  return event.type;
+}
 function renderEvents(events) {
-  $("events").innerHTML = events.slice(-12).reverse().map(event => `<div class="event"><strong>${event.type}</strong><br><small>Turno ${event.turn} · ${event.phase}</small></div>`).join("") || "<em>Nenhum</em>";
+  const root = $("events"); root.replaceChildren();
+  events.slice(-12).reverse().forEach(event => {
+    const node = document.createElement("div"); node.className = "event";
+    const text = document.createElement("strong"); text.textContent = eventText(event);
+    const meta = document.createElement("small"); meta.textContent = `Turno ${event.turn} · ${event.phase}`;
+    node.append(text, document.createElement("br"), meta); root.appendChild(node);
+  });
+  if (!events.length) root.innerHTML = "<em>Nenhum acontecimento.</em>";
 }
 async function refresh() {
   const view = await api(`/matches/${matchId}/view?player_id=${playerId}`);
@@ -107,6 +139,9 @@ async function refresh() {
   const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events`)]);
   $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
   $("players").innerHTML = view.players.map(p => `<div class="player ${p.id === view.active_player_id ? "active" : ""}">J${p.id} ${p.name} — ${p.people}<br>Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic}</div>`).join("");
+  const hand = view.self.hand.length ? view.self.hand.join(" · ") : "vazia";
+  const bets = Object.entries(view.self.bets).filter(([, target]) => target).map(([suit,target]) => `${suit}→J${target}`).join(" · ") || "nenhuma";
+  $("self").textContent = `Mão: ${hand} | Apostas: ${bets} | Corretas: ${view.self.correct_bets}`;
   renderMap(view); renderActions(actions); renderEvents(events);
 }
 async function act(action) {

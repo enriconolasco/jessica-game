@@ -22,6 +22,8 @@ Abra `http://127.0.0.1:8765`. Não há dependências web externas.
 - rejeita versões incompatíveis de save.
 - renderiza as unidades num minimapa acessível de cinco casas com os ícones SVG v0.2;
 - agrupa ações por tipo e confirma o encerramento da janela do jogador.
+- compacta variantes de uma mesma ação em seletores adequados para celular;
+- mostra a área privada do jogador ativo e descreve eventos estruturados em PT-BR.
 
 Ao terminar as quatro janelas do Dia, a partida entra na Noite. Combate, feitiços e
 artefatos ainda permanecem no terminal nesta prova vertical.
