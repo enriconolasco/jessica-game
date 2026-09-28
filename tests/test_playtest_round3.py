@@ -48,6 +48,24 @@ def test_valtherion_imune_a_infeccao():
     assert not state.players[1].infectados
 
 
+def test_valtherion_rejeita_controle_mas_aceita_rei_de_paus():
+    from jessica.core.actions import play_artifact
+    state = make_state(hero="valtherion")
+    owner, enemy = state.players[:2]
+    valtherion = peoples.dragon_base(owner)
+    owner.hand = ["K_C"]
+    play_artifact(state, owner.id, "K_C", choice={"unit_id": valtherion.id})
+    assert valtherion.double_damage and valtherion.resistance_stacks == 1
+    enemy.hand = ["Q_C"]
+    try:
+        play_artifact(state, enemy.id, "Q_C", choice={"unit_id": valtherion.id})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Valtherion foi controlado")
+    assert valtherion.owner_id == owner.id and "Q_C" in enemy.hand
+
+
 def test_belial_cresce_sozinho():
     state = make_state("demonios", "belial")
     demon = state.players[0]
@@ -77,17 +95,21 @@ def test_rogue_pacto_e_bonus_persistem():
     assert revived.statuses["rogue_items"] == ["capa"]
 
 
-def test_rogue_quest_da_vida_ao_firmar_e_ao_cumprir():
+def test_rogue_quest_recompensa_apenas_ao_firmar():
     state = make_state("demonios", "rogue_devil")
     demon = state.players[0]
     demon.city.magic = 10
     rogue = summon_hero(state, 1)
+    hand_before = len(demon.hand)
     pact = peoples.make_demon_pact(state, 1, 1, "banho_sangue", "adaga")
     assert rogue.life == rogue.life_max == 1
     assert not pact["completed"]
+    assert len(demon.hand) == hand_before + 1
+    assert "adaga" in rogue.statuses["rogue_items"]
     pact["completed"] = True
     peoples._demon_pact_reward(state, pact)
-    assert rogue.life == rogue.life_max == 2
+    assert rogue.life == rogue.life_max == 1
+    assert len(demon.hand) == hand_before + 1
 
 
 def test_luarado_custa_dois_e_anda_na_lua_ao_invocar():

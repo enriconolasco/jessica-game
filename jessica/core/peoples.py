@@ -281,25 +281,13 @@ def _demon_pact_reward(state: GameState, pact: dict) -> None:
         return
     owner = get_player(state, pact["owner_id"])
     if pact.get("rogue_pact") and not pact.get("rogue_life_awarded"):
-        if owner.rogue_life_bonus == 0:
-            owner.rogue_life_bonus = 1
-        else:
-            owner.rogue_life_bonus += 1
-            rogue = next((u for u in owner.units if isinstance(u, Hero)
-                          and u.hero_id == "rogue_devil"), None)
-            if rogue is not None:
-                rogue.life_max += 1
-                rogue.life += 1
+        owner.rogue_life_bonus += 1
+        rogue = next((u for u in owner.units if isinstance(u, Hero)
+                      and u.hero_id == "rogue_devil"), None)
+        if rogue is not None:
+            rogue.life_max += 1
+            rogue.life += 1
         pact["rogue_life_awarded"] = True
-    if state.shop.is_empty():
-        pact["reward_pending"] = True
-        return
-    card = state.shop.draw_random(state.rng)
-    owner.hand.append(card)
-    pact["rewarded"] = True
-    pact["reward_pending"] = False
-    on_artifact_obtained(state, owner.id)
-    log(state, f"{owner.name}: pacto {DEMON_PACTS[pact['pact_id']]} concedeu {card}.")
     item = pact.get("rogue_item")
     if item:
         if item not in owner.rogue_items:
@@ -318,6 +306,15 @@ def _demon_pact_reward(state: GameState, pact: dict) -> None:
                     rogue.life += 1
                     rogue.statuses["rogue_resist_heroes"] = True
                 log(state, f"{owner.name}: Rogue Devil recebeu {item}.")
+    if state.shop.is_empty():
+        pact["reward_pending"] = True
+        return
+    card = state.shop.draw_random(state.rng)
+    owner.hand.append(card)
+    pact["rewarded"] = True
+    pact["reward_pending"] = False
+    on_artifact_obtained(state, owner.id)
+    log(state, f"{owner.name}: pacto {DEMON_PACTS[pact['pact_id']]} concedeu {card}.")
 
 
 def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
@@ -372,15 +369,10 @@ def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
         if rogue is None:
             raise ValueError("Rogue Devil nao esta em campo.")
         pact["rogue_pact"] = True
-        if owner.rogue_life_bonus == 0:
-            owner.rogue_life_bonus = 1
-            rogue.life_max += 1
-            rogue.life += 1
-            if pact_id in DEMON_SACRIFICE_PACTS:
-                pact["rogue_life_awarded"] = True
     state.demon_pacts.append(pact)
     if pact_id in DEMON_SACRIFICE_PACTS:
         pact["completed"] = True
+    if pact["completed"] or rogue_pact:
         _demon_pact_reward(state, pact)
     log(state, f"{owner.name} firmou {DEMON_PACTS[pact_id]} com {demon.name}.")
     return pact
