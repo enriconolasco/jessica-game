@@ -181,6 +181,20 @@ function renderActions(actions) {
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
+    if (type === "collect_resources") {
+      const hint = document.createElement("p");
+      hint.textContent = "Escolha uma distribuição. A coleta só pode ser feita uma vez neste turno.";
+      group.appendChild(hint);
+      items.forEach(action => {
+        const button = document.createElement("button");
+        button.className = "action";
+        button.textContent = actionDetails(action);
+        button.onclick = () => act(action);
+        group.appendChild(button);
+      });
+      root.appendChild(group);
+      return;
+    }
     if (items.every(action => action.selection?.kind === "artifacts")) {
       items.forEach(action => {
         const fieldset = document.createElement("fieldset");

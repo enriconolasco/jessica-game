@@ -1,5 +1,10 @@
 # Cliente web vertical
 
+Coleta: as três distribuições de recursos são apresentadas como botões separados,
+sem pré-seleção automática. O motor continua limitando a coleta a uma por turno.
+Teste de apresentação e envio: `node tests/web_actions_ui.cjs` (DOM simulado;
+não substitui teste manual em navegador).
+
 Prova local da comunicação navegador → porta headless → motor → eventos → tela.
 
 ## Executar

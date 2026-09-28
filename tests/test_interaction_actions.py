@@ -255,6 +255,24 @@ def test_sonho_lucido_web_copia_alvo_paridade_e_rejeicao():
         assert state_to_dict(rejected) == before
 
 
+def test_coleta_tres_distribuicoes_uma_vez_por_turno():
+    for gold in (0, 1, 2):
+        state = ready()
+        p = state.players[0]
+        before_gold, before_magic = p.city.gold, p.city.magic
+        choices = [a for a in legal_actions(state, 1) if a["type"] == "collect_resources"]
+        assert len(choices) == 3
+        action = next(a for a in choices if a["params"]["gold"] == gold)
+        result = apply_action(state, action)
+        assert result["success"]
+        p = state.players[0]
+        assert (p.city.gold, p.city.magic) == (before_gold + gold, before_magic + 2 - gold)
+        before = state_to_dict(state)
+        assert not apply_action(state, action)["success"]
+        assert state_to_dict(state) == before
+        assert not any(a["type"] == "collect_resources" for a in legal_actions(state, 1))
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):
