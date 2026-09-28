@@ -598,38 +598,7 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     elif sp.spell_id == "espoliar":
         _spell_espoliar(state, player)
     elif sp.spell_id == "sonho_lucido":
-        if peoples.valendar_is_alive(player):
-            player.devaneio_ativo_turn = state.turn
-            log(state, f"{player.name}: Devaneio Onirico ativo (bonus de naipe no proximo artefato).")
-        else:
-            cards = choice.get("flip_cards", [])
-            if not cards:
-                raise ActionError("Sonho Lucido: escolha ao menos 1 artefato.")
-            if not peoples.luna_is_alive(player) and len(cards) > 1:
-                raise ActionError("Sem Luna, so 1 artefato por Sonho Lucido.")
-            for cid in cards:
-                if cid not in player.hand:
-                    raise ActionError(f"Nao tem {cid} na mao.")
-            artifact_choices = choice.get("artifact_choices", [])
-            from . import artifacts_effects as _ae  # v5v10c #15
-            for index, cid in enumerate(list(cards)):
-                new_card = peoples.sonho_lucido_flip(cid)
-                if new_card == cid:
-                    log(state, f"Sonho Lucido: {card_display(cid)} nao mudou de naipe.")
-                    continue
-                player.hand.remove(cid)
-                player.hand.append(new_card)
-                log(state, f"Sonho Lucido: {card_display(cid)} -> {card_display(new_card)}.")
-                artifact_choice = artifact_choices[index] if index < len(artifact_choices) else {}
-                if _ae.needs_choice(new_card) and not artifact_choice:
-                    raise ActionError(f"{card_display(new_card)} precisa de escolha imediata.")
-                try:
-                    play_artifact(state, player.id, new_card, choice=artifact_choice)
-                    log(state, f"  jogado: {card_display(new_card)}.")
-                except ActionError as e:
-                    player.hand.remove(new_card)
-                    player.hand.append(cid)
-                    log(state, f"  {card_display(new_card)} nao jogado: {e}")
+        _spell_sonho_lucido(state, player, choice)
     elif sp.spell_id == "transformar_morcego":
         _spell_transformar_morcego(state, player, choice)
     elif sp.spell_id == "licantropo":
@@ -658,6 +627,41 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     bump_stat(state, player_id, "spells_cast")
     record_action(state, player_id, "cast_spell", spell=sp.spell_id)
     peoples.on_action_performed(state, player_id, "play_artifact")
+
+
+def _spell_sonho_lucido(state, player, choice):
+    if peoples.valendar_is_alive(player):
+        player.devaneio_ativo_turn = state.turn
+        log(state, f"{player.name}: Devaneio Onirico ativo (bonus de naipe no proximo artefato).")
+    else:
+        cards = choice.get("flip_cards", [])
+        if not cards:
+            raise ActionError("Sonho Lucido: escolha ao menos 1 artefato.")
+        if not peoples.luna_is_alive(player) and len(cards) > 1:
+            raise ActionError("Sem Luna, so 1 artefato por Sonho Lucido.")
+        for cid in cards:
+            if cid not in player.hand:
+                raise ActionError(f"Nao tem {cid} na mao.")
+        artifact_choices = choice.get("artifact_choices", [])
+        from . import artifacts_effects as _ae  # v5v10c #15
+        for index, cid in enumerate(list(cards)):
+            new_card = peoples.sonho_lucido_flip(cid)
+            if new_card == cid:
+                log(state, f"Sonho Lucido: {card_display(cid)} nao mudou de naipe.")
+                continue
+            player.hand.remove(cid)
+            player.hand.append(new_card)
+            log(state, f"Sonho Lucido: {card_display(cid)} -> {card_display(new_card)}.")
+            artifact_choice = artifact_choices[index] if index < len(artifact_choices) else {}
+            if _ae.needs_choice(new_card) and not artifact_choice:
+                raise ActionError(f"{card_display(new_card)} precisa de escolha imediata.")
+            try:
+                play_artifact(state, player.id, new_card, choice=artifact_choice)
+                log(state, f"  jogado: {card_display(new_card)}.")
+            except ActionError as e:
+                player.hand.remove(new_card)
+                player.hand.append(cid)
+                log(state, f"  {card_display(new_card)} nao jogado: {e}")
 
 
 def _spell_sacrificio_demonio(state: GameState, player, choice: dict) -> None:
@@ -902,8 +906,7 @@ def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> 
     elif sp_id == "espoliar":
         _spell_espoliar(state, player)
     elif sp_id == "sonho_lucido":
-        player.sonho_lucido_pending_turn = state.turn
-        log(state, f"{player.name}: Imitou Sonho Lucido.")
+        _spell_sonho_lucido(state, player, choice)
     elif sp_id == "transformar_morcego":
         _spell_transformar_morcego(state, player, choice)
     elif sp_id == "licantropo":

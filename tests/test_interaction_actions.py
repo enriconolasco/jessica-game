@@ -233,6 +233,28 @@ def test_sacrificio_rejeita_excesso_e_jogador_errado():
     assert state_to_dict(state) == before
 
 
+def test_sonho_lucido_web_copia_alvo_paridade_e_rejeicao():
+    for people in ("fadas", "gnomos_duendes"):
+        state = ready()
+        p = state.players[0]
+        p.people = people
+        p.spell_copia_id = "sonho_lucido"
+        p.hand = ["K_S"]
+        before = state_to_dict(state)
+        offer = next(a for a in legal_actions(state, 1) if a["type"] == "cast_spell")
+        assert state_to_dict(state) == before
+        assert offer["params"]["choice"]["artifact_choices"][0]["unit_id"]
+        direct = state_from_dict(before)
+        actions.cast_spell(direct, 1, offer["params"]["choice"])
+        assert apply_action(state, offer)["success"]
+        assert state_to_dict(state) == state_to_dict(direct)
+        assert "K_C" not in state.players[0].hand
+        rejected = state_from_dict(before)
+        offer["params"]["choice"]["artifact_choices"] = [{"unit_id": "unknown"}]
+        assert not apply_action(rejected, offer)["success"]
+        assert state_to_dict(rejected) == before
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

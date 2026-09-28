@@ -19,7 +19,20 @@ def choices(state, player):
         return
     sid = spell.spell_id
     living = [u for u in player.units if u.is_alive()]
-    if sid in ("resistencia", "transformar_morcego", "licantropo"):
+    if sid == "sonho_lucido":
+        from .interaction_actions import artifact_choices
+        if peoples.valendar_is_alive(player):
+            yield {}, "Devaneio Onírico"
+        else:
+            for card in dict.fromkeys(player.hand):
+                transformed = peoples.sonho_lucido_flip(card)
+                if transformed == card:
+                    continue
+                for choice, label in artifact_choices(state, player, transformed):
+                    yield {"flip_cards": [card], "artifact_choices": [choice]}, (
+                        f"{card_display(card)} → {card_display(transformed)}"
+                        + (f" · {label}" if label else ""))
+    elif sid in ("resistencia", "transformar_morcego", "licantropo"):
         for unit in living:
             name = heroes.hero_name(unit.hero_id) if isinstance(unit, Hero) else unit.id
             yield {"unit_id": unit.id}, name

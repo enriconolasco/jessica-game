@@ -30,15 +30,16 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
 Sacrifício de Demônio agora disponível: seleção de herói e múltiplas cartas da mão
 ou campo, inclusive cópia pelos Gnomos. Validação e execução pelo core, sem enumerar
 todas as combinações. Testes cobrem paridade, duplicatas, rejeição e save/load.
-Sonho Lúcido continua pendente: a cópia gnômica no core apenas marca
-`sonho_lucido_pending_turn`, diferente da transformação/ativação imediata das Fadas.
-Essa divergência deve ser corrigida e testada no motor antes de anunciar paridade web.
+Sonho Lúcido disponível para uma carta, incluindo escolha do artefato transformado.
+Cópia gnômica corrigida no motor e terminal: usa a mesma transformação/ativação
+imediata das Fadas. Seleção de várias cartas com Luna ainda pendente na web;
+não considerar esse fluxo completo. Devaneio usa o caminho existente do core.
 
 1. **Sincronizar o motor atual:** concluído para o lote acima; sincronizar novos
    patches do terminal a cada marco.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
-3. **Completar o Dia:** Sonho Lúcido (seleções compostas),
-   sua cópia pelos Gnomos, apostas antes do Dia do Curruna,
+3. **Completar o Dia:** Sonho Lúcido com Luna (seleções compostas),
+   apostas antes do Dia do Curruna,
    Aiquara, Zebum, Miyamoto diurno e demais janelas especiais.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,

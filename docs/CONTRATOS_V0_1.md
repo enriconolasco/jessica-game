@@ -159,7 +159,9 @@ concretas de alvo/arquetipos/canastra enumeradas em `spell_choices.py`; `reroll_
 usa parâmetros vazios e seu resultado é privado. Ambos passam pela transação existente.
 `self` inclui `spell_copia_id`, `spell_cooldown_until_turn` e `has_cast_spell_this_turn`.
 O evento `interaction_resolved.data.spell_id` identifica o feitiço executado;
-não expõe o resultado aleatório antes da execução. Sonho Lúcido ainda está pendente;
+não expõe o resultado aleatório antes da execução. Sonho Lúcido permite uma carta
+com `choice={"flip_cards":[id],"artifact_choices":[escolha]}`; múltiplas cartas com
+Luna ainda não estão oferecidas pelo adaptador web;
 não há promessa de cobertura total dos feitiços.
 
 `sacrifice_spell` aceita `params={"hero_id": unit_id, "artifacts": [{"zone":
