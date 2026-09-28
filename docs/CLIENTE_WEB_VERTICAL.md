@@ -35,8 +35,13 @@ curas, pactos e habilidades diurnas listadas no roteiro. Uma escolha pendente bl
 outras ações até ser resolvida. Rogue recebe vida, item e artefato ao firmar qualquer
 pacto; concluir uma quest não concede outra recompensa.
 
+Há nove feitiços adaptados (lista no roteiro), incluindo Ressonância Mágica com
+adicionar/remover/trocar, cópias desses feitiços pelos Gnomos e rerrolagem de São Tomé.
+O histórico mostra todos os eventos visíveis, separados por turno. Cabaça Cheia
+rola apenas para Caroços que ainda não rolaram naquele turno.
+
 Ao terminar as quatro janelas do Dia, a partida entra na Noite. A Noite ainda não é
-jogável nesta versão. Feitiços e algumas habilidades ainda aguardam adaptação: o cliente
+jogável nesta versão. Sonho Lúcido, Sacrifício de Demônio e algumas habilidades ainda aguardam adaptação: o cliente
 não é uma partida completa. O histórico de eventos agora acompanha o save.
 
 Próximas etapas: [ROADMAP_WEB_LOCAL.md](ROADMAP_WEB_LOCAL.md).

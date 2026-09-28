@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from jessica.web.server import _new_state
 from jessica.core.headless import legal_actions, apply_action, view_for_player, apply_event_to_view
 from jessica.core import actions, artifacts_effects
-from jessica.core.models import Troop, ArtifactOnField
+from jessica.core.models import Hero, Troop, ArtifactOnField
 from jessica.core.constants import Phase
 from jessica.core.serialize import state_to_dict, state_from_dict
 
@@ -100,6 +100,59 @@ def test_habilidades_deterministicas_e_fase_validada():
     before = state_to_dict(state)
     assert not apply_action(state, action)["success"]
     assert state_to_dict(state) == before
+
+
+def test_nove_feiticos_equivalentes_ao_core():
+    for people, hero in (("humanos", "miyamoto"), ("anoes", "ori"), ("orcs", "arken"),
+                         ("vampiros", "luide_vampa"), ("lobisomens", "cigana"),
+                         ("gigantes", "caroco"), ("mortos_vivos", "zoia"),
+                         ("filhos_floresta", "guarari"), ("dragoes", "purpura")):
+        initial = ready()
+        p = initial.players[0]
+        p.people, p.chosen_hero_id = people, hero
+        p.units.append(Hero(id="spell_hero", owner_id=1, house="center",
+                            life=6, life_max=6, hero_id=hero))
+        before = state_to_dict(initial)
+        choices = [a for a in legal_actions(initial, 1) if a["type"] == "cast_spell"]
+        assert choices, people
+        assert state_to_dict(initial) == before, people
+        direct, web = deepcopy(initial), deepcopy(initial)
+        actions.cast_spell(direct, 1, choices[0]["params"]["choice"])
+        result = apply_action(web, choices[0])
+        assert result["success"], (people, result)
+        assert state_to_dict(web) == state_to_dict(direct), people
+
+
+def test_caroco_web_bloqueia_repeticao_sem_consumir_rng():
+    state = ready()
+    p = state.players[0]
+    p.people = "gigantes"
+    p.units = [Hero(id=f"c{i}", owner_id=1, house="center", life=2, life_max=2,
+                    hero_id="caroco") for i in range(2)]
+    options = [a for a in legal_actions(state, 1) if a["type"] == "cast_spell"]
+    assert len(options) == 1
+    assert apply_action(state, options[0])["success"]
+    assert sum("[ROLL] Cabaca Cheia" in line for line in state.event_log) == 2
+    before = state_to_dict(state)
+    assert not apply_action(state, options[0])["success"]
+    assert state_to_dict(state) == before
+
+
+def test_sao_tome_rerrolagem_deterministica_uma_vez():
+    state = ready()
+    p = state.players[0]
+    p.people = "gnomos_duendes"
+    p.spell_copia_id = "resistencia"
+    p.spell_copia_turn = state.turn
+    p.units.append(Hero(id="tome", owner_id=1, house="center", life=3, life_max=3,
+                        hero_id="sao_tome"))
+    before = state_to_dict(state)
+    choice = next(a for a in legal_actions(state, 1) if a["type"] == "reroll_spell")
+    assert state_to_dict(state) == before
+    twin = state_from_dict(before)
+    assert apply_action(state, choice) == apply_action(twin, choice)
+    assert state_to_dict(state) == state_to_dict(twin)
+    assert not any(a["type"] == "reroll_spell" for a in legal_actions(state, 1))
 
 
 def test_http_artefato_e_historico_sobrevivem_ao_load():

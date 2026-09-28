@@ -797,10 +797,13 @@ def _spell_linhagem_ancestral(state, player, choice):
 
 def _cabaca_cheia(state, player):
     carocos = [u for u in player.units
-               if isinstance(u, Hero) and u.is_alive() and u.hero_id == "caroco"]
-    alvos = carocos if carocos else [None]
+               if isinstance(u, Hero) and u.is_alive() and u.hero_id == "caroco"
+               and u.statuses.get("cabaca_used_turn") != state.turn]
+    if not carocos:
+        raise ActionError("Todos os Carocos vivos ja usaram Cabaca Cheia neste turno.")
     nomes = {1: "Invulneravel (★)", 2: "Pode atacar Base", 3: "+1 Ouro", 4: "+1 Magia"}
-    for c in alvos:
+    for c in carocos:
+        c.statuses["cabaca_used_turn"] = state.turn
         r = state.rng.randint(1, 4)
         rotulo = f" (Caroço {c.id})" if c is not None else ""
         log(state, f"[ROLL] Cabaca Cheia{rotulo}: 1d4 = {r} -> {nomes[r]}")

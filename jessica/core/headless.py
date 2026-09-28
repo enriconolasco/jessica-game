@@ -44,6 +44,7 @@ PUBLIC_STATUS_KEYS = {
     "summoned_turn",
     "barba_hero_mode_turn", "mar_chamas_queued_turn", "mar_chamas_cooldown_until_turn",
     "rogue_items", "rogue_resist_heroes", "demon_execute_weaker",
+    "cabaca_used_turn",
 }
 
 
@@ -364,6 +365,9 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         "shop": {"size": state.shop.size()},
         "demon_pacts": deepcopy(state.demon_pacts),
         "self": {
+            "spell_copia_id": viewer.spell_copia_id,
+            "spell_cooldown_until_turn": viewer.spell_cooldown_until_turn,
+            "has_cast_spell_this_turn": viewer.has_cast_spell_this_turn,
             "hand": list(viewer.hand),
             "pending_choice": deepcopy(viewer.pending_artifact_choice),
             "bets": {

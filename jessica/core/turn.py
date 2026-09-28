@@ -15,8 +15,8 @@ class TurnError(Exception):
 def start_turn(state: GameState) -> list[tuple[int, int]]:
     if state.game_over:
         raise TurnError("Partida ja encerrada.")
-    log(state, f"--- Inicio do Turno {state.turn} (Dia) ---")
     state.phase = Phase.DAY
+    log(state, f"--- Inicio do Turno {state.turn} (Dia) ---")
     state.morning_gains = []
     # A fotografia vem antes de invocacoes, transformacoes e movimentos do turno.
     snapshot_turn_start_priority(state)

@@ -495,135 +495,9 @@ def _board_empalados_infectados(state) -> None:
 
 
 def show_turn_log(state) -> None:
-    entries = [e for e in state.action_log if e["turn"] == state.turn]
-    buckets: dict[str, list[str]] = {
-        "MOV": [], "SUM": [], "ART": [], "FEIT": [], "COMB": [], "MORTE": [], "TRG": [],
-    }
-    for e in entries:
-        a = e["action"]
-        params = e.get("params", {})
-        pname = _pname(state, e.get("player_id"))
-        if a == "move_unit":
-            uid = params.get("unit_id", "?")
-            buckets["MOV"].append(
-                f"{pname}: moveu {uid} "
-                f"de {params.get('origin')} para {params.get('destination')}"
-            )
-        elif a == "trigger":
-            src = params.get("source", "?")
-            if src.startswith("asas_encantadas"):
-                pname_of = "Asas Encantadas (Fadas)"
-                if src.endswith("sao_tome"):
-                    pname_of = "Asas Encantadas (Sao Tome herda)"
-                buckets["TRG"].append(
-                    f"{pname}: +{params.get('magic', 1)} Magia ({pname_of})"
-                )
-        elif a == "summon_troop":
-            buckets["SUM"].append(
-                f"{pname}: invocou Tropa {_troop_display(params.get('archetype'))} "
-                f"({params.get('life')} vida)"
-            )
-        elif a == "summon_hero":
-            hid = params.get("hero_id")
-            buckets["SUM"].append(f"{pname}: invocou Heroi {_hero_short(hid)}")
-        elif a == "play_artifact":
-            card = _describe_card(params.get("card"))
-            choice = params.get("choice") or {}
-            extra = ""
-            if choice.get("unit_id"):
-                tuid = choice["unit_id"]
-                for p in state.players:
-                    for u in p.units:
-                        if u.id == tuid:
-                            tipo = (f"Heroi {_hero_short(u.hero_id)}"
-                                    if isinstance(u, Hero)
-                                    else f"Tropa {_troop_display(u.archetype)}")
-                            extra = f" em {tipo} de {_pname(state, p.id)}"
-                            break
-            elif choice.get("target_player_id"):
-                extra = f" em {_pname(state, choice['target_player_id'])}"
-            elif choice.get("hero_id"):
-                extra = f" (invocou {_hero_short(choice['hero_id'])})"
-            buckets["ART"].append(f"{pname}: jogou {card}{extra}")
-        elif a == "buy_artifact_gold":
-            buckets["ART"].append(
-                f"{pname}: comprou {_describe_card(params.get('card'))} (Ouro)"
-            )
-        elif a == "transmute_artifact_magic":
-            buckets["ART"].append(
-                f"{pname}: transmutou {_describe_card(params.get('card'))} (Magia)"
-            )
-        elif a == "sell_artifact":
-            buckets["ART"].append(
-                f"{pname}: vendeu {_describe_card(params.get('card'))}"
-            )
-        elif a == "cast_spell":
-            try:
-                sp_nome = spells_mod.get_spell(params.get("spell")).name
-            except Exception:
-                sp_nome = params.get("spell", "?")
-            buckets["FEIT"].append(f"{pname}: lancou {sp_nome}")
-        elif a == "attack":
-            atk = _describe_unit_kind(params, "attacker")
-            tgt = _describe_unit_kind(params, "target")
-            tgt_dono = _pname(state, params.get("target_owner_id"))
-            buckets["COMB"].append(
-                f"{pname}: {atk} atacou {tgt} de {tgt_dono} "
-                f"(dano {params.get('damage')}, ret {params.get('retaliation')})"
-            )
-        elif a == "attack_city":
-            atk = _describe_unit_kind(params, "attacker")
-            tgt_dono = _pname(state, params.get("target_player_id"))
-            buckets["COMB"].append(
-                f"{pname}: {atk} atacou a Cidade de {tgt_dono} "
-                f"(dano {params.get('damage')})"
-            )
-        elif a == "unit_died":
-            kind = params.get("kind", "?")
-            if kind == "hero":
-                desc = f"Heroi {_hero_short(params.get('hero_id'))}"
-            elif kind == "troop":
-                desc = f"Tropa {_troop_display(params.get('archetype', '?'))}"
-            else:
-                desc = params.get("unit_id", "?")
-            if params.get("killed_by"):
-                killer = _pname(state, params.get("killed_by"))
-                buckets["MORTE"].append(f"{pname}: {desc} morreu (por {killer})")
-            else:
-                buckets["MORTE"].append(f"{pname}: {desc} morreu")
-    # Rolls
-    prefix = f"[T{state.turn} "
-    rolls = []
-    for line in state.event_log:
-        if not line.startswith(prefix):
-            continue
-        idx = line.find("[ROLL]")
-        if idx >= 0:
-            rolls.append(line[idx:])
-    for e in entries:
-        if e["action"] != "roll":
-            continue
-        params = e.get("params", {})
-        pname = _pname(state, e.get("player_id"))
-        src = params.get("source", "?")
-        results = params.get("results", [])
-        desc = _describe_roll(src, results)
-        rolls.append(f"{pname} {src}: {desc}")
-    console.print(f"[bold]TURNO {state.turn} - o que aconteceu ate agora[/bold]")
-    found = False
-    for label, items in buckets.items():
-        if not items:
-            continue
-        found = True
-        for item in items:
-            console.print(f"[dim][{label}][/dim] {item}")
-    if rolls:
-        found = True
-        for r in rolls:
-            console.print(f"[dim][ROLL][/dim] {r}")
-    if not found:
-        console.print("[dim](nada ainda)[/dim]")
-    console.print()
+    historico(state)
+
+
 
 def show_passivas_ativas(state) -> None:
     console.print("[bold]STATUSES / PASSIVAS ATIVAS[/bold]")
@@ -1373,7 +1247,7 @@ def _ajuda_atalhos() -> None:
         "[cyan]E[/cyan]       Analisar campo de batalha (submenu)\n"
         "[cyan]B[/cyan]       Panorama (Board) - tudo de todos\n"
         "[cyan]m[/cyan]       Mapa\n"
-        "[cyan]l[/cyan]       Log do turno\n"
+        "[cyan]l[/cyan]       Histórico da partida\n"
         "[cyan]R[/cyan]       Relatorios (producao, combate, artefatos)\n"
         "[cyan]?[/cyan]       Ajuda (esta tela)\n"
         "[cyan]M[/cyan]       Menu (colher de cha, mola, recomecar)\n"
@@ -1577,7 +1451,7 @@ def _get_actions(state, player) -> list[tuple[str, str, str]]:
     r.append(("Info", "i", "Informacoes"))
     r.append(("Info", "m", "Mapa"))
     r.append(("Info", "p", "Panorama (Board)"))
-    r.append(("Info", "l", "Log do turno"))
+    r.append(("Info", "l", "Histórico da partida"))
     r.append(("Info", "r", "Relatorios"))
     r.append(("Info", "?", "Ajuda"))
     r.append(("Info", "x", "Menu do sistema"))
@@ -2100,25 +1974,18 @@ def estudar_campo(state) -> None:
 
 
 def historico(state) -> None:
-    log_lines = [line for line in state.event_log
-                 if line.startswith(f"[T{state.turn} ")]
+    log_lines = state.event_log
     if not log_lines:
         console.print("[dim]Nenhum evento registrado.[/dim]")
         return
-    N = 20
-    while True:
-        chunk = log_lines[-N:] if len(log_lines) > N else log_lines
-        table = Table(title=f"Historico (ultimas {len(chunk)} de {len(log_lines)})", box=box.SIMPLE)
-        table.add_column("Linha")
-        for line in chunk:
-            table.add_row(line)
-        console.print(table)
-        if len(log_lines) <= N:
-            break
-        ans = Prompt.ask("Mostrar mais 20? (s/n)", choices=["s", "n"], default="n")
-        if ans != "s":
-            break
-        N += 20
+    previous_turn = None
+    for line in log_lines:
+        match = re.match(r"\[T(\d+)\s", line)
+        turn = int(match.group(1)) if match else None
+        if turn is not None and turn != previous_turn:
+            console.rule(f"TURNO {turn}")
+            previous_turn = turn
+        console.print(line, markup=False, highlight=False)
 
 
 def menu_player_actions(state, player) -> str:

@@ -4,6 +4,7 @@ from itertools import combinations
 import json
 
 from . import actions as core, artifacts_effects, heroes, peoples
+from . import spell_choices
 from .artifacts import card_display
 from .constants import CENTER, CITY_HOUSES, Phase, TroopArchetype
 from .models import Hero
@@ -13,6 +14,7 @@ LABELS = {
     "play_artifact": "Jogar artefato", "resolve_artifact_choice": "Resolver escolha pendente",
     "use_pena": "Usar Pena", "use_heal": "Usar cura", "hero_ability": "Habilidade de herói",
     "demon_pact": "Firmar pacto", "decline_pact": "Recusar pacto",
+    "cast_spell": "Usar feitiço", "reroll_spell": "São Tomé: rerrolar feitiço",
 }
 ABILITIES = {
     "arken": (core.arken_espolia, "Arken: Espoliar"),
@@ -99,6 +101,13 @@ def _candidates(state, player):
             yield _offer("decline_pact", pid, {"offer_index": index}, "Recusar oferta de pacto")
     if rogue_pending:
         return
+    spell = spell_choices.effective_spell(player)
+    if spell is not None:
+        for choice, description in spell_choices.choices(state, player):
+            yield _offer("cast_spell", pid, {"choice": choice},
+                         spell.name + (f" → {description}" if description else ""))
+    if player.people == peoples.PEOPLE_GNOMOS:
+        yield _offer("reroll_spell", pid, {}, "São Tomé: sortear outra opção de feitiço")
     tuza = peoples.can_take_tuza_pact(state, pid)
     if tuza is not None:
         for pact in peoples.available_demon_pacts(state):
@@ -140,6 +149,10 @@ def execute(state, action):
     player = get_player(state, pid)
     if kind == "play_artifact":
         core.play_artifact(state, pid, **params)
+    elif kind == "cast_spell":
+        core.cast_spell(state, pid, params["choice"])
+    elif kind == "reroll_spell":
+        peoples.reroll_spell_copia(state, pid)
     elif kind == "resolve_artifact_choice":
         core.resolve_pending_artifact_choice(state, pid, **params)
     elif kind == "use_pena":
@@ -200,7 +213,7 @@ def apply_interaction(state, action):
     except (core.ActionError, ValueError) as exc:
         return _error("domain_error", str(exc))
     pid = action["player_id"]
-    private = action["type"] in ("resolve_artifact_choice", "decline_pact", "use_pena")
+    private = action["type"] in ("resolve_artifact_choice", "decline_pact", "use_pena", "reroll_spell")
     event = {"version": EVENT_VERSION, "type": "interaction_resolved", "turn": trial.turn,
              "phase": trial.phase.value, "participants": [pid],
              "data": {"player_id": pid, "action_type": action["type"]},
@@ -209,6 +222,9 @@ def apply_interaction(state, action):
     for key in ("card_id", "ability", "pact_id"):
         if key in legal["params"]:
             event["data"][key] = legal["params"][key]
+    if action["type"] in ("cast_spell", "reroll_spell"):
+        spell = spell_choices.effective_spell(get_player(trial, pid))
+        event["data"]["spell_id"] = spell.spell_id if spell else None
     projection = {"version": EVENT_VERSION, "type": "player_view_updated", "turn": trial.turn,
                   "phase": trial.phase.value, "participants": [pid],
                   "data": {"view": view_for_player(trial, pid)},

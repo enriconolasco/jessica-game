@@ -19,14 +19,20 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
   Baobá, Guarari e Chamado de Valtherion;
 - histórico de eventos preservado no save/load; novas ações atômicas e testadas
   contra as funções originais do motor.
+- feitiços: Resistência, Armadura de Ouro, Espoliar, Transformar em Morcego,
+  Licantropo, Linhagem Ancestral, Levantar os Mortos, Decompor e Ressonância Mágica;
+  cópias desses feitiços pelos Gnomos e rerrolagem de São Tomé;
+- histórico visível completo em ordem cronológica, com separadores por turno;
+  Cabaça Cheia limita cada Caroço vivo a uma rolagem por turno, persistida no save.
 
 ## Passos restantes
 
 1. **Sincronizar o motor atual:** concluído para o lote acima; sincronizar novos
    patches do terminal a cada marco.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
-3. **Completar o Dia:** feitiços (incluindo seleções compostas), apostas,
-   Aiquara, Zebum, Miyamoto diurno, rerrolagem de São Tomé e demais janelas especiais.
+3. **Completar o Dia:** Sonho Lúcido e Sacrifício de Demônio (seleções compostas),
+   suas cópias pelos Gnomos, apostas antes do Dia do Curruna,
+   Aiquara, Zebum, Miyamoto diurno e demais janelas especiais.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,
    retaliações e janelas especiais/reacionais. Nenhuma regra ficará no frontend.

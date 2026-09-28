@@ -219,7 +219,8 @@ function eventText(event) {
   if (event.type === "interaction_resolved") {
     const labels = {play_artifact: "jogou", resolve_artifact_choice: "resolveu a escolha de artefato",
       use_pena: "usou uma Pena", use_heal: "aplicou uma cura", hero_ability: "usou uma habilidade",
-      demon_pact: "firmou um pacto", decline_pact: "recusou um pacto"};
+      demon_pact: "firmou um pacto", decline_pact: "recusou um pacto",
+      cast_spell: "usou um feitiço", reroll_spell: "rerrolou o feitiço copiado"};
     return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${d.card_id}` : ""}${d.pact_id ? `: ${d.pact_id.replaceAll("_", " ")}` : ""}.`;
   }
   return event.type;
@@ -227,7 +228,14 @@ function eventText(event) {
 function renderEvents(events) {
   const root = $("events"); root.replaceChildren();
   const visible = events.filter(event => event.type !== "player_view_updated");
-  visible.slice(-20).reverse().forEach(event => {
+  let previousTurn = null;
+  visible.forEach(event => {
+    if (event.turn !== previousTurn) {
+      const heading = document.createElement("h3");
+      heading.textContent = `Turno ${event.turn}`;
+      root.appendChild(heading);
+      previousTurn = event.turn;
+    }
     const node = document.createElement("div"); node.className = "event";
     const text = document.createElement("strong"); text.textContent = eventText(event);
     const meta = document.createElement("small"); meta.textContent = `Turno ${event.turn} · ${event.phase}`;
@@ -260,7 +268,8 @@ async function refresh(allowPlayerSwitch = false) {
   const bets = Object.entries(view.self.bets).filter(([, target]) => target).map(([suit,target]) => `${suit}→J${target}`).join(" · ") || "nenhuma";
   const pending = view.self.pending_choice ? " | Resolva a escolha pendente nas ações abaixo." : "";
   const offers = view.self.demon_pact_offers?.length ? " | Há uma oferta de pacto nas ações abaixo." : "";
-  $("self").textContent = `Mão: ${hand} | Apostas: ${bets} | Corretas: ${view.self.correct_bets} | Curas: ${view.self.pending_heals || 0}${pending}${offers}`;
+  const copiedSpell = view.self.spell_copia_id ? ` | Feitiço copiado: ${view.self.spell_copia_id.replaceAll("_", " ")}` : "";
+  $("self").textContent = `Mão: ${hand} | Apostas: ${bets} | Corretas: ${view.self.correct_bets} | Curas: ${view.self.pending_heals || 0}${copiedSpell}${pending}${offers}`;
   renderMap(view); renderActions(actions); renderEvents(events);
 }
 async function act(action) {

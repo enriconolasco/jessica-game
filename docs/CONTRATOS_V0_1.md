@@ -154,6 +154,14 @@ contém a visão posterior exclusivamente do próprio jogador, com visibilidade 
 O projetor aceita ambos. O servidor mantém a filtragem de eventos por destinatário.
 Saves anteriores sem `events` continuam carregáveis; novos saves preservam eventos.
 
+Extensão adicional: `cast_spell` usa `params={"choice": {...}}`, com escolhas
+concretas de alvo/arquetipos/canastra enumeradas em `spell_choices.py`; `reroll_spell`
+usa parâmetros vazios e seu resultado é privado. Ambos passam pela transação existente.
+`self` inclui `spell_copia_id`, `spell_cooldown_until_turn` e `has_cast_spell_this_turn`.
+O evento `interaction_resolved.data.spell_id` identifica o feitiço executado;
+não expõe o resultado aleatório antes da execução. Sonho Lúcido e Sacrifício de
+Demônio ainda não são enumerados; não há promessa de cobertura total dos feitiços.
+
 1. Mesma seed + mesmo save + mesmas ações produz o mesmo estado e eventos.
 2. Uma ação fora de `legal_actions` ainda é rejeitada por `apply_action`.
 3. Falha não produz mutação parcial.
