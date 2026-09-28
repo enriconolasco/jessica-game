@@ -193,6 +193,46 @@ def test_http_artefato_e_historico_sobrevivem_ao_load():
             server.SAVES = old_saves
 
 
+def test_sacrificio_multicartas_paridade_save_e_privacidade():
+    for people in ("demonios", "gnomos_duendes"):
+        state = ready()
+        p = state.players[0]
+        p.people = people
+        p.spell_copia_id = "sacrificio_de_demonio"
+        p.chosen_hero_id = "tuza"
+        p.units.append(Hero(id="sacrifice", owner_id=1, house="center",
+                            life=6, life_max=6, hero_id="tuza"))
+        p.hand = ["K_H", "K_H", "Q_D"]
+        p.field_artifacts.append(ArtifactOnField(card_id="K_D", owner_id=1))
+        before = state_to_dict(state)
+        offer = next(a for a in legal_actions(state, 1) if a["type"] == "sacrifice_spell")
+        assert state_to_dict(state) == before
+        offer["params"]["artifacts"] = offer["selection"]["options"]
+        direct = state_from_dict(before)
+        actions.cast_spell(direct, 1, offer["params"])
+        result = apply_action(state, offer)
+        assert result["success"], result
+        assert state_to_dict(state) == state_to_dict(direct)
+        assert "artifacts" not in result["events"][0]["data"]
+        assert state_to_dict(state_from_dict(state_to_dict(state))) == state_to_dict(state)
+
+
+def test_sacrificio_rejeita_excesso_e_jogador_errado():
+    state = ready()
+    p = state.players[0]
+    p.people = "demonios"
+    p.units.append(Hero(id="sacrifice", owner_id=1, house="center",
+                        life=6, life_max=6, hero_id="tuza"))
+    offer = next(a for a in legal_actions(state, 1) if a["type"] == "sacrifice_spell")
+    before = state_to_dict(state)
+    offer["params"]["artifacts"] *= 100
+    assert not apply_action(state, offer)["success"]
+    assert state_to_dict(state) == before
+    offer["player_id"] = 2
+    assert not apply_action(state, offer)["success"]
+    assert state_to_dict(state) == before
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

@@ -159,8 +159,17 @@ concretas de alvo/arquetipos/canastra enumeradas em `spell_choices.py`; `reroll_
 usa parâmetros vazios e seu resultado é privado. Ambos passam pela transação existente.
 `self` inclui `spell_copia_id`, `spell_cooldown_until_turn` e `has_cast_spell_this_turn`.
 O evento `interaction_resolved.data.spell_id` identifica o feitiço executado;
-não expõe o resultado aleatório antes da execução. Sonho Lúcido e Sacrifício de
-Demônio ainda não são enumerados; não há promessa de cobertura total dos feitiços.
+não expõe o resultado aleatório antes da execução. Sonho Lúcido ainda está pendente;
+não há promessa de cobertura total dos feitiços.
+
+`sacrifice_spell` aceita `params={"hero_id": unit_id, "artifacts": [{"zone":
+"hand" ou "field", "card_id": id}]}`. A oferta inclui `selection={"kind":
+"artifacts", "options": [...]}` somente para o jogador ativo. Ocorrências repetidas
+representam cartas distintas. A lista enviada deve ser não vazia e respeitar as
+quantidades disponíveis; o servidor revalida o herói, as cartas e o feitiço na
+transação. O frontend apresenta checkboxes e confirmação de morte, sem calcular
+efeitos. Essa oferta parametrizada evita crescimento exponencial de combinações.
+Eventos públicos não expõem as cartas privadas selecionadas.
 
 1. Mesma seed + mesmo save + mesmas ações produz o mesmo estado e eventos.
 2. Uma ação fora de `legal_actions` ainda é rejeitada por `apply_action`.

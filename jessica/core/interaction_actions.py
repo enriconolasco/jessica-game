@@ -1,5 +1,6 @@
 """Adaptadores de escolhas do Dia. As regras são executadas pelo core existente."""
 from copy import deepcopy
+from collections import Counter
 from itertools import combinations
 import json
 
@@ -15,6 +16,7 @@ LABELS = {
     "use_pena": "Usar Pena", "use_heal": "Usar cura", "hero_ability": "Habilidade de herói",
     "demon_pact": "Firmar pacto", "decline_pact": "Recusar pacto",
     "cast_spell": "Usar feitiço", "reroll_spell": "São Tomé: rerrolar feitiço",
+    "sacrifice_spell": "Sacrifício de Demônio",
 }
 ABILITIES = {
     "arken": (core.arken_espolia, "Arken: Espoliar"),
@@ -102,6 +104,16 @@ def _candidates(state, player):
     if rogue_pending:
         return
     spell = spell_choices.effective_spell(player)
+    if spell is not None and spell.spell_id == "sacrificio_de_demonio":
+        options = ([{"zone": "hand", "card_id": c} for c in player.hand]
+                   + [{"zone": "field", "card_id": c.card_id} for c in player.field_artifacts])
+        for hero in player.units:
+            if isinstance(hero, Hero) and hero.is_alive() and options:
+                offer = _offer("sacrifice_spell", pid,
+                               {"hero_id": hero.id, "artifacts": options[:1]},
+                               "Sacrificar " + heroes.hero_name(hero.hero_id))
+                offer["selection"] = {"kind": "artifacts", "options": options}
+                yield offer
     if spell is not None:
         for choice, description in spell_choices.choices(state, player):
             yield _offer("cast_spell", pid, {"choice": choice},
@@ -151,6 +163,8 @@ def execute(state, action):
         core.play_artifact(state, pid, **params)
     elif kind == "cast_spell":
         core.cast_spell(state, pid, params["choice"])
+    elif kind == "sacrifice_spell":
+        core.cast_spell(state, pid, params)
     elif kind == "reroll_spell":
         peoples.reroll_spell_copia(state, pid)
     elif kind == "resolve_artifact_choice":
@@ -202,7 +216,25 @@ def apply_interaction(state, action):
         params = json.dumps(action["params"], sort_keys=True, allow_nan=False)
     except (TypeError, ValueError):
         return _error("invalid_action", "Parâmetros inválidos.")
-    legal = next((a for a in legal_interactions(state, action["player_id"])
+    available = legal_interactions(state, action["player_id"])
+    if action["type"] == "sacrifice_spell":
+        submitted = action["params"]
+        selected = submitted.get("artifacts")
+        if (set(submitted) != {"hero_id", "artifacts"} or not isinstance(selected, list)
+                or not selected or any(not isinstance(x, dict) or set(x) != {"zone", "card_id"}
+                                      for x in selected)):
+            return _error("invalid_action", "Selecione os artefatos para o sacrifício.")
+        template = next((a for a in available if a["type"] == "sacrifice_spell"
+                         and a["params"]["hero_id"] == submitted["hero_id"]), None)
+        counts = Counter(json.dumps(x, sort_keys=True) for x in selected)
+        options = Counter(json.dumps(x, sort_keys=True) for x in
+                          template["selection"]["options"]) if template else Counter()
+        if template is None or counts - options:
+            return _error("not_legal", "Artefatos indisponíveis para sacrifício.")
+        legal = deepcopy(template)
+        legal["params"] = deepcopy(submitted)
+    else:
+        legal = next((a for a in available
                   if a["type"] == action["type"]
                   and json.dumps(a["params"], sort_keys=True) == params), None)
     if legal is None:
@@ -222,7 +254,7 @@ def apply_interaction(state, action):
     for key in ("card_id", "ability", "pact_id"):
         if key in legal["params"]:
             event["data"][key] = legal["params"][key]
-    if action["type"] in ("cast_spell", "reroll_spell"):
+    if action["type"] in ("cast_spell", "reroll_spell", "sacrifice_spell"):
         spell = spell_choices.effective_spell(get_player(trial, pid))
         event["data"]["spell_id"] = spell.spell_id if spell else None
     projection = {"version": EVENT_VERSION, "type": "player_view_updated", "turn": trial.turn,

@@ -181,6 +181,34 @@ function renderActions(actions) {
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
+    if (items.every(action => action.selection?.kind === "artifacts")) {
+      items.forEach(action => {
+        const fieldset = document.createElement("fieldset");
+        const legend = document.createElement("legend");
+        legend.textContent = action.description;
+        fieldset.appendChild(legend);
+        const inputs = action.selection.options.map(item => {
+          const label = document.createElement("label");
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          label.append(input, document.createTextNode(` ${item.card_id} · ${item.zone === "hand" ? "mão" : "campo"} `));
+          fieldset.appendChild(label);
+          return input;
+        });
+        const button = document.createElement("button");
+        button.textContent = "Sacrificar herói e trocar cartas selecionadas";
+        button.onclick = () => {
+          const artifacts = action.selection.options.filter((_, i) => inputs[i].checked);
+          if (!artifacts.length) { $("message").textContent = "Selecione ao menos um artefato."; return; }
+          if (confirm(`${action.description}? O herói morrerá e as cartas selecionadas serão trocadas.`))
+            act({...action, params: {...action.params, artifacts}});
+        };
+        fieldset.appendChild(button);
+        group.appendChild(fieldset);
+      });
+      root.appendChild(group);
+      return;
+    }
     if (items.length > 1) {
       const select = document.createElement("select");
       select.className = "action-select";
@@ -220,7 +248,8 @@ function eventText(event) {
     const labels = {play_artifact: "jogou", resolve_artifact_choice: "resolveu a escolha de artefato",
       use_pena: "usou uma Pena", use_heal: "aplicou uma cura", hero_ability: "usou uma habilidade",
       demon_pact: "firmou um pacto", decline_pact: "recusou um pacto",
-      cast_spell: "usou um feitiço", reroll_spell: "rerrolou o feitiço copiado"};
+      cast_spell: "usou um feitiço", sacrifice_spell: "usou Sacrifício de Demônio",
+      reroll_spell: "rerrolou o feitiço copiado"};
     return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${d.card_id}` : ""}${d.pact_id ? `: ${d.pact_id.replaceAll("_", " ")}` : ""}.`;
   }
   return event.type;
