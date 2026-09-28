@@ -124,6 +124,49 @@ def test_luarado_custa_dois_e_anda_na_lua_ao_invocar():
     assert luarado.house == "center"
 
 
+def test_cabaca_rola_cada_caroco_uma_vez_por_turno():
+    from jessica.core.actions import cast_spell, ActionError
+    state = make_state("gigantes", "caroco")
+    player = state.players[0]
+    player.units = [Hero(id=f"caroco_{i}", owner_id=1, house="center",
+                         life=2, life_max=2, hero_id="caroco") for i in range(2)]
+    cast_spell(state, 1, {"hero_id": "caroco"})
+    assert sum("[ROLL] Cabaca Cheia" in line for line in state.event_log) == 2
+    state = state_from_dict(state_to_dict(state))
+    before = state_to_dict(state)
+    try:
+        cast_spell(state, 1, {"hero_id": "caroco"})
+    except ActionError:
+        pass
+    else:
+        raise AssertionError("Carocos repetiram rolagens")
+    assert state_to_dict(state) == before
+    state.players[0].units.append(Hero(id="caroco_novo", owner_id=1, house="center",
+                                      life=2, life_max=2, hero_id="caroco"))
+    cast_spell(state, 1, {"hero_id": "caroco"})
+    assert sum("[ROLL] Cabaca Cheia" in line for line in state.event_log) == 3
+    state.turn += 1
+    cast_spell(state, 1, {"hero_id": "caroco"})
+    assert sum("[ROLL] Cabaca Cheia" in line for line in state.event_log) == 6
+
+
+def test_log_inclui_partida_inteira_com_separacao_de_turnos():
+    from io import StringIO
+    from unittest.mock import patch
+    from rich.console import Console
+    from jessica import main
+    state = make_state()
+    state.turn = 2
+    state.event_log = ["[T1 day] Primeiro jogador coletou 2 Magia.",
+                       "[T2 day] Segundo jogador invocou um heroi."]
+    output = StringIO()
+    with patch.object(main, "console", Console(file=output, width=120, color_system=None)):
+        main.show_turn_log(state)
+    text = output.getvalue()
+    assert "Primeiro jogador coletou" in text and "Segundo jogador invocou" in text
+    assert text.index("TURNO 1") < text.index("Primeiro jogador") < text.index("TURNO 2")
+
+
 def run_all():
     tests = [value for name, value in sorted(globals().items())
              if name.startswith("test_") and callable(value)]
