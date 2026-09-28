@@ -111,6 +111,7 @@ class Player:
     zebum_herois: list[str] = field(default_factory=list)
     spell_copia_id: Optional[str] = None
     spell_copia_turn: int = -1
+    spell_copia_rerolled_turn: int = -1
     bets_need_realocacao: bool = False
     zebum_seven_dwarves: bool = False
 
@@ -137,9 +138,13 @@ class Player:
     canastra: list[str] = field(default_factory=list)
     canastra_moves_turn: int = -1
     canastra_moved_cards: list[str] = field(default_factory=list)
+    canastra_resonance_uses: int = 0
 
     # Demonios
     demon_pact_offers: list[dict] = field(default_factory=list)
+    rogue_life_bonus: int = 0
+    rogue_items: list[str] = field(default_factory=list)
+    summoned_hero_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -159,6 +164,7 @@ class GameState:
     winner_id: Optional[int] = None
     pending_effects: list[dict] = field(default_factory=list)
     deaths_this_night: list[str] = field(default_factory=list)
+    combats_this_night: list[str] = field(default_factory=list)
     dain_kills: list[dict] = field(default_factory=list)
     espectros_pendentes: list[dict] = field(default_factory=list)
     lobisomens_transformados: list[dict] = field(default_factory=list)

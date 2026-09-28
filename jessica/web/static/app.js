@@ -160,6 +160,7 @@ function renderMap(view) {
   if (selected) showUnit(selected, players.get(selected.owner_id), peopleName(players.get(selected.owner_id)?.people || "Povo desconhecido"));
 }
 function actionDetails(action) {
+  if (action.description) return action.description;
   const p = action.params;
   if (action.type === "collect_resources") return `${p.gold} Ouro + ${p.magic} Magia`;
   if (action.type === "raise_city_life") return `${p.times} aumento(s)`;
@@ -176,7 +177,7 @@ function renderActions(actions) {
   grouped.forEach((items, type) => {
     const group = document.createElement("details");
     group.className = "action-group";
-    group.open = ["collect_resources", "end_turn"].includes(type);
+    group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "demon_pact"].includes(type);
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
@@ -215,17 +216,24 @@ function eventText(event) {
   if (event.type === "player_turn_ended") return `J${d.player_id} encerrou sua janela do Dia.`;
   if (event.type === "artifact_obtained") return d.pending_choice ? "Escolha de artefato pendente." : `Artefato obtido: ${d.card_id}.`;
   if (event.type === "artifact_sold") return `J${d.player_id} vendeu ${d.card_id}.`;
+  if (event.type === "interaction_resolved") {
+    const labels = {play_artifact: "jogou", resolve_artifact_choice: "resolveu a escolha de artefato",
+      use_pena: "usou uma Pena", use_heal: "aplicou uma cura", hero_ability: "usou uma habilidade",
+      demon_pact: "firmou um pacto", decline_pact: "recusou um pacto"};
+    return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${d.card_id}` : ""}${d.pact_id ? `: ${d.pact_id.replaceAll("_", " ")}` : ""}.`;
+  }
   return event.type;
 }
 function renderEvents(events) {
   const root = $("events"); root.replaceChildren();
-  events.slice(-12).reverse().forEach(event => {
+  const visible = events.filter(event => event.type !== "player_view_updated");
+  visible.slice(-20).reverse().forEach(event => {
     const node = document.createElement("div"); node.className = "event";
     const text = document.createElement("strong"); text.textContent = eventText(event);
     const meta = document.createElement("small"); meta.textContent = `Turno ${event.turn} · ${event.phase}`;
     node.append(text, document.createElement("br"), meta); root.appendChild(node);
   });
-  if (!events.length) root.innerHTML = "<em>Nenhum acontecimento.</em>";
+  if (!visible.length) root.textContent = "Nenhum acontecimento.";
 }
 async function refresh(allowPlayerSwitch = false) {
   const view = await api(`/matches/${matchId}/view?player_id=${playerId}`);
@@ -241,10 +249,18 @@ async function refresh(allowPlayerSwitch = false) {
   playerId = view.active_player_id || playerId;
   const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
   $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
-  $("players").innerHTML = view.players.map(p => `<div class="player ${p.id === view.active_player_id ? "active" : ""}">J${p.id} ${p.name} — ${p.people}<br>Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic}</div>`).join("");
+  $("players").replaceChildren();
+  view.players.forEach(p => {
+    const node = document.createElement("div");
+    node.className = `player ${p.id === view.active_player_id ? "active" : ""}`;
+    node.textContent = `J${p.id} ${p.name} — ${p.people} · Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic} · Em campo: ${(p.field_artifacts || []).join(", ") || "nenhum"} · Canastra: ${(p.canastra || []).join(", ") || "vazia"}`;
+    $("players").appendChild(node);
+  });
   const hand = view.self.hand.length ? view.self.hand.join(" · ") : "vazia";
   const bets = Object.entries(view.self.bets).filter(([, target]) => target).map(([suit,target]) => `${suit}→J${target}`).join(" · ") || "nenhuma";
-  $("self").textContent = `Mão: ${hand} | Apostas: ${bets} | Corretas: ${view.self.correct_bets}`;
+  const pending = view.self.pending_choice ? " | Resolva a escolha pendente nas ações abaixo." : "";
+  const offers = view.self.demon_pact_offers?.length ? " | Há uma oferta de pacto nas ações abaixo." : "";
+  $("self").textContent = `Mão: ${hand} | Apostas: ${bets} | Corretas: ${view.self.correct_bets} | Curas: ${view.self.pending_heals || 0}${pending}${offers}`;
   renderMap(view); renderActions(actions); renderEvents(events);
 }
 async function act(action) {

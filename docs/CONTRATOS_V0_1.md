@@ -107,9 +107,9 @@ um `state_to_dict`; a visão deve ser construída por lista permitida.
   aumentos de vida da Cidade que podem ser pagos e construção de Monumento
   quando seus requisitos estiverem satisfeitos.
 
-Limitação conhecida: o `GameState` atual não registra qual jogador possui a janela de
-decisão do dia. A prova v0.1 valida fase e estado individual; o laço chamador ainda
-controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do motor.
+`GameState.active_player_id` registra e valida a janela ativa do Dia no cliente web.
+O valor `None` permanece compatível com os chamadores antigos do terminal.
+A ordem e as janelas especiais da Noite ainda precisam de adaptação estruturada.
 
 ### `apply_action(state, action) -> ActionResult`
 
@@ -136,6 +136,23 @@ controla a vez. Antes de IA/online, a janela ativa deverá entrar no estado do m
   `monument_built`, `unit_summoned`, `unit_moved` e `player_turn_ended`.
 
 ## Invariantes da prova
+
+### Extensão de apresentação e interações — 2026-09-28
+
+Sem alterar as versões existentes, ações concretas podem incluir `description`, texto
+de apresentação gerado no servidor. O navegador devolve `type/player_id/params`;
+rótulos não concedem autorização. Novos tipos: `play_artifact`,
+`resolve_artifact_choice`, `use_pena`, `use_heal`, `hero_ability`, `demon_pact`
+e `decline_pact`. `interaction_actions.py` enumera escolhas e reutiliza o core em
+cópias isoladas; só publica o estado depois do sucesso. Pendências obrigatórias
+bloqueiam inclusive `end_turn`. Não há consumo do RNG ao consultar ações.
+
+`PlayerView.players[].field_artifacts` expõe somente cartas ativas públicas;
+`self.pending_heals` pertence à visão do jogador. Novos eventos:
+`interaction_resolved` descreve a ação sem revelar a mão; `player_view_updated`
+contém a visão posterior exclusivamente do próprio jogador, com visibilidade privada.
+O projetor aceita ambos. O servidor mantém a filtragem de eventos por destinatário.
+Saves anteriores sem `events` continuam carregáveis; novos saves preservam eventos.
 
 1. Mesma seed + mesmo save + mesmas ações produz o mesmo estado e eventos.
 2. Uma ação fora de `legal_actions` ainda é rejeitada por `apply_action`.

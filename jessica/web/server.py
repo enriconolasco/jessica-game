@@ -106,7 +106,8 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
 
 def _save(match_id: str) -> str:
     SAVES.mkdir(parents=True, exist_ok=True)
-    payload = {"version": SAVE_VERSION, "state": state_to_dict(MATCHES[match_id]["state"])}
+    payload = {"version": SAVE_VERSION, "state": state_to_dict(MATCHES[match_id]["state"]),
+               "events": MATCHES[match_id]["events"]}
     path = SAVES / f"{match_id}.json"
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return path.name
@@ -190,7 +191,8 @@ class Handler(BaseHTTPRequestHandler):
                 if payload.get("version") != SAVE_VERSION:
                     return self._json(409, {"error": "Versão de save incompatível."})
                 match_id = uuid.uuid4().hex[:12]
-                MATCHES[match_id] = {"state": state_from_dict(payload["state"]), "events": []}
+                MATCHES[match_id] = {"state": state_from_dict(payload["state"]),
+                                     "events": payload.get("events", [])}
                 return self._json(201, {"match_id": match_id})
             if len(parts) == 3 and parts[0] == "matches":
                 match_id, resource = parts[1], parts[2]

@@ -130,17 +130,22 @@ def _process_gigantes_turn(state: GameState) -> None:
     if state.turn % 4 != 0:
         return
     for player in state.players:
-        if player.people != peoples.PEOPLE_GIGANTES:
+        inherits = (player.people == peoples.PEOPLE_GNOMOS
+                    and peoples.PEOPLE_GIGANTES in
+                    peoples.sao_tome_effective_peoples(state, player))
+        if player.people != peoples.PEOPLE_GIGANTES and not inherits:
             continue
         if not player.city.is_alive():
             continue
         for u in player.units:
             if isinstance(u, Hero) and u.is_alive():
-                if u.hero_id in ("joao_grandao", "pe_descalco"):
+                if inherits or u.hero_id in ("joao_grandao", "pe_descalco"):
                     u.life_max *= 2
                     u.life = u.life_max
                     log(state, f"{player.name}: {u.hero_id} vida dobrada ({u.life_max}).")
-        if any(isinstance(u, Hero) and u.hero_id == "caroco" for u in player.units):
+        if (player.people == peoples.PEOPLE_GIGANTES
+                and any(isinstance(u, Hero) and u.hero_id == "caroco"
+                        for u in player.units)):
             player.carocos_gerados += 1
             n = sum(1 for u in player.units if isinstance(u, Hero))
             unit_id = f"p{player.id}_caroco_extra_{n}"
@@ -197,6 +202,7 @@ def end_day(state: GameState) -> None:
     if state.phase != Phase.DAY:
         raise TurnError("Nao esta na fase do Dia.")
     state.deaths_this_night = []
+    state.combats_this_night = []
     artifacts_effects.on_night_start(state)
     pass  # v5v10 #13: Luna agora é perguntada via UI (_try_luna_return em main.py)
     state.phase = Phase.NIGHT

@@ -11,6 +11,7 @@ from .models import GameState, Hero, Troop, Unit
 from .state import get_player
 from .turn import day_order, end_day, start_player_day
 from . import peoples
+from . import interaction_actions
 
 
 ACTION_VERSION = "action-v0.1"
@@ -41,6 +42,8 @@ PUBLIC_STATUS_KEYS = {
     "morcego_until_turn",
     "sono_until_turn",
     "summoned_turn",
+    "barba_hero_mode_turn", "mar_chamas_queued_turn", "mar_chamas_cooldown_until_turn",
+    "rogue_items", "rogue_resist_heroes", "demon_execute_weaker",
 }
 
 
@@ -63,6 +66,8 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
     if (state.game_over or state.phase != Phase.DAY or not player.city.is_alive()
             or state.active_player_id not in (None, player_id)):
         return []
+    if interaction_actions.blocked_by_choice(player):
+        return interaction_actions.legal_interactions(state, player_id)
     actions = []
     if not player.has_collected_this_turn:
         actions.extend(
@@ -105,6 +110,10 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
     if player.people == "mortos_vivos":
         from .heroes import heroes_for_people
         hero_choices = [h.hero_id for h in heroes_for_people("mortos_vivos")]
+    elif (player.people == peoples.PEOPLE_GNOMOS
+          and peoples.PEOPLE_MORTOS_VIVOS in
+          peoples.sao_tome_effective_peoples(state, player)):
+        hero_choices = ["bimbo_do_mal", "sao_tome", "zebum"]
     for hero_id in hero_choices:
         params = {} if hero_id is None else {"hero_id": hero_id}
         candidate = _action("summon_hero", player_id, **params)
@@ -144,6 +153,7 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
             continue
         actions.append(_action("sell_artifact", player_id, card_id=card_id))
     actions.append(_action("end_turn", player_id))
+    actions.extend(interaction_actions.legal_interactions(state, player_id))
     return actions
 
 
@@ -161,6 +171,8 @@ def apply_action(state: GameState, action: dict) -> dict:
     if action.get("version") != ACTION_VERSION:
         return _error("unsupported_action_version", "Versão de ação não suportada.")
     action_type = action.get("type")
+    if isinstance(action_type, str) and action_type in interaction_actions.LABELS:
+        return interaction_actions.apply_interaction(state, action)
     if action_type not in {"collect_resources", "raise_city_life", "build_monument",
                            "summon_troop", "summon_hero", "move_unit", "end_turn",
                            "buy_artifact_gold", "transmute_artifact_magic",
@@ -333,6 +345,7 @@ def view_for_player(state: GameState, player_id: int) -> dict:
             },
             "hand_count": len(player.hand),
             "canastra": list(player.canastra),
+            "field_artifacts": [artifact.card_id for artifact in player.field_artifacts],
         })
         board["units"].extend(_unit_view(unit) for unit in player.units
                               if unit.is_alive())
@@ -361,6 +374,7 @@ def view_for_player(state: GameState, player_id: int) -> dict:
             },
             "correct_bets": viewer.correct_bets,
             "demon_pact_offers": deepcopy(viewer.demon_pact_offers),
+            "pending_heals": viewer.pending_heals,
         },
         # event_log atual mistura texto público e privado; não é exposto.
         "events": [],
@@ -383,6 +397,16 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
         raise ValueError("Evento não é visível para este jogador.")
 
     projected = deepcopy(view)
+    if event.get("type") == "player_view_updated":
+        updated = event.get("data", {}).get("view", {})
+        if updated.get("viewer_id") != viewer_id:
+            raise ValueError("Visão pertence a outro jogador.")
+        projected = deepcopy(updated)
+        projected["events"] = deepcopy(view.get("events", [])) + [deepcopy(event)]
+        return projected
+    if event.get("type") == "interaction_resolved":
+        projected["events"].append(deepcopy(event))
+        return projected
     if event.get("type") in {"resources_collected", "city_life_raised", "monument_built",
                               "unit_summoned", "unit_moved", "player_turn_ended"}:
         data = event["data"]

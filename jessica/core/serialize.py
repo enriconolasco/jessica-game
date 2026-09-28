@@ -113,6 +113,7 @@ def player_to_dict(p: Player) -> dict:
         "zebum_herois": list(p.zebum_herois),
         "spell_copia_id": p.spell_copia_id,
         "spell_copia_turn": p.spell_copia_turn,
+        "spell_copia_rerolled_turn": p.spell_copia_rerolled_turn,
         "bets_need_realocacao": p.bets_need_realocacao,
         "zebum_seven_dwarves": p.zebum_seven_dwarves,
         "garoche_life_max_bonus": p.garoche_life_max_bonus,
@@ -120,7 +121,11 @@ def player_to_dict(p: Player) -> dict:
         "canastra": list(p.canastra),
         "canastra_moves_turn": p.canastra_moves_turn,
         "canastra_moved_cards": list(p.canastra_moved_cards),
+        "canastra_resonance_uses": p.canastra_resonance_uses,
         "demon_pact_offers": [dict(e) for e in p.demon_pact_offers],
+        "rogue_life_bonus": p.rogue_life_bonus,
+        "rogue_items": list(p.rogue_items),
+        "summoned_hero_ids": list(p.summoned_hero_ids),
         "devaneio_ativo_turn": p.devaneio_ativo_turn,
         "stats": dict(p.stats),
         "hand": list(p.hand),
@@ -175,6 +180,7 @@ def player_from_dict(d: dict) -> Player:
         zebum_herois=list(d.get("zebum_herois", [])),
         spell_copia_id=d.get("spell_copia_id", None),
         spell_copia_turn=d.get("spell_copia_turn", -1),
+        spell_copia_rerolled_turn=d.get("spell_copia_rerolled_turn", -1),
         bets_need_realocacao=d.get("bets_need_realocacao", False),
         zebum_seven_dwarves=d.get("zebum_seven_dwarves", False),
         garoche_life_max_bonus=d.get("garoche_life_max_bonus", 0),
@@ -182,7 +188,11 @@ def player_from_dict(d: dict) -> Player:
         canastra=list(d.get("canastra", [])),
         canastra_moves_turn=d.get("canastra_moves_turn", -1),
         canastra_moved_cards=list(d.get("canastra_moved_cards", [])),
+        canastra_resonance_uses=d.get("canastra_resonance_uses", 0),
         demon_pact_offers=[dict(e) for e in d.get("demon_pact_offers", [])],
+        rogue_life_bonus=d.get("rogue_life_bonus", 0),
+        rogue_items=list(d.get("rogue_items", [])),
+        summoned_hero_ids=list(d.get("summoned_hero_ids", [])),
         devaneio_ativo_turn=d.get("devaneio_ativo_turn", -1),
         stats=dict(d.get("stats", {})),
         hand=list(d["hand"]),
@@ -214,6 +224,7 @@ def state_to_dict(s: GameState) -> dict:
         "game_over": s.game_over, "winner_id": s.winner_id,
         "pending_effects": [dict(e) for e in s.pending_effects],
         "deaths_this_night": list(s.deaths_this_night),
+        "combats_this_night": list(s.combats_this_night),
         "dain_kills": [dict(e) for e in s.dain_kills],
         "espectros_pendentes": [dict(e) for e in s.espectros_pendentes],
         "lobisomens_transformados": [dict(e) for e in s.lobisomens_transformados],
@@ -244,6 +255,7 @@ def state_from_dict(d: dict) -> GameState:
     state.winner_id = d["winner_id"]
     state.pending_effects = [dict(e) for e in d.get("pending_effects", [])]
     state.deaths_this_night = list(d.get("deaths_this_night", []))
+    state.combats_this_night = list(d.get("combats_this_night", []))
     state.dain_kills = [dict(e) for e in d.get("dain_kills", [])]
     state.espectros_pendentes = [dict(e) for e in d.get("espectros_pendentes", [])]
     state.lobisomens_transformados = [dict(e) for e in d.get("lobisomens_transformados", [])]

@@ -10,7 +10,7 @@ from rich import box
 
 from .core.setup import run_setup, roll_d20_order, horario_from
 from .core.state import (
-    make_rng, get_player, declaration_order_for_house, sync_house_priority,
+    make_rng, get_player, declaration_order_for_house, sync_house_priority, log,
 )
 from .core.actions import (
     raise_city_life, summon_troop, summon_hero,
@@ -19,10 +19,11 @@ from .core.actions import (
     resolve_pending_artifact_choice, use_heal, cast_spell, arken_espolia,
     besouro_mandinga, use_or_give_pena, tintin_ficar_invisivel,
     dandara_invisibilidade, luide_vampa_mover, ActionError,
-    transformar_em_centauro, aiquara_mover, aiquara_atacar,
+    transformar_em_centauro, aiquara_mover, aiquara_atacar, rogue_clock_move,
     baoba_pagar_magia, bimbo_invisibilidade, bimbo_gastar_5,
     zebum_invocar_heroi, zebum_reinvocar, zebum_invocar_proximo_anao,
     gnomo_alocar_aposta, purpura_invisibilidade, barba_mar_de_chamas,
+    barba_combater_como_heroi, barba_resolver_mar_de_chamas,
     valtherion_chamado,
 )
 from .core.combat import (
@@ -133,14 +134,14 @@ HERO_ABILITY_DESC = {
     "aiquara": "Ninfa: controla inimigo da casa (mover no Dia, atacar na Noite).",
     "baoba_ba": "Anciao: 1 Magia x 3 turnos para invocar. Tropas aliadas na casa dele.",
     "bimbo_do_mal": "Gastar aposta: invisivel (1) ou artefato da Loja (5).",
-    "sao_tome": "Passivas dos alvos das apostas. 2 determinacoes por dia.",
+    "sao_tome": "Herda passivas dos jogadores apostados e pode rerrolar o feitico copiado.",
     "zebum": "Mistico: apostas corretas compram herois estrangeiros.",
     "barba_negra": "Base movel. Mar de Chamas e modo Heroi por uma Noite.",
     "purpura": "Cresce conforme manhas pares passadas. Pode ficar Invisivel.",
     "valtherion": "Base movel que combate como Heroi. Chamado invoca Tropas Dragao.",
     "belial": "Chamas: 1 dano em inimigos e cura 1 em aliados proximos no inicio da Noite.",
     "tuza": "Tem Resistencia. Inimigos podem firmar pactos no turno Curuna dos Demonios.",
-    "rogue_devil": "Ao ser invocado, pode firmar pacto e escolher Invisibilidade ou Execucao.",
+    "rogue_devil": "Vida 0. Ao firmar/completar pactos, conquista Capa, Adaga, Relogio e Bracelete; com os 4 ataca Bases.",
 }
 
 
@@ -367,6 +368,12 @@ def show_hud(state) -> None:
     for _p in state.players:
         if _p.people == "gnomos_duendes" and _p.city.is_alive():
             console.print(f"  [cyan]{_p.name}: apostas corretas = {_p.correct_bets}[/cyan]")
+            bets = (("Copas", _p.bet_H_target), ("Paus", _p.bet_C_target),
+                    ("Ouros", _p.bet_D_target), ("Espadas", _p.bet_S_target))
+            allocation = ", ".join(
+                f"{suit}: {_pname(state, target) if target else 'vazia'}"
+                for suit, target in bets)
+            console.print(f"  [cyan]Apostas — {allocation}[/cyan]")
     # v5v10c #16: aviso de Lua Cheia (só se houver lobisomem no jogo)
     try:
         _tem_lobo = any(p.people == "lobisomens" and p.city.is_alive()
@@ -769,11 +776,9 @@ def _menu_informacoes(state, pid: int) -> None:
         "Inspecionar local",
         "Inspecionar unidade (ficha completa)",
         "Artefatos em campo (todos)",
-        "Passivas ativas",
-        "Unidades empaladas / infectadas",
+        "Unidades com condições",
         "Eventos futuros",
         "Ver povo (todos os 10)",
-        "Habilidades do meu povo",
         "Voltar",
     ]
     idx = pick_index("Informacoes", opts)
@@ -786,17 +791,34 @@ def _menu_informacoes(state, pid: int) -> None:
     elif idx == 3:
         show_active_artifacts(state)
     elif idx == 4:
-        show_passivas_ativas(state)
+        show_unidades_condicionadas(state)
     elif idx == 5:
-        show_empalados_infectados(state)
-    elif idx == 6:
         show_eventos_futuros(state)
-    elif idx == 7:
+    elif idx == 6:
         _menu_povos(state, pid)
-    elif idx == 8:
-        show_habilidades(state, pid)
 
-def show_empalados_infectados(state) -> None:
+def show_unidades_condicionadas(state) -> None:
+    console.print("[bold]Unidades com condições[/bold]")
+    found = False
+    for p in state.players:
+        for u in p.units:
+            conditions = []
+            if u.double_damage: conditions.append("dobro de dano")
+            if u.resistance_stacks: conditions.append(f"resistência x{u.resistance_stacks}")
+            if u.max_moves_this_turn > 1: conditions.append(f"anda {u.max_moves_this_turn}x")
+            attacks = _effective_max_attacks(state, u)
+            if attacks > 1: conditions.append(f"bate {attacks}x")
+            if u.statuses.get("invulneravel_until_turn", -1) >= state.turn: conditions.append("invulnerável")
+            if u.statuses.get("invisivel_until_turn", -1) >= state.turn: conditions.append("invisível")
+            if u.statuses.get("cannot_attack_on_turn") == state.turn: conditions.append("não pode atacar")
+            if peoples.is_unit_infected(state, u): conditions.append("infectada")
+            if peoples.has_vovo_bonus(state, u): conditions.append("+1 de dano")
+            if conditions:
+                found = True
+                console.print(f"  {u.id} — {p.name}/{p.people}: {', '.join(conditions)}")
+    if not found:
+        console.print("  [dim](nenhuma unidade viva condicionada)[/dim]")
+    console.print()
     console.print("[bold]Empalados (nao podem ser reinvocados)[/bold]")
     found = False
     for p in state.players:
@@ -804,6 +826,9 @@ def show_empalados_infectados(state) -> None:
             found = True
             for sig in p.empalados:
                 console.print(f"  {_status_signature_label(state, sig, p.id)}")
+        for entry in p.dwarf_empalados:
+            found = True
+            console.print(f"  {_status_signature_label(state, entry['sig'], p.id)} (por Soneca)")
     if not found:
         console.print("  [dim](nenhum)[/dim]")  # v5v10 #18/19 (marcador W adicionado em _board_empalados_infectados)
     console.print()
@@ -866,6 +891,15 @@ def _menu_especiais(state, pid: int) -> str | None:
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "zebum" for u in player.units):
         opts.append("Zebum: invocar/reinvocar heroi")
         keys.append("g")
+    if (player.people == "gnomos_duendes"
+            and player.spell_copia_id
+            and player.spell_copia_turn == state.turn
+            and player.spell_copia_rerolled_turn != state.turn
+            and not player.has_cast_spell_this_turn
+            and any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "sao_tome"
+                    for u in player.units)):
+        opts.append(f"São Tomé: rerrolar feitiço ({player.spell_copia_id})")
+        keys.append("R")
     if player.pending_heals > 0:
         opts.append(f"Usar cura pendente ({player.pending_heals})")
         keys.append("h")
@@ -879,6 +913,15 @@ def _menu_especiais(state, pid: int) -> str | None:
     if valtherion and valtherion.statuses.get("chamado_cooldown_until_turn", -1) <= state.turn:
         opts.append("Valtherion: Chamado")
         keys.append("v")
+    barba = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                  and u.hero_id == "barba_negra"), None)
+    if barba is not None:
+        if barba.statuses.get("mar_chamas_cooldown_until_turn", -1) <= state.turn:
+            opts.append("Barba Negra: preparar Mar de Chamas")
+            keys.append("B")
+        if barba.statuses.get("barba_hero_mode_turn") != state.turn:
+            opts.append("Barba Negra: combater como Herói nesta Noite")
+            keys.append("H")
     if player.demon_pact_offers and peoples.available_demon_pacts(state):
         opts.append("Escolher pacto demoniaco disponivel")
         keys.append("D")
@@ -1027,6 +1070,10 @@ def _spell_choice_ui(state, player, spell_id):
         cd["archetypes"] = [labels[i1], labels[i2]]
     elif spell_id == "decompor":
         return _escolher_decompor(state, player)
+    elif spell_id == "ressonancia_magica":
+        return _dragon_resonance_ui(player)
+    elif spell_id == "sacrificio_de_demonio":
+        return _sacrificio_demonio_ui(player)
     elif spell_id == "imitacao_gnomerica":
         raise ActionError("Nao pode imitar a si mesmo.")
     return cd
@@ -1059,24 +1106,44 @@ def _dragon_resonance_ui(player):
     return {"action": "swap", "old_card_id": old, "new_card_id": new}
 
 
-def _demon_pact_ui(state, player, demon_player_id, rogue=False):
+def _demon_pact_ui(state, player, demon_player_id, rogue=False, required=False):
     pact_ids = peoples.available_demon_pacts(state)
     if not pact_ids:
         raise ActionError("Todos os pactos demoníacos já foram escolhidos.")
-    labels = [peoples.DEMON_PACTS[p] for p in pact_ids] + ["Não fazer pacto"]
+    labels = [peoples.DEMON_PACTS[p] for p in pact_ids]
+    if not required:
+        labels.append("Não fazer pacto")
     idx = pick_index("Pacto demoníaco", labels)
     if idx == len(pact_ids):
         return False
     buff = None
     if rogue:
-        buffs = ["Invisibilidade até o fim do turno", "Executar inimigos com vida menor"]
-        buff = ("invisibilidade", "execucao")[pick_index("Buff de Rogue Devil", buffs)]
-    peoples.make_demon_pact(state, demon_player_id, player.id, pact_ids[idx], buff)
+        rogue_unit = next((u for u in player.units if isinstance(u, Hero)
+                           and u.hero_id == "rogue_devil"), None)
+        owned = set(player.rogue_items)
+        available_items = [i for i in peoples.ROGUE_ITEMS if i not in owned]
+        labels_items = {
+            "capa": "Capa — fica invisível ao derrotar inimigo",
+            "adaga": "Adaga — executa inimigos menores isolados",
+            "relogio": "Relógio — transporte antes do fim da Noite",
+            "bracelete": "Bracelete — resistência a heróis e +1 Vida",
+        }
+        if available_items:
+            buff = available_items[pick_index(
+                "Item de Rogue Devil", [labels_items[i] for i in available_items])]
+    peoples.make_demon_pact(state, demon_player_id, player.id, pact_ids[idx], buff,
+                            rogue_pact=rogue)
     console.print(f"[green]Pacto firmado: {labels[idx]}.[/green]")
     return True
 
 
 def _sacrificio_demonio_ui(player):
+    living_heroes = [u for u in player.units if isinstance(u, Hero) and u.is_alive()]
+    if not living_heroes:
+        raise ActionError("Sem Heroi vivo para sacrificar.")
+    hero = living_heroes[pick_index(
+        "Heroi sacrificado", [f"{heroes.hero_name(u.hero_id)} ({u.life}/{u.life_max})"
+                              for u in living_heroes])]
     available = ([{"zone": "hand", "card_id": c} for c in player.hand]
                  + [{"zone": "field", "card_id": a.card_id}
                     for a in player.field_artifacts])
@@ -1090,7 +1157,7 @@ def _sacrificio_demonio_ui(player):
         selected.append(available.pop(idx))
     if not selected:
         raise ActionError("Escolha ao menos um Artefato.")
-    return {"artifacts": selected}
+    return {"hero_id": hero.id, "artifacts": selected}
 
 
 def _escolher_imitacao(state, player):
@@ -1200,7 +1267,9 @@ def _zebum_obter_novo(state, player):
                     continue
                 skip = False
                 for other in state.players:
-                    if other.id != player.id and other.chosen_hero_id == hid:
+                    if (other.id != player.id
+                            and (other.chosen_hero_id == hid
+                                 or hid in other.summoned_hero_ids)):
                         skip = True
                         break
                 if skip:
@@ -1552,6 +1621,31 @@ def _ask_int(prompt: str, default: int, min_val: int = 0, max_val: int = 999) ->
         console.print(f"[red]Valor entre {min_val} e {max_val}.[/red]")
 
 
+def _show_people_selection_help(peoples_available) -> None:
+    table = Table(title="Consulta de povos", box=box.SIMPLE)
+    table.add_column("Povo")
+    table.add_column("Passiva")
+    table.add_column("Feitiço")
+    for people in peoples_available:
+        spell = spells_mod.spell_for_people(people)
+        table.add_row(people, PASSIVA_DESC.get(people, "—"),
+                      f"{spell.name}: {spell.description}" if spell else "—")
+    console.print(table)
+
+
+def _show_hero_selection_help(people: str, hero_names) -> None:
+    table = Table(title=f"Heróis de {people}", box=box.SIMPLE)
+    table.add_column("Herói")
+    table.add_column("Vida")
+    table.add_column("Habilidade")
+    for name in hero_names:
+        hid = heroes.resolve_hero_for_people(people, name)
+        definition = heroes.get_hero(hid)
+        table.add_row(definition.name, str(definition.life),
+                      HERO_DESCRIPTIONS.get(hid, ", ".join(definition.abilities) or "—"))
+    console.print(table)
+
+
 def setup_ui():
     console.print(Panel.fit(
         "[bold cyan]JESSICA[/bold cyan]\n"
@@ -1599,7 +1693,12 @@ def setup_ui():
     available_peoples = list(PEOPLES)
     for pid in povo_order:
         console.print(f"Vez de [bold]{names[pid]}[/bold] (Jogador {pid}).")
-        idx = pick_index("Povo", available_peoples)
+        while True:
+            options = list(available_peoples) + ["Consultar o que os povos fazem"]
+            idx = pick_index("Povo", options)
+            if idx < len(available_peoples):
+                break
+            _show_people_selection_help(available_peoples)
         chosen = available_peoples[idx]
         available_peoples.remove(chosen)
         choices[pid] = {"povo": chosen}
@@ -1611,9 +1710,17 @@ def setup_ui():
             console.print(f"[bold]{names[pid]}[/bold] (Mortos-Vivos): sem escolha de heroi.\n")
             choices[pid]["heroi"] = ""
             continue
-        herois = HEROES_BY_PEOPLE[povo]
+        # Ent permanece fora da selecao enquanto aguarda rework.
+        herois = [name for name in HEROES_BY_PEOPLE[povo]
+                  if name.strip().lower() != "ent"
+                  and heroes.normalize_hero_id(name) != "ent"]
         console.print(f"Vez de [bold]{names[pid]}[/bold] ({povo}).")
-        idx = pick_index("Heroi", herois)
+        while True:
+            options = list(herois) + ["Consultar o que os heróis fazem"]
+            idx = pick_index("Heroi", options)
+            if idx < len(herois):
+                break
+            _show_hero_selection_help(povo, herois)
         choices[pid]["heroi"] = herois[idx]
         console.print(f"[green]{names[pid]} escolheu: {herois[idx]}[/green]\n")
     state, _ = run_setup(
@@ -1684,6 +1791,9 @@ def show_state_for_player(state, pid: int) -> None:
     if player.field_artifacts:
         campo = ", ".join(card_display(a.card_id) for a in player.field_artifacts)
         console.print(f"[bold]Artefatos ativos:[/bold] {campo}")
+    if player.people == "dragoes":
+        canastra = ", ".join(card_display(c) for c in player.canastra) or "(vazia)"
+        console.print(f"[bold]Canastra:[/bold] {canastra}")
     console.print()
 
 
@@ -1990,7 +2100,8 @@ def estudar_campo(state) -> None:
 
 
 def historico(state) -> None:
-    log_lines = state.event_log
+    log_lines = [line for line in state.event_log
+                 if line.startswith(f"[T{state.turn} ")]
     if not log_lines:
         console.print("[dim]Nenhum evento registrado.[/dim]")
         return
@@ -2228,6 +2339,17 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         if player.people == "mortos_vivos":
             hid = _escolher_heroi_mv()
             params = {"hero_id": hid}
+        elif (player.people == "gnomos_duendes"
+              and peoples.PEOPLE_MORTOS_VIVOS in
+              peoples.sao_tome_effective_peoples(state, player)):
+            ids = ["bimbo_do_mal", "sao_tome", "zebum"]
+            available = [hid for hid in ids if not any(
+                isinstance(u, Hero) and u.is_alive() and u.hero_id == hid
+                for u in player.units)]
+            if not available:
+                raise ActionError("Os 3 herois gnomos ja estao vivos.")
+            hid = available[pick_index("Heroi", [heroes.hero_name(h) for h in available])]
+            params = {"hero_id": hid}
         else:
             params = {}
         action = next((a for a in legal_actions(state, pid)
@@ -2235,13 +2357,23 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         if action is None:
             raise ActionError("Invocação de Herói não é legal no estado atual.")
         _apply_simple_engine_action(state, action)
+        rogue_offer = next((offer for offer in player.demon_pact_offers
+                            if offer.get("source") == "rogue_devil"
+                            and offer.get("turn") == state.turn), None)
+        if rogue_offer is not None:
+            _demon_pact_ui(state, player, rogue_offer["demon_player_id"],
+                           rogue=True, required=True)
+            player.demon_pact_offers.remove(rogue_offer)
         console.print("[green]Heroi ok.[/green]")
     elif choice == "5":
         alive = [u for u in player.units if u.is_alive()]
         units = [u for u in alive if not u.has_moved_this_turn
                  and u.moves_this_turn < u.max_moves_this_turn
                  and not (u.statuses.get("summoned_turn") == state.turn
-                          and not (isinstance(u, Hero) and u.hero_id == "guarari"))]
+                          and not (isinstance(u, Hero) and u.hero_id in ("guarari", "luarado")
+                                   and (u.hero_id == "guarari"
+                                        or peoples.is_lua_cheia(state, player.id)
+                                        or u.statuses.get("lobisomem_until_turn", -1) >= state.turn)))]
         if not units:
             if any(u.statuses.get("summoned_turn") == state.turn for u in alive):
                 raise ActionError("Unidade recém invocada não pode se movimentar.")
@@ -2355,6 +2487,12 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         labels = [f"{a.value} (max {TROOP_MAX_LIFE[a.value]})" for a in kinds]
         troop = valtherion_chamado(state, pid, kinds[pick_index("Chamado", labels)])
         console.print(f"[green]Chamado: {troop.id} ({troop.life}/{troop.life_max}).[/green]")
+    elif choice == "B":
+        barba_mar_de_chamas(state, pid)
+        console.print("[green]Mar de Chamas preparado.[/green]")
+    elif choice == "H":
+        barba_combater_como_heroi(state, pid)
+        console.print("[green]Barba Negra combaterá como Herói nesta Noite.[/green]")
     elif choice == "i":
         _aiquara_ui(state, pid)
     elif choice == "b":
@@ -2364,6 +2502,9 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         _bimbo_ui(state, pid)
     elif choice == "g":
         _zebum_ui(state, pid)
+    elif choice == "R":
+        new_spell = peoples.reroll_spell_copia(state, pid)
+        console.print(f"[green]Novo feitiço copiado: {new_spell}.[/green]")
     elif choice == "D":
         offer = player.demon_pact_offers.pop(0)
         _demon_pact_ui(state, player, offer["demon_player_id"],
@@ -2442,6 +2583,14 @@ def _do_action(state, pid: int, choice: str) -> str | None:
                     console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
                     return None
                 choice_data["flip_cards"] = [player.hand[idx]]
+            artifact_choices = []
+            for original in choice_data.get("flip_cards", []):
+                transformed = peoples.sonho_lucido_flip(original)
+                artifact_choices.append(
+                    _ask_choice_for_artifact(state, pid, transformed)
+                    if artifacts_effects.needs_choice(transformed) else {}
+                )
+            choice_data["artifact_choices"] = artifact_choices
         elif sp.spell_id == "ressonancia_magica":
             choice_data = _dragon_resonance_ui(player)
         elif sp.spell_id == "sacrificio_de_demonio":
@@ -2490,6 +2639,90 @@ def handle_action(state, pid: int, choice: str) -> str | None:
     return _do_action(state, pid, choice)
 
 
+def _visible_state_snapshot(state) -> dict:
+    result = {}
+    for p in state.players:
+        result[p.id] = {
+            "Ouro": p.city.gold, "Magia": p.city.magic,
+            "Vida da Base": p.city.life, "Vida máxima da Base": p.city.life_max,
+            "Artefatos na mão": len(p.hand), "Canastra": tuple(p.canastra),
+            "Unidades": {
+                u.id: (u.life, u.life_max, u.house, u.moves_this_turn,
+                       u.max_moves_this_turn, u.attacks_made_this_night,
+                       u.max_attacks_this_night, u.double_damage,
+                       u.resistance_stacks, tuple(sorted(u.statuses.items())))
+                for u in p.units
+            },
+        }
+    return result
+
+
+def _log_visible_state_changes(state, before: dict, source: str,
+                               prior_lines: list[str] | None = None) -> None:
+    after = _visible_state_snapshot(state)
+    prior_lines = prior_lines or []
+    for p in state.players:
+        old, new = before.get(p.id, {}), after[p.id]
+        for key in ("Ouro", "Magia", "Vida da Base", "Vida máxima da Base",
+                    "Artefatos na mão", "Canastra"):
+            if old.get(key) != new[key]:
+                if (key in ("Ouro", "Magia") and any(
+                        f"{p.name} coletou" in line for line in prior_lines)):
+                    continue
+                log(state, f"[STATE] {source}: {p.name} — {key}: {old.get(key)} -> {new[key]}.")
+        old_units, new_units = old.get("Unidades", {}), new["Unidades"]
+        for uid in sorted(set(old_units) | set(new_units)):
+            previous, current = old_units.get(uid), new_units.get(uid)
+            if previous == current:
+                continue
+            unit = next((u for u in p.units if u.id == uid), None)
+            if isinstance(unit, Hero):
+                unit_name = heroes.hero_name(unit.hero_id)
+            elif isinstance(unit, Troop):
+                size = {"light": "pequena", "medium": "média", "heavy": "grande",
+                        "dragon_light": "dragão pequena", "dragon_medium": "dragão média",
+                        "dragon_heavy": "dragão grande"}.get(unit.archetype.value,
+                                                       unit.archetype.value)
+                unit_name = f"Tropa {size}"
+            else:
+                unit_name = uid
+            if previous is None or current is None:
+                verb = "entrou em campo" if previous is None else "saiu de campo"
+                log(state, f"[STATE] {source}: {unit_name} ({p.name}) {verb}.")
+                continue
+            labels = ("Vida", "Vida máxima", "Casa", "Movimentos usados",
+                      "Movimentos permitidos", "Ataques usados", "Ataques permitidos",
+                      "Dano dobrado", "Resistências")
+            changes = []
+            for i, label in enumerate(labels):
+                if previous[i] == current[i]:
+                    continue
+                old_value, new_value = previous[i], current[i]
+                if i == 2:
+                    old_value = house_short(state, old_value)
+                    new_value = house_short(state, new_value)
+                changes.append(f"{label} {old_value} → {new_value}")
+            old_status, new_status = dict(previous[9]), dict(current[9])
+            status_names = {
+                "summoned_turn": "invocada no turno",
+                "barba_hero_mode_turn": "combate como herói no turno",
+                "mar_chamas_queued_turn": "Mar de Chamas preparado no turno",
+                "mar_chamas_cooldown_until_turn": "Mar de Chamas em recarga até o turno",
+                "lobisomem_until_turn": "lobisomem até o turno",
+                "invisivel_until_turn": "invisível até o turno",
+                "invulneravel_until_turn": "invulnerável até o turno",
+                "rogue_items": "itens de Rogue Devil",
+            }
+            for status in sorted(old_status.keys() | new_status.keys()):
+                if old_status.get(status) != new_status.get(status):
+                    label = status_names.get(status, status.replace("_", " "))
+                    changes.append(f"{label}: {old_status.get(status, 'não')} → "
+                                   f"{new_status.get(status, 'não')}")
+            if changes:
+                log(state, f"[STATE] {source}: {unit_name} ({p.name}) — "
+                           + "; ".join(changes) + ".")
+
+
 def run_player_day(state, pid: int) -> str | None:
     player = get_player(state, pid)
     try:
@@ -2506,7 +2739,13 @@ def run_player_day(state, pid: int) -> str | None:
             player.has_played_day_this_turn = True
             return None
         try:
+            before_state = _visible_state_snapshot(state)
+            before_log = len(state.event_log)
             result = handle_action(state, pid, choice)
+            _log_visible_state_changes(state, before_state, f"ação de {player.name}",
+                                       state.event_log[before_log:])
+            for line in state.event_log[before_log:]:
+                console.print(f"  [cyan]{line}[/cyan]")
             if result is not None:
                 return result
         except (ActionError, CombatError, ValueError) as e:
@@ -2729,16 +2968,25 @@ def _declarar_casa(state, house: str, pids_declaram: list[int],
                    processed_houses=None, allow_luide: bool = True) -> None:
     if processed_houses is None:
         processed_houses = set()
+    has_combat = any(
+        find_targets(state, unit)
+        for pid in pids_declaram
+        for unit in get_player(state, pid).units
+        if unit.house == house and unit.is_alive()
+    )
+    if not has_combat:
+        console.print(f"[dim]Não havia combates a declarar em {house_short(state, house)}.[/dim]")
+        return
     for pid in pids_declaram:
-        _night_info_prompt(state)
         player = get_player(state, pid)
-        if allow_luide:
-            _luide_janela_noturna(state, pid, house, processed_houses)
         units_here = [u for u in player.units if u.house == house and u.is_alive()]
         if not units_here:
             continue
         if not any(find_targets(state, u) for u in units_here):
             continue
+        _night_info_prompt(state)
+        if allow_luide:
+            _luide_janela_noturna(state, pid, house, processed_houses)
         _mostrar_resumo_local(state, house)
         console.print(f"[bold]{player.name} declara ataques em {house_short(state, house)}.[/bold]")
         for unit in list(units_here):
@@ -2866,14 +3114,7 @@ def run_night_phase(state) -> None:
     _ask_vovo_position(state)
 
     all_pids = list(day_order(state))
-    for pid in all_pids:
-        player = get_player(state, pid)
-        barba = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
-                      and u.hero_id == "barba_negra"), None)
-        if (barba is not None
-                and barba.statuses.get("mar_chamas_cooldown_until_turn", -1) <= state.turn
-                and Prompt.ask(f"{player.name}: usar Mar de Chamas?", choices=["s", "n"], default="n") == "s"):
-            barba_mar_de_chamas(state, pid)
+    barba_resolver_mar_de_chamas(state)
     for pid in all_pids:
         player = get_player(state, pid)
         _try_luna_return(state, player)
@@ -2897,6 +3138,7 @@ def run_night_phase(state) -> None:
             if any(u.house == house and u.is_alive() for u in player.units):
                 pids_here.append(pid)
         if not pids_here:
+            console.print(f"[dim]Não havia combates a declarar em {house_short(state, house)}.[/dim]")
             processed_houses.add(house)
             continue
         pids_here = _order_players_for_house(state, pids_here, house)
@@ -2913,6 +3155,19 @@ def run_night_phase(state) -> None:
 
     _ainai_prompt_all(state, all_pids, processed_houses)
 
+    for pid in all_pids:
+        player = get_player(state, pid)
+        rogue = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                      and u.hero_id == "rogue_devil"
+                      and "relogio" in u.statuses.get("rogue_items", [])), None)
+        if (rogue is not None and state.combats_this_night
+                and Prompt.ask(f"{player.name}: usar Relógio de bolso?",
+                               choices=["s", "n"], default="n") == "s"):
+            houses = list(state.combats_this_night)
+            destination = houses[pick_index(
+                "Destino", [house_short(state, h) for h in houses])]
+            rogue_clock_move(state, pid, destination)
+
 def show_victory(state) -> None:
     if state.winner_id:
         player = get_player(state, state.winner_id)
@@ -2928,7 +3183,9 @@ def _run_one_game() -> None:
     console.clear()
     state = setup_ui()
     while not state.game_over:
+        before_turn = _visible_state_snapshot(state)
         interest = start_turn(state)
+        _log_visible_state_changes(state, before_turn, "início do turno")
         console.rule(f"[bold yellow]TURNO {state.turn} - DIA[/bold yellow]")
         curuna = get_player(state, state.curuna_id)
         console.print(f"[bold yellow]* Curuna: {curuna.name}[/bold yellow]\n")
@@ -2972,7 +3229,10 @@ def _run_one_game() -> None:
             snapshots[pid] = state_to_dict(state)
             console.rule(f"[bold]Vez de {player.name}[/bold]")
             before = len(state.event_log)
+            before_morning = _visible_state_snapshot(state)
             start_player_day(state, pid)
+            _log_visible_state_changes(state, before_morning, f"manhã de {player.name}",
+                                       state.event_log[before:])
             for line in state.event_log[before:]:
                 console.print(f"  [cyan]{line}[/cyan]")
             if player.skip_day_turn == state.turn:
@@ -3001,7 +3261,9 @@ def _run_one_game() -> None:
                          if p.city.is_alive() and p.skip_night_turn == state.turn]
         if night_skipped:
             console.print(f"[yellow]Pulados na Noite: {', '.join(night_skipped)}[/yellow]\n")
+        before_night = _visible_state_snapshot(state)
         run_night_phase(state)
+        _log_visible_state_changes(state, before_night, "fase da Noite")
         if state.game_over:
             break
         end_turn(state)

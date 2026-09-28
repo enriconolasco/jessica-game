@@ -185,6 +185,32 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
     if not city.is_alive():
         raise ActionError("Cidade destruida.")
 
+    gnomo_undead = (player.people == peoples.PEOPLE_GNOMOS
+                    and peoples.PEOPLE_MORTOS_VIVOS in
+                    peoples.sao_tome_effective_peoples(state, player))
+    if gnomo_undead and force_hero_id is not None:
+        hid = heroes.normalize_hero_id(force_hero_id)
+        if hid not in ("bimbo_do_mal", "sao_tome", "zebum"):
+            raise ActionError("Passiva dos Mortos-Vivos libera apenas os 3 herois gnomos.")
+        if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == hid
+               for u in player.units):
+            raise ActionError(f"Heroi {hid} ja em campo.")
+        magic_cost = peoples.hero_summon_cost(player, state)
+        if city.magic < magic_cost:
+            raise ActionError(f"Magia insuficiente ({magic_cost}).")
+        city.magic -= magic_cost
+        hdef = heroes.get_hero(hid)
+        hero = Hero(id=f"p{player_id}_hero_{hid}", owner_id=player_id,
+                    house=f"city_{player_id}", life=hdef.life, life_max=hdef.life,
+                    hero_id=hid, has_moved_this_turn=True, moves_this_turn=1)
+        hero.statuses["sao_tome_undead_summon"] = True
+        player.units.append(hero)
+        mark_summoned(state, player, hero)
+        record_action(state, player_id, "summon_hero", hero_id=hid)
+        log(state, f"{player.name} invocou {hdef.name} pela passiva dos Mortos-Vivos.")
+        peoples.on_action_performed(state, player_id, "summon_hero")
+        return hero
+
     if player.people == peoples.PEOPLE_MORTOS_VIVOS:
         if force_hero_id is None:
             raise ActionError("Mortos-Vivos: escolha o heroi.")
@@ -278,6 +304,8 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
     if alive_heroes and force_hero_id is None:
         raise ActionError("Ja existe heroi vivo.")
     target_id = force_hero_id if force_hero_id is not None else player.chosen_hero_id
+    if target_id == "rogue_devil" and not peoples.available_demon_pacts(state):
+        raise ActionError("Rogue Devil precisa de um pacto disponivel para ser invocado.")
     sig = {"kind": "hero", "id": target_id}
     if peoples.is_empalado(player, sig):
         raise ActionError(f"Heroi {target_id} empalado.")
@@ -285,7 +313,7 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
            for u in player.units):
         raise ActionError(f"Heroi {target_id} ja em campo.")
 
-    magic_cost = peoples.hero_summon_cost(player, state)
+    magic_cost = 2 if target_id == "luarado" else peoples.hero_summon_cost(player, state)
     if city.magic < magic_cost:
         raise ActionError(f"Magia insuficiente ({magic_cost}).")
     city.magic -= magic_cost
@@ -321,7 +349,13 @@ def move_unit(state: GameState, player_id: int, unit_id: str, destination: str) 
     if unit is None:
         raise ActionError(f"Unidade {unit_id} nao encontrada.")
     summoned_now = unit.statuses.get("summoned_turn") == state.turn
-    if summoned_now and not (isinstance(unit, Hero) and unit.hero_id == "guarari"):
+    lunar_luarado = (isinstance(unit, Hero) and unit.hero_id == "luarado"
+                     and (peoples.is_lua_cheia(state, player.id)
+                          or unit.statuses.get("lobisomem_until_turn", -1) >= state.turn))
+    can_move_when_summoned = lunar_luarado or (
+        isinstance(unit, Hero) and unit.hero_id == "guarari"
+    ) or unit.statuses.get("morcego_until_turn", -1) >= state.turn
+    if summoned_now and not can_move_when_summoned:
         raise ActionError("Unidade invocada neste turno nao pode se mover.")
     if unit.moves_this_turn >= unit.max_moves_this_turn:
         raise ActionError("Unidade ja se moveu o maximo.")
@@ -421,7 +455,7 @@ def arken_espolia(state: GameState, player_id: int) -> None:
     log(state, f"{player.name} (Arken): +{gold} Ouro.")
     enemy_houses = {f"city_{pid}" for pid in occupied_pids}
     for u in player.units:
-        if isinstance(u, Troop) and u.is_alive() and u.house in enemy_houses:
+        if u.is_alive() and u.house in enemy_houses:
             healed = min(1, u.life_max - u.life)
             if healed > 0:
                 u.life += healed
@@ -541,9 +575,14 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     city = player.city
     if not city.is_alive():
         raise ActionError("Cidade destruida.")
-    if state.turn < player.spell_cooldown_until_turn:
+    copied_resonance = (player.people == peoples.PEOPLE_GNOMOS
+                        and player.spell_copia_id == "ressonancia_magica")
+    resonance_continues = ((player.people == peoples.PEOPLE_DRAGOES
+                            or copied_resonance)
+                           and player.canastra_moves_turn == state.turn)
+    if state.turn < player.spell_cooldown_until_turn and not resonance_continues:
         raise ActionError(f"Feitico em recarga.")
-    is_resonance = player.people == peoples.PEOPLE_DRAGOES
+    is_resonance = player.people == peoples.PEOPLE_DRAGOES or copied_resonance
     if player.has_cast_spell_this_turn and not is_resonance:
         raise ActionError("Ja usou feitico.")
 
@@ -571,8 +610,9 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
             for cid in cards:
                 if cid not in player.hand:
                     raise ActionError(f"Nao tem {cid} na mao.")
+            artifact_choices = choice.get("artifact_choices", [])
             from . import artifacts_effects as _ae  # v5v10c #15
-            for cid in list(cards):
+            for index, cid in enumerate(list(cards)):
                 new_card = peoples.sonho_lucido_flip(cid)
                 if new_card == cid:
                     log(state, f"Sonho Lucido: {card_display(cid)} nao mudou de naipe.")
@@ -580,11 +620,11 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
                 player.hand.remove(cid)
                 player.hand.append(new_card)
                 log(state, f"Sonho Lucido: {card_display(cid)} -> {card_display(new_card)}.")
-                if _ae.needs_choice(new_card):
-                    log(state, f"  {card_display(new_card)} precisa de escolha: ficou na mao.")
-                    continue
+                artifact_choice = artifact_choices[index] if index < len(artifact_choices) else {}
+                if _ae.needs_choice(new_card) and not artifact_choice:
+                    raise ActionError(f"{card_display(new_card)} precisa de escolha imediata.")
                 try:
-                    play_artifact(state, player.id, new_card)
+                    play_artifact(state, player.id, new_card, choice=artifact_choice)
                     log(state, f"  jogado: {card_display(new_card)}.")
                 except ActionError as e:
                     player.hand.remove(new_card)
@@ -603,8 +643,7 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
     elif sp.spell_id == "decompor":
         spell_decompor(state, player_id, choice)
     elif sp.spell_id == "imitacao_gnomerica":
-        spell_imitacao_gnomerica(state, player_id, choice)
-        no_cooldown = True
+        no_cooldown = spell_imitacao_gnomerica(state, player_id, choice)
     elif sp.spell_id == "ressonancia_magica":
         cooldown = _spell_ressonancia_magica(state, player, choice)
         no_cooldown = not cooldown
@@ -622,10 +661,13 @@ def cast_spell(state: GameState, player_id: int, choice: dict | None = None) -> 
 
 
 def _spell_sacrificio_demonio(state: GameState, player, choice: dict) -> None:
+    hero_id = choice.get("hero_id")
     hero = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
-                 and u.hero_id == player.chosen_hero_id), None)
+                 and (u.id == hero_id or u.hero_id == hero_id)), None) if hero_id else next(
+        (u for u in player.units if isinstance(u, Hero) and u.is_alive()
+         and u.hero_id == player.chosen_hero_id), None)
     if hero is None:
-        raise ActionError("Seu Heroi principal precisa estar vivo.")
+        raise ActionError("Escolha um Heroi vivo para o Sacrificio.")
     selected = choice.get("artifacts", [])
     if not selected:
         raise ActionError("Escolha ao menos um Artefato.")
@@ -718,6 +760,10 @@ def _spell_licantropo(state, player, choice):
     if t is None:
         raise ActionError("Alvo nao encontrado.")
     t.statuses["lobisomem_until_turn"] = state.turn
+    if isinstance(t, Hero) and t.hero_id == "luarado":
+        t.max_moves_this_turn = 1 if t.statuses.get("summoned_turn") == state.turn else 2
+        t.moves_this_turn = min(t.moves_this_turn, t.max_moves_this_turn - 1)
+        t.has_moved_this_turn = False
     peoples.apply_lobisomem_hero_buffs(state, player, t)
     if peoples.is_lua_cheia(state, player.id):
         log(state, f"{player.name}: {t.id} virou Lobisomem na Lua Cheia "
@@ -840,7 +886,7 @@ def spell_decompor(state: GameState, player_id: int, choice: dict) -> None:
 # Feitico: Imitacao Gnomerica
 # =============================================================
 
-def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> None:
+def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> bool:
     player = get_player(state, player_id)
     sp_id = player.spell_copia_id
     if not sp_id:
@@ -861,15 +907,27 @@ def spell_imitacao_gnomerica(state: GameState, player_id: int, choice: dict) -> 
         _spell_licantropo(state, player, choice)
     elif sp_id == "linhagem_ancestral":
         _spell_linhagem_ancestral(state, player, choice)
+        if choice.get("hero_id") == "caroco":
+            log(state, f"{player.name}: Imitacao Gnomerica usou {sp.name}.")
+            return True
     elif sp_id == "levantar_mortos":
         _spell_levantar_mortos(state, player, choice)
     elif sp_id == "decompor":
         spell_decompor(state, player_id, choice)
+    elif sp_id == "ressonancia_magica":
+        if peoples.PEOPLE_DRAGOES not in peoples.sao_tome_effective_peoples(state, player):
+            raise ActionError("Ressonancia exige Sao Tome e uma aposta ativa em Dragoes.")
+        cooldown = _spell_ressonancia_magica(state, player, choice)
+        log(state, f"{player.name}: Imitacao Gnomerica usou {sp.name}.")
+        return not cooldown
+    elif sp_id == "sacrificio_de_demonio":
+        _spell_sacrificio_demonio(state, player, choice)
     elif sp_id == "imitacao_gnomerica":
         raise ActionError("Nao pode imitar a si mesmo.")
     else:
         raise ActionError(f"Feitico {sp_id} nao imitavel.")
     log(state, f"{player.name}: Imitacao Gnomerica usou {sp.name}.")
+    return False
 
 
 # =============================================================
@@ -907,7 +965,7 @@ def transformar_em_centauro(state: GameState, player_id: int, unit_id: str) -> N
 def _dragon_refresh_canastra_buffs(state: GameState, player) -> None:
     has_heart = peoples.dragon_has_suit(player, "H")
     has_club = peoples.dragon_has_suit(player, "C")
-    for unit in peoples.dragon_heroes(player):
+    for unit in peoples.dragon_heroes(player, state):
         marked = unit.statuses.get("dragon_heart_resistance", False)
         if has_heart and not marked:
             unit.resistance_stacks += 1
@@ -928,7 +986,7 @@ def _dragon_canastra_leave(state: GameState, player, card_id: str) -> None:
         player.city.gold += jacks_before
         log(state, f"{player.name}: Acumulador +{jacks_before} Ouro ao retirar Valete.")
     if card_id.startswith("Q_"):
-        for unit in peoples.dragon_heroes(player):
+        for unit in peoples.dragon_heroes(player, state):
             unit.life_max = max(1, unit.life_max - 2)
     player.canastra.remove(card_id)
     player.hand.append(card_id)
@@ -946,7 +1004,7 @@ def _dragon_canastra_enter(state: GameState, player, card_id: str) -> None:
     player.hand.remove(card_id)
     player.canastra.append(card_id)
     if card_id.startswith("Q_"):
-        for unit in peoples.dragon_heroes(player):
+        for unit in peoples.dragon_heroes(player, state):
             was_base = bool(unit.statuses.get("dragon_base"))
             unit.life_max += 2
             unit.life = min(unit.life_max, unit.life + 2)
@@ -964,6 +1022,12 @@ def _spell_ressonancia_magica(state: GameState, player, choice: dict) -> bool:
     if player.canastra_moves_turn != state.turn:
         player.canastra_moves_turn = state.turn
         player.canastra_moved_cards = []
+        player.canastra_resonance_uses = 0
+    planned = ([choice.get("card_id")] if action in ("add", "remove")
+               else [choice.get("old_card_id"), choice.get("new_card_id")]
+               if action == "swap" else [])
+    if any(card and player.canastra_moved_cards.count(card) >= 2 for card in planned):
+        raise ActionError("Ressonancia: o mesmo Artefato so pode ser movido 2 vezes por turno.")
     if action == "add":
         card_id = choice.get("card_id")
         _dragon_canastra_enter(state, player, card_id)
@@ -991,10 +1055,9 @@ def _spell_ressonancia_magica(state: GameState, player, choice: dict) -> bool:
         moved.extend([old_card, new_card])
     else:
         raise ActionError("Ressonancia: use add, remove ou swap.")
-    previous = list(player.canastra_moved_cards)
     player.canastra_moved_cards.extend(moved)
-    repeated = any(card in previous for card in moved)
-    cooldown = repeated or len(player.canastra_moved_cards) > 1
+    player.canastra_resonance_uses += 1
+    cooldown = player.canastra_resonance_uses >= 2
     _dragon_refresh_canastra_buffs(state, player)
     log(state, f"{player.name}: Ressonancia {action} ({', '.join(moved)}).")
     return cooldown
@@ -1013,33 +1076,74 @@ def purpura_invisibilidade(state: GameState, player_id: int) -> None:
     log(state, f"{player.name}: Purpura ficou invisivel.")
 
 
+def rogue_clock_move(state: GameState, player_id: int, destination: str) -> None:
+    player = get_player(state, player_id)
+    rogue = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                  and u.hero_id == "rogue_devil"
+                  and "relogio" in u.statuses.get("rogue_items", [])), None)
+    if rogue is None:
+        raise ActionError("Rogue Devil nao possui o Relogio de bolso.")
+    if state.phase != Phase.NIGHT:
+        raise ActionError("Relogio so pode ser usado antes do fim da Noite.")
+    if destination not in state.combats_this_night:
+        raise ActionError("Nesse local nao ocorreu combate nesta Noite.")
+    rogue.house = destination
+    log(state, f"{player.name}: Rogue Devil usou o Relogio e foi para {destination}.")
+
+
 def barba_mar_de_chamas(state: GameState, player_id: int) -> None:
     player = get_player(state, player_id)
     barba = next((u for u in peoples.dragon_heroes(player)
                   if u.hero_id == "barba_negra"), None)
     if barba is None:
         raise ActionError("Barba Negra nao esta vivo.")
-    if state.phase != Phase.NIGHT:
-        raise ActionError("Mar de Chamas so pode ser usado no inicio da Noite.")
+    if state.phase != Phase.DAY:
+        raise ActionError("Mar de Chamas deve ser escolhido durante o Dia.")
     if barba.statuses.get("mar_chamas_cooldown_until_turn", -1) > state.turn:
         raise ActionError("Mar de Chamas em recarga.")
-    barba.statuses["barba_hero_mode_turn"] = state.turn
+    if barba.statuses.get("mar_chamas_queued_turn") == state.turn:
+        raise ActionError("Mar de Chamas ja foi escolhido neste turno.")
+    barba.statuses["mar_chamas_queued_turn"] = state.turn
     barba.statuses["mar_chamas_cooldown_until_turn"] = state.turn + 2
-    for other in state.players:
-        if other.id == player_id:
+    log(state, f"{player.name}: Mar de Chamas preparado para o inicio da Noite.")
+
+
+def barba_combater_como_heroi(state: GameState, player_id: int) -> None:
+    player = get_player(state, player_id)
+    barba = next((u for u in peoples.dragon_heroes(player)
+                  if u.hero_id == "barba_negra"), None)
+    if barba is None or state.phase != Phase.DAY:
+        raise ActionError("Barba Negra deve ativar o combate como Heroi durante o Dia.")
+    if barba.statuses.get("barba_hero_mode_turn") == state.turn:
+        raise ActionError("Combate como Heroi ja ativado neste turno.")
+    barba.statuses["barba_hero_mode_turn"] = state.turn
+    log(state, f"{player.name}: Barba Negra combaterá como Heroi nesta Noite.")
+
+
+def barba_resolver_mar_de_chamas(state: GameState) -> None:
+    for player in state.players:
+        barba = next((u for u in peoples.dragon_heroes(player)
+                      if u.hero_id == "barba_negra"
+                      and u.statuses.get("mar_chamas_queued_turn") == state.turn), None)
+        if barba is None:
             continue
-        for unit in other.units:
-            if (unit.is_alive() and unit.house == barba.house
-                    and not unit.statuses.get("dragon_base")):
-                before = unit.life
-                unit.life = max(0, unit.life - 1)
-                if not unit.is_alive():
-                    unit.statuses["life_at_death"] = before
-                    unit.killed_by_player_id = player_id
-                    unit.killed_by_unit_id = barba.id
-    from .combat import _cleanup_dead
-    _cleanup_dead(state)
-    log(state, f"{player.name}: Mar de Chamas ativado; Barba Negra combate como Heroi.")
+        hits = 0
+        for other in state.players:
+            if other.id == player.id:
+                continue
+            for unit in other.units:
+                if (unit.is_alive() and unit.house == barba.house
+                        and not unit.statuses.get("dragon_base")):
+                    before = unit.life
+                    unit.life = max(0, unit.life - 1)
+                    hits += 1
+                    if not unit.is_alive():
+                        unit.statuses["life_at_death"] = before
+                        unit.killed_by_player_id = player.id
+                        unit.killed_by_unit_id = barba.id
+        from .combat import _cleanup_dead
+        _cleanup_dead(state)
+        log(state, f"{player.name}: Mar de Chamas atingiu {hits} inimigo(s).")
 
 
 def valtherion_chamado(state: GameState, player_id: int,
@@ -1108,6 +1212,8 @@ def aiquara_mover(state: GameState, player_id: int, enemy_unit_id: str,
             break
     if enemy is None:
         raise ActionError("Inimigo nao encontrado na casa de Aiquara.")
+    if isinstance(enemy, Hero) and enemy.hero_id == "valtherion":
+        raise ActionError("Valtherion nao pode ser controlado.")
     if destination not in (CENTER, *CITY_HOUSES):
         raise ActionError("Destino invalido.")
     origin = enemy.house
@@ -1151,6 +1257,8 @@ def aiquara_atacar(state: GameState, player_id: int, enemy_unit_id: str,
             break
     if enemy is None:
         raise ActionError("Inimigo nao encontrado na casa de Aiquara.")
+    if isinstance(enemy, Hero) and enemy.hero_id == "valtherion":
+        raise ActionError("Valtherion nao pode ser controlado.")
     if target_type == "city" and target_id.isdigit():
         if int(target_id) == enemy.owner_id:
             raise ActionError("Nao pode atacar a propria Cidade do inimigo controlado.")
@@ -1287,7 +1395,8 @@ def zebum_invocar_heroi(state: GameState, player_id: int, hero_id: str) -> None:
     for other in state.players:
         if other.id == player_id:
             continue
-        if other.chosen_hero_id == hero_id:
+        if (other.chosen_hero_id == hero_id or hero_id in other.summoned_hero_ids
+                or any(isinstance(u, Hero) and u.hero_id == hero_id for u in other.units)):
             raise ActionError("Heroi principal de outro jogador.")
     if _zebum_heroi_em_uso_por_outro(state, player_id, hero_id):
         raise ActionError("Heroi ja foi obtido por outro Zebum.")
@@ -1433,8 +1542,11 @@ def buy_artifact_with_gold(state, player_id):
         raise ActionError("Ja comprou com Ouro hoje.")
     if not _has_unit_at_center(state, player_id):
         raise ActionError("Precisa unidade no Centro.")
-    cost = 5 if (player.people == peoples.PEOPLE_DRAGOES
-                 and peoples.dragon_has_suit(player, "D")) else ARTIFACT_GOLD_COST
+    dragon_effect = (player.people == peoples.PEOPLE_DRAGOES
+                     or (player.people == peoples.PEOPLE_GNOMOS
+                         and peoples.PEOPLE_DRAGOES in
+                         peoples.sao_tome_effective_peoples(state, player)))
+    cost = 5 if (dragon_effect and peoples.dragon_has_suit(player, "D")) else ARTIFACT_GOLD_COST
     if city.gold < cost:
         raise ActionError(f"Ouro insuficiente ({cost}).")
     if state.shop.is_empty():
@@ -1463,8 +1575,11 @@ def transmute_artifact_with_magic(state, player_id):
         raise ActionError("Cidade destruida.")
     if player.artifacts_bought_magic_today >= ARTIFACT_MAX_BUYS_MAGIC_PER_DAY:
         raise ActionError("Ja transmutou hoje.")
-    cost = 5 if (player.people == peoples.PEOPLE_DRAGOES
-                 and peoples.dragon_has_suit(player, "D")) else ARTIFACT_MAGIC_COST
+    dragon_effect = (player.people == peoples.PEOPLE_DRAGOES
+                     or (player.people == peoples.PEOPLE_GNOMOS
+                         and peoples.PEOPLE_DRAGOES in
+                         peoples.sao_tome_effective_peoples(state, player)))
+    cost = 5 if (dragon_effect and peoples.dragon_has_suit(player, "D")) else ARTIFACT_MAGIC_COST
     if city.magic < cost:
         raise ActionError(f"Magia insuficiente ({cost}).")
     if state.shop.is_empty():

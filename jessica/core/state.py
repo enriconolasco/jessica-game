@@ -167,6 +167,7 @@ def declaration_order_for_house(state: GameState, house: str,
 
 def mark_summoned(state: GameState, player: Player, unit) -> None:
     """Regra geral: invocado no turno nao se move, mas ainda pode atacar."""
+    from . import peoples
     unit.statuses["summoned_turn"] = state.turn
     unit.moves_this_turn = unit.max_moves_this_turn
     unit.has_moved_this_turn = True
@@ -175,9 +176,14 @@ def mark_summoned(state: GameState, player: Player, unit) -> None:
         unit.max_moves_this_turn = 1
         unit.moves_this_turn = 0
         unit.has_moved_this_turn = False
-    if getattr(player, "people", None) == "dragoes" and getattr(unit, "hero_id", None):
-        from . import peoples
-        peoples.apply_dragon_canastra_to_hero(player, unit)
-    from . import peoples
+    if (getattr(unit, "hero_id", None) == "luarado"
+            and peoples.is_lua_cheia(state, player.id)):
+        unit.max_moves_this_turn = 1
+        unit.moves_this_turn = 0
+        unit.has_moved_this_turn = False
+    if getattr(unit, "hero_id", None):
+        if unit.hero_id not in player.summoned_hero_ids:
+            player.summoned_hero_ids.append(unit.hero_id)
+        peoples.apply_dragon_canastra_to_hero(state, player, unit)
     peoples.on_unit_summoned(state, player.id, unit)
     sync_house_priority(state, unit.house)

@@ -208,6 +208,8 @@ def on_play(state: GameState, player_id: int, card_id: str, choice: dict) -> Non
             raise ValueError(f"Alvo {target_unit_id} nao encontrado.")
         if original_owner.id == player_id:
             raise ValueError("Qc so controla unidade inimiga.")
+        if isinstance(target, Hero) and target.hero_id == "valtherion":
+            raise ValueError("Valtherion nao pode ser controlado.")
         if not original_owner.city.is_alive():
             raise ValueError("Qc nao controla unidade de jogador eliminado.")
         if target.original_owner_id is not None:

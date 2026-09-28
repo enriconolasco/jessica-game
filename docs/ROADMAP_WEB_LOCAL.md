@@ -1,6 +1,6 @@
 # Roteiro para a versão web local
 
-Status em 2026-09-25: corte vertical do Dia funcionando no navegador. O motor continua
+Status em 2026-09-28: ações e escolhas do Dia ampliadas no navegador. O motor continua
 sendo a única autoridade mecânica. Multiplayer online não faz parte deste roteiro.
 
 ## Concluído
@@ -12,14 +12,22 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
 - save manual, autosave, load e validação da versão do save.
 - setup local com nomes, parâmetros iniciais, 12 povos e heróis válidos vindos do catálogo do motor.
 - tela de passagem do dispositivo que oculta a área privada na troca do jogador ativo.
+- motor do terminal integrado até `1f0588d`, com correção posterior de Rogue e Valtherion;
+- uso dos 12 artefatos, Pena e escolhas pendentes J♦/Feliz/Q♦; curas pendentes;
+- pactos de Rogue, Belial e Tuza, incluindo prioridade obrigatória da oferta de Rogue;
+- habilidades diurnas de Arken, Dunga, Dandara, Púrpura, Barba Negra, Bimbo,
+  Baobá, Guarari e Chamado de Valtherion;
+- histórico de eventos preservado no save/load; novas ações atômicas e testadas
+  contra as funções originais do motor.
 
 ## Passos restantes
 
-1. **Sincronizar o motor atual:** transportar seletivamente os patches validados do
-   terminal, preservar servidor/assets e comprovar paridade pelas mesmas seeds.
+1. **Sincronizar o motor atual:** concluído para o lote acima; sincronizar novos
+   patches do terminal a cada marco.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
-3. **Completar o Dia:** jogar Artefatos, escolhas pendentes, feitiços, habilidades,
-   curas, apostas e demais ações especiais usando contratos estruturados.
+3. **Completar o Dia:** feitiços (incluindo seleções compostas), apostas,
+   Aiquara, Zebum, Miyamoto diurno, rerrolagem de São Tomé e demais janelas especiais.
+   Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,
    retaliações e janelas especiais/reacionais. Nenhuma regra ficará no frontend.
 5. **Fechar o ciclo da partida:** manhã, mudança de fase, fim do turno, vitória,

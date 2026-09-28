@@ -30,7 +30,13 @@ Abra `http://127.0.0.1:8765`. Não há dependências web externas.
 - mostra a área privada do jogador ativo e descreve eventos estruturados em PT-BR.
 - filtra eventos privados por jogador; cartas compradas não vazam para adversários.
 
-Ao terminar as quatro janelas do Dia, a partida entra na Noite. Combate, feitiços e
-o uso dos artefatos ainda permanecem no terminal nesta prova vertical.
+Também estão disponíveis os 12 artefatos com escolhas de alvo, Pena, escolhas pendentes,
+curas, pactos e habilidades diurnas listadas no roteiro. Uma escolha pendente bloqueia
+outras ações até ser resolvida. Rogue recebe vida, item e artefato ao firmar qualquer
+pacto; concluir uma quest não concede outra recompensa.
+
+Ao terminar as quatro janelas do Dia, a partida entra na Noite. A Noite ainda não é
+jogável nesta versão. Feitiços e algumas habilidades ainda aguardam adaptação: o cliente
+não é uma partida completa. O histórico de eventos agora acompanha o save.
 
 Próximas etapas: [ROADMAP_WEB_LOCAL.md](ROADMAP_WEB_LOCAL.md).
