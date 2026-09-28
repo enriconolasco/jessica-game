@@ -181,6 +181,37 @@ function renderActions(actions) {
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
+    if (type === "dream_multi") {
+      const action = items[0];
+      const selected = [];
+      const select = document.createElement("select");
+      select.setAttribute("aria-label", "Carta transformada e alvo");
+      action.selection.options.forEach((option, i) => select.appendChild(new Option(option.label, i)));
+      const list = document.createElement("ol");
+      const add = document.createElement("button");
+      add.textContent = "Adicionar à sequência";
+      add.onclick = () => {
+        const option = action.selection.options[Number(select.value)];
+        selected.push(option);
+        const row = document.createElement("li");
+        row.textContent = option.label;
+        list.appendChild(row);
+      };
+      const clear = document.createElement("button");
+      clear.textContent = "Limpar sequência";
+      clear.onclick = () => { selected.length = 0; list.replaceChildren(); };
+      const submit = document.createElement("button");
+      submit.textContent = "Lançar Sonho Lúcido";
+      submit.onclick = () => act({...action, params: {choice: {
+        flip_cards: selected.map(o => o.choice.flip_cards[0]),
+        artifact_choices: selected.map(o => o.choice.artifact_choices[0]),
+      }}});
+      const hint = document.createElement("p");
+      hint.textContent = "As cartas serão resolvidas na ordem abaixo. Uma carta que abre escolha de compra deve ficar por último. O motor valida quantidades e alvos.";
+      group.append(hint, select, add, list, clear, submit);
+      root.appendChild(group);
+      return;
+    }
     if (type === "allocate_bets") {
       const action = items[0];
       const fields = {};
@@ -286,6 +317,7 @@ function eventText(event) {
       demon_pact: "firmou um pacto", decline_pact: "recusou um pacto",
       cast_spell: "usou um feitiço", sacrifice_spell: "usou Sacrifício de Demônio",
       allocate_bets: "confirmou as apostas",
+      dream_multi: "usou Sonho Lúcido com Luna",
       reroll_spell: "rerrolou o feitiço copiado"};
     return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${d.card_id}` : ""}${d.pact_id ? `: ${d.pact_id.replaceAll("_", " ")}` : ""}.`;
   }

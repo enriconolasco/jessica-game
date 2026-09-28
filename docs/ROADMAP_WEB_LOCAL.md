@@ -42,13 +42,15 @@ ou campo, inclusive cópia pelos Gnomos. Validação e execução pelo core, sem
 todas as combinações. Testes cobrem paridade, duplicatas, rejeição e save/load.
 Sonho Lúcido disponível para uma carta, incluindo escolha do artefato transformado.
 Cópia gnômica corrigida no motor e terminal: usa a mesma transformação/ativação
-imediata das Fadas. Seleção de várias cartas com Luna ainda pendente na web;
-não considerar esse fluxo completo. Devaneio usa o caminho existente do core.
+imediata das Fadas. Luna agora permite uma sequência de várias cartas e alvos.
+Limitação do adaptador: J♦ transformado deve ser a última carta; alvos são os
+disponíveis antes da sequência. Escolhas intercaladas ainda pendentes.
+Devaneio usa o caminho existente do core.
 
 1. **Sincronizar o motor atual:** concluído para o lote acima; sincronizar novos
    patches do terminal a cada marco.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
-3. **Completar o Dia:** Sonho Lúcido com Luna (seleções compostas),
+3. **Completar o Dia:** Sonho Lúcido com Luna (escolhas intercaladas),
    integração das apostas ao ciclo completo de turnos,
    Miyamoto diurno e demais janelas especiais. Aiquara diurna e Zebum já adaptados.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.

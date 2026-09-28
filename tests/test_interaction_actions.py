@@ -372,6 +372,34 @@ def test_apostas_invalidas_atomicas():
     assert apply_action(state, action)["success"]
 
 
+def test_luna_multicartas_paridade_ordem_save_e_atomicidade():
+    state = ready()
+    p = state.players[0]
+    p.people = "fadas"
+    p.hand = ["K_H", "K_S"]
+    p.units.append(Hero(id="luna", owner_id=1, house="center", life=2, life_max=2, hero_id="luna"))
+    before = state_to_dict(state)
+    offer = next(a for a in legal_actions(state, 1) if a["type"] == "dream_multi")
+    assert state_to_dict(state) == before
+    options = offer["selection"]["options"]
+    first = next(o["choice"] for o in options if o["choice"]["flip_cards"] == ["K_H"])
+    second = next(o["choice"] for o in options if o["choice"]["flip_cards"] == ["K_S"])
+    choice = {"flip_cards": first["flip_cards"] + second["flip_cards"],
+              "artifact_choices": first["artifact_choices"] + second["artifact_choices"]}
+    offer["params"] = {"choice": choice}
+    direct = state_from_dict(before)
+    actions.cast_spell(direct, 1, choice)
+    assert apply_action(state, offer)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    assert state_to_dict(state_from_dict(state_to_dict(state))) == state_to_dict(state)
+    for cards, targets in ((["K_H", "K_H"], [{}, {}]), (["K_S"], [{"unit_id": "missing"}]),
+                           ([], []), (["K_H"], [])):
+        rejected = state_from_dict(before)
+        offer["params"] = {"choice": {"flip_cards": cards, "artifact_choices": targets}}
+        assert not apply_action(rejected, offer)["success"]
+        assert state_to_dict(rejected) == before
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

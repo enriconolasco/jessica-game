@@ -18,6 +18,7 @@ LABELS = {
     "cast_spell": "Usar feitiço", "reroll_spell": "São Tomé: rerrolar feitiço",
     "sacrifice_spell": "Sacrifício de Demônio",
     "allocate_bets": "Apostas do início do turno",
+    "dream_multi": "Luna: Sonho Lúcido com várias cartas",
 }
 ABILITIES = {
     "arken": (core.arken_espolia, "Arken: Espoliar"),
@@ -217,7 +218,7 @@ def execute(state, action):
             start_player_day(state, state.active_player_id)
     elif kind == "play_artifact":
         core.play_artifact(state, pid, **params)
-    elif kind == "cast_spell":
+    elif kind in ("cast_spell", "dream_multi"):
         core.cast_spell(state, pid, params["choice"])
     elif kind == "sacrifice_spell":
         core.cast_spell(state, pid, params)
@@ -261,6 +262,16 @@ def legal_interactions(state, player_id):
         except (core.ActionError, ValueError):
             continue
         result.append(candidate)
+    spell = spell_choices.effective_spell(player)
+    if spell and spell.spell_id == "sonho_lucido" and peoples.luna_is_alive(player):
+        options = [{"choice": a["params"]["choice"], "label": a["description"]}
+                   for a in result if a["type"] == "cast_spell"
+                   and a["params"]["choice"].get("flip_cards")]
+        if options:
+            offer = _offer("dream_multi", player_id, {"choice": options[0]["choice"]},
+                           "Adicione as cartas na ordem de resolução desejada")
+            offer["selection"] = {"kind": "dream", "options": options}
+            result.append(offer)
     return result
 
 
@@ -273,7 +284,27 @@ def apply_interaction(state, action):
     except (TypeError, ValueError):
         return _error("invalid_action", "Parâmetros inválidos.")
     available = legal_interactions(state, action["player_id"])
-    if action["type"] == "allocate_bets":
+    if action["type"] == "dream_multi":
+        submitted = action["params"]
+        choice = submitted.get("choice")
+        template = next((a for a in available if a["type"] == "dream_multi"), None)
+        if (template is None or set(submitted) != {"choice"} or not isinstance(choice, dict)
+                or set(choice) != {"flip_cards", "artifact_choices"}):
+            return _error("not_legal", "Escolha de Sonho Lúcido inválida.")
+        cards, targets = choice["flip_cards"], choice["artifact_choices"]
+        if (not isinstance(cards, list) or not cards or not all(isinstance(c, str) for c in cards)
+                or not isinstance(targets, list) or len(cards) != len(targets)
+                or Counter(cards) - Counter(get_player(state, action["player_id"]).hand)):
+            return _error("not_legal", "Quantidade de cartas indisponível.")
+        options = {json.dumps(o["choice"], sort_keys=True) for o in template["selection"]["options"]}
+        for card, target in zip(cards, targets):
+            if json.dumps({"flip_cards": [card], "artifact_choices": [target]}, sort_keys=True) not in options:
+                return _error("not_legal", "Carta ou alvo indisponível.")
+        if any(peoples.sonho_lucido_flip(c) == "J_D" for c in cards[:-1]):
+            return _error("not_legal", "Coloque a carta que abre escolha de compra por último.")
+        legal = deepcopy(template)
+        legal["params"] = deepcopy(submitted)
+    elif action["type"] == "allocate_bets":
         submitted = action["params"]
         bets = submitted.get("bets")
         template = next((a for a in available if a["type"] == "allocate_bets"), None)
@@ -322,7 +353,7 @@ def apply_interaction(state, action):
     for key in ("card_id", "ability", "pact_id"):
         if key in legal["params"]:
             event["data"][key] = legal["params"][key]
-    if action["type"] in ("cast_spell", "reroll_spell", "sacrifice_spell"):
+    if action["type"] in ("cast_spell", "reroll_spell", "sacrifice_spell", "dream_multi"):
         spell = spell_choices.effective_spell(get_player(trial, pid))
         event["data"]["spell_id"] = spell.spell_id if spell else None
     projection = {"version": EVENT_VERSION, "type": "player_view_updated", "turn": trial.turn,

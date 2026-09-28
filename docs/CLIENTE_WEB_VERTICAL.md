@@ -48,7 +48,8 @@ rola apenas para Caroços que ainda não rolaram naquele turno.
 Ao terminar as quatro janelas do Dia, a partida entra na Noite. A Noite ainda não é
 jogável nesta versão. Sacrifício de Demônio permite selecionar herói e múltiplas
 cartas da mão/campo, inclusive quando copiado pelos Gnomos. Sonho Lúcido oferece
-uma carta com escolha imediata; múltiplas cartas com Luna e algumas habilidades
+uma carta com escolha imediata; Luna também monta uma sequência de várias cartas
+com seus alvos atuais (J♦ transformado deve ficar por último). Escolhas intercaladas e algumas habilidades
 ainda aguardam adaptação: o cliente
 não é uma partida completa. O histórico de eventos agora acompanha o save.
 

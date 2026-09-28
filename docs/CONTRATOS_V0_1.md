@@ -160,8 +160,12 @@ usa parâmetros vazios e seu resultado é privado. Ambos passam pela transação
 `self` inclui `spell_copia_id`, `spell_cooldown_until_turn` e `has_cast_spell_this_turn`.
 O evento `interaction_resolved.data.spell_id` identifica o feitiço executado;
 não expõe o resultado aleatório antes da execução. Sonho Lúcido permite uma carta
-com `choice={"flip_cards":[id],"artifact_choices":[escolha]}`; múltiplas cartas com
-Luna ainda não estão oferecidas pelo adaptador web;
+com `choice={"flip_cards":[id],"artifact_choices":[escolha]}`;
+`dream_multi` usa essas mesmas listas, com múltiplos elementos em ordem de execução.
+A oferta `selection.kind="dream"` enumera opções individuais, sem gerar todas as
+combinações. Servidor valida quantidades, Luna viva e opções antes de executar
+a sequência em cópia transacional. J♦ transformado só é aceito na última posição;
+alvos que surgem no meio da sequência ainda não são oferecidos.
 não há promessa de cobertura total dos feitiços.
 
 `sacrifice_spell` aceita `params={"hero_id": unit_id, "artifacts": [{"zone":
