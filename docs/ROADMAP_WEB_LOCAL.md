@@ -27,6 +27,10 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
 
 ## Passos restantes
 
+Habilidades diurnas adicionais: Aiquara move inimigos; Zebum obtém/reinvoca
+heróis e oferece a sequência de anões quando disponível. Escolhas passam pelas
+funções originais do core; sem mudança de custo, imunidade ou restrição.
+
 Sacrifício de Demônio agora disponível: seleção de herói e múltiplas cartas da mão
 ou campo, inclusive cópia pelos Gnomos. Validação e execução pelo core, sem enumerar
 todas as combinações. Testes cobrem paridade, duplicatas, rejeição e save/load.
@@ -40,7 +44,7 @@ não considerar esse fluxo completo. Devaneio usa o caminho existente do core.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
 3. **Completar o Dia:** Sonho Lúcido com Luna (seleções compostas),
    apostas antes do Dia do Curruna,
-   Aiquara, Zebum, Miyamoto diurno e demais janelas especiais.
+   Miyamoto diurno e demais janelas especiais. Aiquara diurna e Zebum já adaptados.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,
    retaliações e janelas especiais/reacionais. Nenhuma regra ficará no frontend.

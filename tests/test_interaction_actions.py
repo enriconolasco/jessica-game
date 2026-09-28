@@ -273,6 +273,59 @@ def test_coleta_tres_distribuicoes_uma_vez_por_turno():
         assert not any(a["type"] == "collect_resources" for a in legal_actions(state, 1))
 
 
+def test_aiquara_web_paridade_limite_e_imunidade():
+    state = ready()
+    p = state.players[0]
+    p.units.append(Hero(id="ninfa", owner_id=1, house="center",
+                        life=3, life_max=3, hero_id="aiquara"))
+    state.players[1].units.append(Hero(id="immune", owner_id=2, house="center",
+                                     life=20, life_max=20, hero_id="valtherion"))
+    before = state_to_dict(state)
+    choices = [a for a in legal_actions(state, 1)
+               if a["params"].get("ability") == "aiquara_move"]
+    assert choices
+    assert not any(a["params"]["args"]["enemy_unit_id"] == "immune" for a in choices)
+    assert state_to_dict(state) == before
+    action = choices[0]
+    direct = state_from_dict(before)
+    actions.aiquara_mover(direct, 1, **action["params"]["args"])
+    assert apply_action(state, action)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    before = state_to_dict(state)
+    assert not apply_action(state, action)["success"]
+    assert state_to_dict(state) == before
+
+
+def test_zebum_web_paridade_reinvocacao_e_restricoes():
+    state = ready()
+    p = state.players[0]
+    p.units.append(Hero(id="zebum", owner_id=1, house="center",
+                        life=3, life_max=3, hero_id="zebum"))
+    p.correct_bets = 30
+    before = state_to_dict(state)
+    choices = [a for a in legal_actions(state, 1)
+               if a["params"].get("ability") == "zebum_summon"]
+    assert choices and state_to_dict(state) == before
+    forbidden = {other.chosen_hero_id for other in state.players[1:]}
+    assert not any(a["params"]["args"]["hero_id"] in forbidden for a in choices)
+    action = next(a for a in choices if a["params"]["args"]["hero_id"] != "seven_dwarves")
+    direct = state_from_dict(before)
+    actions.zebum_invocar_heroi(direct, 1, **action["params"]["args"])
+    assert apply_action(state, action)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    acquired = action["params"]["args"]["hero_id"]
+    p = state.players[0]
+    next(u for u in p.units if isinstance(u, Hero) and u.hero_id == acquired).life = 0
+    choices = legal_actions(state, 1)
+    action = next(a for a in choices if a["params"].get("ability") == "zebum_resummon")
+    direct = state_from_dict(state_to_dict(state))
+    actions.zebum_reinvocar(direct, 1, **action["params"]["args"])
+    assert apply_action(state, action)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    state.phase = Phase.NIGHT
+    assert not apply_action(state, action)["success"]
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

@@ -30,6 +30,10 @@ ABILITIES = {
     "bimbo_artifact": (core.bimbo_gastar_5, "Bimbo: obter artefato"),
     "guarari": (core.transformar_em_centauro, "Guarari: transformar aliado"),
     "valtherion": (core.valtherion_chamado, "Valtherion: Chamado"),
+    "aiquara_move": (core.aiquara_mover, "Aiquara: mover inimigo"),
+    "zebum_summon": (core.zebum_invocar_heroi, "Zebum: obter herói"),
+    "zebum_resummon": (core.zebum_reinvocar, "Zebum: reinvocar herói"),
+    "zebum_dwarf": (core.zebum_invocar_proximo_anao, "Zebum: próximo anão"),
 }
 
 
@@ -134,6 +138,33 @@ def _candidates(state, player):
                 yield _offer("play_artifact", pid, {"card_id": card, "choice": choice},
                              card_display(card) + (f" → {label}" if label else ""))
     living = {u.hero_id for u in player.units if isinstance(u, Hero) and u.is_alive()}
+    if "aiquara" in living:
+        for owner in state.players:
+            if owner.id == pid:
+                continue
+            for unit in owner.units:
+                if not unit.is_alive():
+                    continue
+                for destination in (CENTER, *CITY_HOUSES):
+                    name = heroes.hero_name(unit.hero_id) if isinstance(unit, Hero) else unit.id
+                    label = "Centro" if destination == CENTER else destination.replace("city_", "Cidade J")
+                    yield _offer("hero_ability", pid,
+                                 {"ability": "aiquara_move", "args": {
+                                     "enemy_unit_id": unit.id, "destination": destination}},
+                                 f"Aiquara: {name} ({owner.name}) → {label}")
+    if "zebum" in living:
+        for people in sorted({p.people for p in state.players if p.people}):
+            for hero in heroes.heroes_for_people(people):
+                yield _offer("hero_ability", pid,
+                             {"ability": "zebum_summon", "args": {"hero_id": hero.hero_id}},
+                             f"Zebum: obter {hero.name}")
+        for hero_id in player.zebum_herois:
+            yield _offer("hero_ability", pid,
+                         {"ability": "zebum_resummon", "args": {"hero_id": hero_id}},
+                         f"Zebum: reinvocar {heroes.hero_name(hero_id)}")
+        if player.zebum_seven_dwarves:
+            yield _offer("hero_ability", pid,
+                         {"ability": "zebum_dwarf", "args": {}}, "Zebum: próximo anão")
     aliases = {"barba_negra": ("barba_flames", "barba_combat"),
                "bimbo_do_mal": ("bimbo_hide", "bimbo_artifact")}
     for hero in sorted(living):
