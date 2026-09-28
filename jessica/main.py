@@ -925,6 +925,8 @@ def _escolher_decompor(state, player):
 
 def _spell_choice_ui(state, player, spell_id):
     cd: dict = {}
+    if spell_id == "sonho_lucido":
+        return _sonho_lucido_ui(state, player)
     if spell_id in ("resistencia", "transformar_morcego", "licantropo"):
         if not player.units:
             raise ActionError("Sem unidades.")
@@ -951,6 +953,45 @@ def _spell_choice_ui(state, player, spell_id):
     elif spell_id == "imitacao_gnomerica":
         raise ActionError("Nao pode imitar a si mesmo.")
     return cd
+
+
+def _sonho_lucido_ui(state, player):
+    pid = player.id
+    choice_data = {}
+    if peoples.valendar_is_alive(player):
+        pass  # Devaneio Onirico: sem escolha
+    elif peoples.luna_is_alive(player):
+        cards = []
+        hand_disponivel = list(player.hand)
+        while hand_disponivel:
+            labels = [card_display(c) for c in hand_disponivel] + ["(parar)"]
+            idx = pick_index("Inverter qual?", labels)
+            if idx == len(hand_disponivel):
+                break
+            c = hand_disponivel.pop(idx)
+            cards.append(c)
+        if not cards:
+            console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
+            raise ActionError("Sonho Lucido cancelado.")
+        choice_data["flip_cards"] = cards
+    else:
+        if not player.hand:
+            raise ActionError("Mao vazia.")
+        labels = [card_display(c) for c in player.hand] + ["Cancelar"]
+        idx = pick_index("Inverter qual?", labels)
+        if idx == len(player.hand):
+            console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
+            return None
+        choice_data["flip_cards"] = [player.hand[idx]]
+    artifact_choices = []
+    for original in choice_data.get("flip_cards", []):
+        transformed = peoples.sonho_lucido_flip(original)
+        artifact_choices.append(
+            _ask_choice_for_artifact(state, pid, transformed)
+            if artifacts_effects.needs_choice(transformed) else {}
+        )
+    choice_data["artifact_choices"] = artifact_choices
+    return choice_data
 
 
 def _dragon_resonance_ui(player):
@@ -2425,39 +2466,7 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         elif sp.spell_id == "imitacao_gnomerica":
             choice_data = _escolher_imitacao(state, player)
         elif sp.spell_id == "sonho_lucido":
-            if peoples.valendar_is_alive(player):
-                pass  # Devaneio Onirico: sem escolha
-            elif peoples.luna_is_alive(player):
-                cards = []
-                hand_disponivel = list(player.hand)
-                while hand_disponivel:
-                    labels = [card_display(c) for c in hand_disponivel] + ["(parar)"]
-                    idx = pick_index("Inverter qual?", labels)
-                    if idx == len(hand_disponivel):
-                        break
-                    c = hand_disponivel.pop(idx)
-                    cards.append(c)
-                if not cards:
-                    console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
-                    return None
-                choice_data["flip_cards"] = cards
-            else:
-                if not player.hand:
-                    raise ActionError("Mao vazia.")
-                labels = [card_display(c) for c in player.hand] + ["Cancelar"]
-                idx = pick_index("Inverter qual?", labels)
-                if idx == len(player.hand):
-                    console.print("[yellow]Sonho Lucido cancelado.[/yellow]")
-                    return None
-                choice_data["flip_cards"] = [player.hand[idx]]
-            artifact_choices = []
-            for original in choice_data.get("flip_cards", []):
-                transformed = peoples.sonho_lucido_flip(original)
-                artifact_choices.append(
-                    _ask_choice_for_artifact(state, pid, transformed)
-                    if artifacts_effects.needs_choice(transformed) else {}
-                )
-            choice_data["artifact_choices"] = artifact_choices
+            choice_data = _sonho_lucido_ui(state, player)
         elif sp.spell_id == "ressonancia_magica":
             choice_data = _dragon_resonance_ui(player)
         elif sp.spell_id == "sacrificio_de_demonio":

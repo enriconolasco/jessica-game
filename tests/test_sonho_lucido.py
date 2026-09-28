@@ -63,9 +63,24 @@ def test_sonho_lucido_only_that_turn():
     print("OK  - Sonho Lucido so vale no turno do cast")
 
 
+def test_copia_gnomica_ativa_imediatamente():
+    state = make_state()
+    p = state.players[0]
+    p.people = "gnomos_duendes"
+    p.spell_copia_id = "sonho_lucido"
+    p.hand = ["K_H"]
+    p.city.magic = 10
+    cast_spell(state, p.id, {"flip_cards": ["K_H"], "artifact_choices": [{}]})
+    assert not p.hand
+    assert any(a.card_id == "K_D" for a in p.field_artifacts)
+    assert p.sonho_lucido_pending_turn == -1
+    assert p.has_cast_spell_this_turn
+
+
 def run_all():
     tests = [
         test_flip_card,
+        test_copia_gnomica_ativa_imediatamente,
         test_flip_pena_unchanged,
         test_sonho_lucido_flips_played_artifact,
         test_sonho_lucido_only_that_turn,
