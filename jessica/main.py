@@ -23,6 +23,7 @@ from .core.actions import (
     baoba_pagar_magia, bimbo_invisibilidade, bimbo_gastar_5,
     zebum_invocar_heroi, zebum_reinvocar, zebum_invocar_proximo_anao,
     gnomo_alocar_aposta, purpura_invisibilidade, barba_mar_de_chamas,
+    barba_combater_como_heroi, barba_resolver_mar_de_chamas,
     valtherion_chamado,
 )
 from .core.combat import (
@@ -912,6 +913,15 @@ def _menu_especiais(state, pid: int) -> str | None:
     if valtherion and valtherion.statuses.get("chamado_cooldown_until_turn", -1) <= state.turn:
         opts.append("Valtherion: Chamado")
         keys.append("v")
+    barba = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                  and u.hero_id == "barba_negra"), None)
+    if barba is not None:
+        if barba.statuses.get("mar_chamas_cooldown_until_turn", -1) <= state.turn:
+            opts.append("Barba Negra: preparar Mar de Chamas")
+            keys.append("B")
+        if barba.statuses.get("barba_hero_mode_turn") != state.turn:
+            opts.append("Barba Negra: combater como Herói nesta Noite")
+            keys.append("H")
     if player.demon_pact_offers and peoples.available_demon_pacts(state):
         opts.append("Escolher pacto demoniaco disponivel")
         keys.append("D")
@@ -1096,11 +1106,13 @@ def _dragon_resonance_ui(player):
     return {"action": "swap", "old_card_id": old, "new_card_id": new}
 
 
-def _demon_pact_ui(state, player, demon_player_id, rogue=False):
+def _demon_pact_ui(state, player, demon_player_id, rogue=False, required=False):
     pact_ids = peoples.available_demon_pacts(state)
     if not pact_ids:
         raise ActionError("Todos os pactos demoníacos já foram escolhidos.")
-    labels = [peoples.DEMON_PACTS[p] for p in pact_ids] + ["Não fazer pacto"]
+    labels = [peoples.DEMON_PACTS[p] for p in pact_ids]
+    if not required:
+        labels.append("Não fazer pacto")
     idx = pick_index("Pacto demoníaco", labels)
     if idx == len(pact_ids):
         return False
@@ -1108,19 +1120,19 @@ def _demon_pact_ui(state, player, demon_player_id, rogue=False):
     if rogue:
         rogue_unit = next((u for u in player.units if isinstance(u, Hero)
                            and u.hero_id == "rogue_devil"), None)
-        owned = set(rogue_unit.statuses.get("rogue_items", [])) if rogue_unit else set()
+        owned = set(player.rogue_items)
         available_items = [i for i in peoples.ROGUE_ITEMS if i not in owned]
-        if not available_items:
-            raise ActionError("Rogue Devil ja possui os quatro itens.")
         labels_items = {
             "capa": "Capa — fica invisível ao derrotar inimigo",
             "adaga": "Adaga — executa inimigos menores isolados",
             "relogio": "Relógio — transporte antes do fim da Noite",
             "bracelete": "Bracelete — resistência a heróis e +1 Vida",
         }
-        buff = available_items[pick_index(
-            "Item de Rogue Devil", [labels_items[i] for i in available_items])]
-    peoples.make_demon_pact(state, demon_player_id, player.id, pact_ids[idx], buff)
+        if available_items:
+            buff = available_items[pick_index(
+                "Item de Rogue Devil", [labels_items[i] for i in available_items])]
+    peoples.make_demon_pact(state, demon_player_id, player.id, pact_ids[idx], buff,
+                            rogue_pact=rogue)
     console.print(f"[green]Pacto firmado: {labels[idx]}.[/green]")
     return True
 
@@ -1255,7 +1267,9 @@ def _zebum_obter_novo(state, player):
                     continue
                 skip = False
                 for other in state.players:
-                    if other.id != player.id and other.chosen_hero_id == hid:
+                    if (other.id != player.id
+                            and (other.chosen_hero_id == hid
+                                 or hid in other.summoned_hero_ids)):
                         skip = True
                         break
                 if skip:
@@ -2086,7 +2100,8 @@ def estudar_campo(state) -> None:
 
 
 def historico(state) -> None:
-    log_lines = state.event_log
+    log_lines = [line for line in state.event_log
+                 if line.startswith(f"[T{state.turn} ")]
     if not log_lines:
         console.print("[dim]Nenhum evento registrado.[/dim]")
         return
@@ -2342,13 +2357,23 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         if action is None:
             raise ActionError("Invocação de Herói não é legal no estado atual.")
         _apply_simple_engine_action(state, action)
+        rogue_offer = next((offer for offer in player.demon_pact_offers
+                            if offer.get("source") == "rogue_devil"
+                            and offer.get("turn") == state.turn), None)
+        if rogue_offer is not None:
+            _demon_pact_ui(state, player, rogue_offer["demon_player_id"],
+                           rogue=True, required=True)
+            player.demon_pact_offers.remove(rogue_offer)
         console.print("[green]Heroi ok.[/green]")
     elif choice == "5":
         alive = [u for u in player.units if u.is_alive()]
         units = [u for u in alive if not u.has_moved_this_turn
                  and u.moves_this_turn < u.max_moves_this_turn
                  and not (u.statuses.get("summoned_turn") == state.turn
-                          and not (isinstance(u, Hero) and u.hero_id == "guarari"))]
+                          and not (isinstance(u, Hero) and u.hero_id in ("guarari", "luarado")
+                                   and (u.hero_id == "guarari"
+                                        or peoples.is_lua_cheia(state, player.id)
+                                        or u.statuses.get("lobisomem_until_turn", -1) >= state.turn)))]
         if not units:
             if any(u.statuses.get("summoned_turn") == state.turn for u in alive):
                 raise ActionError("Unidade recém invocada não pode se movimentar.")
@@ -2462,6 +2487,12 @@ def _do_action(state, pid: int, choice: str) -> str | None:
         labels = [f"{a.value} (max {TROOP_MAX_LIFE[a.value]})" for a in kinds]
         troop = valtherion_chamado(state, pid, kinds[pick_index("Chamado", labels)])
         console.print(f"[green]Chamado: {troop.id} ({troop.life}/{troop.life_max}).[/green]")
+    elif choice == "B":
+        barba_mar_de_chamas(state, pid)
+        console.print("[green]Mar de Chamas preparado.[/green]")
+    elif choice == "H":
+        barba_combater_como_heroi(state, pid)
+        console.print("[green]Barba Negra combaterá como Herói nesta Noite.[/green]")
     elif choice == "i":
         _aiquara_ui(state, pid)
     elif choice == "b":
@@ -2626,19 +2657,70 @@ def _visible_state_snapshot(state) -> dict:
     return result
 
 
-def _log_visible_state_changes(state, before: dict, source: str) -> None:
+def _log_visible_state_changes(state, before: dict, source: str,
+                               prior_lines: list[str] | None = None) -> None:
     after = _visible_state_snapshot(state)
+    prior_lines = prior_lines or []
     for p in state.players:
         old, new = before.get(p.id, {}), after[p.id]
         for key in ("Ouro", "Magia", "Vida da Base", "Vida máxima da Base",
                     "Artefatos na mão", "Canastra"):
             if old.get(key) != new[key]:
+                if (key in ("Ouro", "Magia") and any(
+                        f"{p.name} coletou" in line for line in prior_lines)):
+                    continue
                 log(state, f"[STATE] {source}: {p.name} — {key}: {old.get(key)} -> {new[key]}.")
         old_units, new_units = old.get("Unidades", {}), new["Unidades"]
         for uid in sorted(set(old_units) | set(new_units)):
-            if old_units.get(uid) != new_units.get(uid):
-                log(state, f"[STATE] {source}: {p.name} — {uid}: "
-                           f"{old_units.get(uid, '(ausente)')} -> {new_units.get(uid, '(ausente)')}.")
+            previous, current = old_units.get(uid), new_units.get(uid)
+            if previous == current:
+                continue
+            unit = next((u for u in p.units if u.id == uid), None)
+            if isinstance(unit, Hero):
+                unit_name = heroes.hero_name(unit.hero_id)
+            elif isinstance(unit, Troop):
+                size = {"light": "pequena", "medium": "média", "heavy": "grande",
+                        "dragon_light": "dragão pequena", "dragon_medium": "dragão média",
+                        "dragon_heavy": "dragão grande"}.get(unit.archetype.value,
+                                                       unit.archetype.value)
+                unit_name = f"Tropa {size}"
+            else:
+                unit_name = uid
+            if previous is None or current is None:
+                verb = "entrou em campo" if previous is None else "saiu de campo"
+                log(state, f"[STATE] {source}: {unit_name} ({p.name}) {verb}.")
+                continue
+            labels = ("Vida", "Vida máxima", "Casa", "Movimentos usados",
+                      "Movimentos permitidos", "Ataques usados", "Ataques permitidos",
+                      "Dano dobrado", "Resistências")
+            changes = []
+            for i, label in enumerate(labels):
+                if previous[i] == current[i]:
+                    continue
+                old_value, new_value = previous[i], current[i]
+                if i == 2:
+                    old_value = house_short(state, old_value)
+                    new_value = house_short(state, new_value)
+                changes.append(f"{label} {old_value} → {new_value}")
+            old_status, new_status = dict(previous[9]), dict(current[9])
+            status_names = {
+                "summoned_turn": "invocada no turno",
+                "barba_hero_mode_turn": "combate como herói no turno",
+                "mar_chamas_queued_turn": "Mar de Chamas preparado no turno",
+                "mar_chamas_cooldown_until_turn": "Mar de Chamas em recarga até o turno",
+                "lobisomem_until_turn": "lobisomem até o turno",
+                "invisivel_until_turn": "invisível até o turno",
+                "invulneravel_until_turn": "invulnerável até o turno",
+                "rogue_items": "itens de Rogue Devil",
+            }
+            for status in sorted(old_status.keys() | new_status.keys()):
+                if old_status.get(status) != new_status.get(status):
+                    label = status_names.get(status, status.replace("_", " "))
+                    changes.append(f"{label}: {old_status.get(status, 'não')} → "
+                                   f"{new_status.get(status, 'não')}")
+            if changes:
+                log(state, f"[STATE] {source}: {unit_name} ({p.name}) — "
+                           + "; ".join(changes) + ".")
 
 
 def run_player_day(state, pid: int) -> str | None:
@@ -2660,7 +2742,8 @@ def run_player_day(state, pid: int) -> str | None:
             before_state = _visible_state_snapshot(state)
             before_log = len(state.event_log)
             result = handle_action(state, pid, choice)
-            _log_visible_state_changes(state, before_state, f"ação de {player.name}")
+            _log_visible_state_changes(state, before_state, f"ação de {player.name}",
+                                       state.event_log[before_log:])
             for line in state.event_log[before_log:]:
                 console.print(f"  [cyan]{line}[/cyan]")
             if result is not None:
@@ -3031,14 +3114,7 @@ def run_night_phase(state) -> None:
     _ask_vovo_position(state)
 
     all_pids = list(day_order(state))
-    for pid in all_pids:
-        player = get_player(state, pid)
-        barba = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
-                      and u.hero_id == "barba_negra"), None)
-        if (barba is not None
-                and barba.statuses.get("mar_chamas_cooldown_until_turn", -1) <= state.turn
-                and Prompt.ask(f"{player.name}: usar Mar de Chamas?", choices=["s", "n"], default="n") == "s"):
-            barba_mar_de_chamas(state, pid)
+    barba_resolver_mar_de_chamas(state)
     for pid in all_pids:
         player = get_player(state, pid)
         _try_luna_return(state, player)
@@ -3154,7 +3230,8 @@ def _run_one_game() -> None:
             before = len(state.event_log)
             before_morning = _visible_state_snapshot(state)
             start_player_day(state, pid)
-            _log_visible_state_changes(state, before_morning, f"manhã de {player.name}")
+            _log_visible_state_changes(state, before_morning, f"manhã de {player.name}",
+                                       state.event_log[before:])
             for line in state.event_log[before:]:
                 console.print(f"  [cyan]{line}[/cyan]")
             if player.skip_day_turn == state.turn:

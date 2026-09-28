@@ -304,6 +304,8 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
     if alive_heroes and force_hero_id is None:
         raise ActionError("Ja existe heroi vivo.")
     target_id = force_hero_id if force_hero_id is not None else player.chosen_hero_id
+    if target_id == "rogue_devil" and not peoples.available_demon_pacts(state):
+        raise ActionError("Rogue Devil precisa de um pacto disponivel para ser invocado.")
     sig = {"kind": "hero", "id": target_id}
     if peoples.is_empalado(player, sig):
         raise ActionError(f"Heroi {target_id} empalado.")
@@ -311,7 +313,7 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
            for u in player.units):
         raise ActionError(f"Heroi {target_id} ja em campo.")
 
-    magic_cost = peoples.hero_summon_cost(player, state)
+    magic_cost = 2 if target_id == "luarado" else peoples.hero_summon_cost(player, state)
     if city.magic < magic_cost:
         raise ActionError(f"Magia insuficiente ({magic_cost}).")
     city.magic -= magic_cost
@@ -347,7 +349,10 @@ def move_unit(state: GameState, player_id: int, unit_id: str, destination: str) 
     if unit is None:
         raise ActionError(f"Unidade {unit_id} nao encontrada.")
     summoned_now = unit.statuses.get("summoned_turn") == state.turn
-    can_move_when_summoned = (
+    lunar_luarado = (isinstance(unit, Hero) and unit.hero_id == "luarado"
+                     and (peoples.is_lua_cheia(state, player.id)
+                          or unit.statuses.get("lobisomem_until_turn", -1) >= state.turn))
+    can_move_when_summoned = lunar_luarado or (
         isinstance(unit, Hero) and unit.hero_id == "guarari"
     ) or unit.statuses.get("morcego_until_turn", -1) >= state.turn
     if summoned_now and not can_move_when_summoned:
@@ -755,6 +760,10 @@ def _spell_licantropo(state, player, choice):
     if t is None:
         raise ActionError("Alvo nao encontrado.")
     t.statuses["lobisomem_until_turn"] = state.turn
+    if isinstance(t, Hero) and t.hero_id == "luarado":
+        t.max_moves_this_turn = 1 if t.statuses.get("summoned_turn") == state.turn else 2
+        t.moves_this_turn = min(t.moves_this_turn, t.max_moves_this_turn - 1)
+        t.has_moved_this_turn = False
     peoples.apply_lobisomem_hero_buffs(state, player, t)
     if peoples.is_lua_cheia(state, player.id):
         log(state, f"{player.name}: {t.id} virou Lobisomem na Lua Cheia "
@@ -1088,27 +1097,53 @@ def barba_mar_de_chamas(state: GameState, player_id: int) -> None:
                   if u.hero_id == "barba_negra"), None)
     if barba is None:
         raise ActionError("Barba Negra nao esta vivo.")
-    if state.phase != Phase.NIGHT:
-        raise ActionError("Mar de Chamas so pode ser usado no inicio da Noite.")
+    if state.phase != Phase.DAY:
+        raise ActionError("Mar de Chamas deve ser escolhido durante o Dia.")
     if barba.statuses.get("mar_chamas_cooldown_until_turn", -1) > state.turn:
         raise ActionError("Mar de Chamas em recarga.")
-    barba.statuses["barba_hero_mode_turn"] = state.turn
+    if barba.statuses.get("mar_chamas_queued_turn") == state.turn:
+        raise ActionError("Mar de Chamas ja foi escolhido neste turno.")
+    barba.statuses["mar_chamas_queued_turn"] = state.turn
     barba.statuses["mar_chamas_cooldown_until_turn"] = state.turn + 2
-    for other in state.players:
-        if other.id == player_id:
+    log(state, f"{player.name}: Mar de Chamas preparado para o inicio da Noite.")
+
+
+def barba_combater_como_heroi(state: GameState, player_id: int) -> None:
+    player = get_player(state, player_id)
+    barba = next((u for u in peoples.dragon_heroes(player)
+                  if u.hero_id == "barba_negra"), None)
+    if barba is None or state.phase != Phase.DAY:
+        raise ActionError("Barba Negra deve ativar o combate como Heroi durante o Dia.")
+    if barba.statuses.get("barba_hero_mode_turn") == state.turn:
+        raise ActionError("Combate como Heroi ja ativado neste turno.")
+    barba.statuses["barba_hero_mode_turn"] = state.turn
+    log(state, f"{player.name}: Barba Negra combaterá como Heroi nesta Noite.")
+
+
+def barba_resolver_mar_de_chamas(state: GameState) -> None:
+    for player in state.players:
+        barba = next((u for u in peoples.dragon_heroes(player)
+                      if u.hero_id == "barba_negra"
+                      and u.statuses.get("mar_chamas_queued_turn") == state.turn), None)
+        if barba is None:
             continue
-        for unit in other.units:
-            if (unit.is_alive() and unit.house == barba.house
-                    and not unit.statuses.get("dragon_base")):
-                before = unit.life
-                unit.life = max(0, unit.life - 1)
-                if not unit.is_alive():
-                    unit.statuses["life_at_death"] = before
-                    unit.killed_by_player_id = player_id
-                    unit.killed_by_unit_id = barba.id
-    from .combat import _cleanup_dead
-    _cleanup_dead(state)
-    log(state, f"{player.name}: Mar de Chamas ativado; Barba Negra combate como Heroi.")
+        hits = 0
+        for other in state.players:
+            if other.id == player.id:
+                continue
+            for unit in other.units:
+                if (unit.is_alive() and unit.house == barba.house
+                        and not unit.statuses.get("dragon_base")):
+                    before = unit.life
+                    unit.life = max(0, unit.life - 1)
+                    hits += 1
+                    if not unit.is_alive():
+                        unit.statuses["life_at_death"] = before
+                        unit.killed_by_player_id = player.id
+                        unit.killed_by_unit_id = barba.id
+        from .combat import _cleanup_dead
+        _cleanup_dead(state)
+        log(state, f"{player.name}: Mar de Chamas atingiu {hits} inimigo(s).")
 
 
 def valtherion_chamado(state: GameState, player_id: int,
@@ -1177,6 +1212,8 @@ def aiquara_mover(state: GameState, player_id: int, enemy_unit_id: str,
             break
     if enemy is None:
         raise ActionError("Inimigo nao encontrado na casa de Aiquara.")
+    if isinstance(enemy, Hero) and enemy.hero_id == "valtherion":
+        raise ActionError("Valtherion nao pode ser controlado.")
     if destination not in (CENTER, *CITY_HOUSES):
         raise ActionError("Destino invalido.")
     origin = enemy.house
@@ -1220,6 +1257,8 @@ def aiquara_atacar(state: GameState, player_id: int, enemy_unit_id: str,
             break
     if enemy is None:
         raise ActionError("Inimigo nao encontrado na casa de Aiquara.")
+    if isinstance(enemy, Hero) and enemy.hero_id == "valtherion":
+        raise ActionError("Valtherion nao pode ser controlado.")
     if target_type == "city" and target_id.isdigit():
         if int(target_id) == enemy.owner_id:
             raise ActionError("Nao pode atacar a propria Cidade do inimigo controlado.")
@@ -1356,7 +1395,8 @@ def zebum_invocar_heroi(state: GameState, player_id: int, hero_id: str) -> None:
     for other in state.players:
         if other.id == player_id:
             continue
-        if other.chosen_hero_id == hero_id:
+        if (other.chosen_hero_id == hero_id or hero_id in other.summoned_hero_ids
+                or any(isinstance(u, Hero) and u.hero_id == hero_id for u in other.units)):
             raise ActionError("Heroi principal de outro jogador.")
     if _zebum_heroi_em_uso_por_outro(state, player_id, hero_id):
         raise ActionError("Heroi ja foi obtido por outro Zebum.")

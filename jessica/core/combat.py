@@ -270,7 +270,7 @@ def _check_can_attack(state: GameState, unit: Unit) -> None:
         raise CombatError(f"Unidade {unit.id} esta dormindo (Bein).")
     if (isinstance(unit, Hero) and unit.hero_id == "barba_negra"
             and unit.statuses.get("barba_hero_mode_turn") != state.turn):
-        raise CombatError("Barba Negra so ataca apos usar Mar de Chamas.")
+        raise CombatError("Barba Negra so ataca apos ativar Combater como Heroi durante o Dia.")
 
 
 def _compute_bein_sleep_until(state: GameState, attacker_owner_id: int) -> int:

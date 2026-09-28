@@ -94,6 +94,8 @@ def on_play(state: GameState, player_id: int, card_id: str, choice: dict) -> Non
         target = next((u for u in player.units if u.id == target_unit_id and u.is_alive()), None)
         if target is None:
             raise ValueError(f"Alvo {target_unit_id} nao encontrado.")
+        if isinstance(target, Hero) and target.hero_id == "valtherion":
+            raise ValueError("Valtherion nao pode ser controlado.")
         target.double_damage = True
         target.resistance_stacks += 1
         for a in player.field_artifacts:

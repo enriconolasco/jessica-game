@@ -142,6 +142,9 @@ class Player:
 
     # Demonios
     demon_pact_offers: list[dict] = field(default_factory=list)
+    rogue_life_bonus: int = 0
+    rogue_items: list[str] = field(default_factory=list)
+    summoned_hero_ids: list[str] = field(default_factory=list)
 
 
 @dataclass

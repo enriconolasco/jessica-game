@@ -67,6 +67,8 @@ def infection_matches(record: dict, unit: Unit) -> bool:
 
 
 def add_infection(infector: Player, unit: Unit) -> bool:
+    if isinstance(unit, Hero) and unit.hero_id == "valtherion":
+        return False
     record = infection_record(unit)
     for existing in infector.infectados:
         if (existing.get("kind") == record["kind"]
@@ -142,6 +144,8 @@ def hero_life_with_persistent_bonus(player: Player, hero_def,
         life += player.garoche_life_max_bonus
     if hero_def.hero_id == "purpura" and state is not None:
         life += state.turn // 2
+    if hero_def.hero_id == "rogue_devil":
+        life += player.rogue_life_bonus + int("bracelete" in player.rogue_items)
     if hero_def.people == PEOPLE_DRAGOES:
         life += 2 * dragon_rank_count(player, "Q")
     return life
@@ -213,7 +217,13 @@ def on_action_performed(state: GameState, actor_id: int, action: str) -> None:
 def on_unit_summoned(state: GameState, actor_id: int, unit: Unit | None = None) -> None:
     on_action_performed(state, actor_id, "unit_summoned")
     if isinstance(unit, Hero) and unit.hero_id == "rogue_devil":
-        get_player(state, actor_id).demon_pact_offers.append({
+        owner = get_player(state, actor_id)
+        unit.statuses["rogue_items"] = list(owner.rogue_items)
+        if "adaga" in owner.rogue_items:
+            unit.statuses["demon_execute_weaker"] = True
+        if "bracelete" in owner.rogue_items:
+            unit.statuses["rogue_resist_heroes"] = True
+        owner.demon_pact_offers.append({
             "source": "rogue_devil", "demon_player_id": actor_id,
             "unit_id": unit.id, "turn": state.turn,
         })
@@ -270,6 +280,17 @@ def _demon_pact_reward(state: GameState, pact: dict) -> None:
     if pact.get("rewarded"):
         return
     owner = get_player(state, pact["owner_id"])
+    if pact.get("rogue_pact") and not pact.get("rogue_life_awarded"):
+        if owner.rogue_life_bonus == 0:
+            owner.rogue_life_bonus = 1
+        else:
+            owner.rogue_life_bonus += 1
+            rogue = next((u for u in owner.units if isinstance(u, Hero)
+                          and u.hero_id == "rogue_devil"), None)
+            if rogue is not None:
+                rogue.life_max += 1
+                rogue.life += 1
+        pact["rogue_life_awarded"] = True
     if state.shop.is_empty():
         pact["reward_pending"] = True
         return
@@ -281,6 +302,8 @@ def _demon_pact_reward(state: GameState, pact: dict) -> None:
     log(state, f"{owner.name}: pacto {DEMON_PACTS[pact['pact_id']]} concedeu {card}.")
     item = pact.get("rogue_item")
     if item:
+        if item not in owner.rogue_items:
+            owner.rogue_items.append(item)
         rogue = next((u for u in owner.units if isinstance(u, Hero)
                       and u.hero_id == "rogue_devil"), None)
         if rogue is not None:
@@ -288,19 +311,18 @@ def _demon_pact_reward(state: GameState, pact: dict) -> None:
             if item not in items:
                 items.append(item)
                 rogue.statuses["rogue_items"] = items
-                rogue.life_max += 1
-                rogue.life += 1
                 if item == "adaga":
                     rogue.statuses["demon_execute_weaker"] = True
                 elif item == "bracelete":
                     rogue.life_max += 1
                     rogue.life += 1
                     rogue.statuses["rogue_resist_heroes"] = True
-                log(state, f"{owner.name}: Rogue Devil recebeu {item} e +1 Vida Maxima.")
+                log(state, f"{owner.name}: Rogue Devil recebeu {item}.")
 
 
 def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
-                     pact_id: str, rogue_buff: str | None = None) -> dict:
+                     pact_id: str, rogue_buff: str | None = None,
+                     rogue_pact: bool = False) -> dict:
     demon = get_player(state, demon_player_id)
     owner = get_player(state, owner_id)
     inherits = (demon.people == PEOPLE_GNOMOS
@@ -317,11 +339,11 @@ def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
         pact["old_life_max"] = base.life_max if base is not None else owner.city.life_max
         if base is not None:
             base.life_max = 4
-            base.life = min(base.life, 4)
+            base.life = 4
             sync_dragon_base_city(owner)
         else:
             owner.city.life_max = 4
-            owner.city.life = min(owner.city.life, 4)
+            owner.city.life = 4
     elif pact_id == "cabecas_herois":
         pact["required_peoples"] = sorted({p.people for p in state.players
                                             if p.id != owner_id and p.city.is_alive()})
@@ -341,6 +363,21 @@ def make_demon_pact(state: GameState, demon_player_id: int, owner_id: int,
         if rogue_item in rogue.statuses.get("rogue_items", []):
             raise ValueError("Rogue Devil ja possui este item.")
         pact["rogue_item"] = rogue_item
+        rogue_pact = True
+    if rogue_pact:
+        if owner_id != demon_player_id:
+            raise ValueError("Pacto de Rogue Devil deve pertencer ao invocador.")
+        rogue = next((u for u in owner.units if isinstance(u, Hero)
+                      and u.hero_id == "rogue_devil"), None)
+        if rogue is None:
+            raise ValueError("Rogue Devil nao esta em campo.")
+        pact["rogue_pact"] = True
+        if owner.rogue_life_bonus == 0:
+            owner.rogue_life_bonus = 1
+            rogue.life_max += 1
+            rogue.life += 1
+            if pact_id in DEMON_SACRIFICE_PACTS:
+                pact["rogue_life_awarded"] = True
     state.demon_pacts.append(pact)
     if pact_id in DEMON_SACRIFICE_PACTS:
         pact["completed"] = True
@@ -444,13 +481,16 @@ def apply_belial_night_start(state: GameState) -> None:
                     and PEOPLE_DEMONIOS in sao_tome_effective_peoples(state, demon))
         if (demon.people != PEOPLE_DEMONIOS and not inherits) or belial is None:
             continue
+        belial.life_max += 1
+        belial.life += 1
         for player in state.players:
             for unit in player.units:
                 if (not unit.is_alive() or unit.house != belial.house
                         or unit.statuses.get("dragon_base")):
                     continue
                 if player.id == demon.id:
-                    unit.life = min(unit.life_max, unit.life + 1)
+                    if unit is not belial:
+                        unit.life = min(unit.life_max, unit.life + 1)
                 else:
                     before = unit.life
                     unit.life = max(0, unit.life - 1)
@@ -982,6 +1022,7 @@ def _flip_infected(state: GameState, lobisomem: Player) -> None:
             candidates = [u for u in other.units
                           if u.id not in used and u.is_alive()
                           and u.original_owner_id is None
+                          and not (isinstance(u, Hero) and u.hero_id == "valtherion")
                           and infection_matches(record, u)]
             exact = next((u for u in candidates
                           if u.id == record.get("unit_id")), None)
