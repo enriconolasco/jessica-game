@@ -17,6 +17,7 @@ LABELS = {
     "demon_pact": "Firmar pacto", "decline_pact": "Recusar pacto",
     "cast_spell": "Usar feitiço", "reroll_spell": "São Tomé: rerrolar feitiço",
     "sacrifice_spell": "Sacrifício de Demônio",
+    "allocate_bets": "Apostas do início do turno",
 }
 ABILITIES = {
     "arken": (core.arken_espolia, "Arken: Espoliar"),
@@ -38,7 +39,8 @@ ABILITIES = {
 
 
 def blocked_by_choice(player):
-    return bool(player.pending_artifact_choice or any(
+    return bool((player.people == peoples.PEOPLE_GNOMOS and player.bets_need_realocacao)
+                or player.pending_artifact_choice or any(
         offer.get("source") == "rogue_devil" for offer in player.demon_pact_offers))
 
 
@@ -79,6 +81,14 @@ def artifact_choices(state, player, card):
 
 def _candidates(state, player):
     pid = player.id
+    if player.people == peoples.PEOPLE_GNOMOS and player.bets_need_realocacao:
+        offer = _offer("allocate_bets", pid, {"bets": dict.fromkeys("HCDS")},
+                       "Alocar apostas antes do Dia do Curruna")
+        offer["selection"] = {"kind": "bets", "targets": [
+            {"id": p.id, "name": p.name} for p in state.players
+            if p.id != pid and p.city.is_alive()]}
+        yield offer
+        return
     pending = player.pending_artifact_choice
     if pending:
         if pending["kind"] in ("J_D", "BOIN"):
@@ -190,7 +200,22 @@ def _candidates(state, player):
 def execute(state, action):
     pid, kind, params = action["player_id"], action["type"], action["params"]
     player = get_player(state, pid)
-    if kind == "play_artifact":
+    if kind == "allocate_bets":
+        for suit, target in params["bets"].items():
+            if target is None:
+                setattr(player, f"bet_{suit}_target", None)
+            else:
+                core.gnomo_alocar_aposta(state, pid, suit, target)
+        player.bets_need_realocacao = False
+        from .turn import start_player_day
+        pending = next((p for p in state.players if p.city.is_alive()
+                        and p.people == peoples.PEOPLE_GNOMOS and p.bets_need_realocacao), None)
+        day_already_started = any(p.morning_done_this_turn for p in state.players)
+        if not day_already_started:
+            state.active_player_id = pending.id if pending else state.curuna_id
+        if pending is None and not day_already_started:
+            start_player_day(state, state.active_player_id)
+    elif kind == "play_artifact":
         core.play_artifact(state, pid, **params)
     elif kind == "cast_spell":
         core.cast_spell(state, pid, params["choice"])
@@ -248,7 +273,19 @@ def apply_interaction(state, action):
     except (TypeError, ValueError):
         return _error("invalid_action", "Parâmetros inválidos.")
     available = legal_interactions(state, action["player_id"])
-    if action["type"] == "sacrifice_spell":
+    if action["type"] == "allocate_bets":
+        submitted = action["params"]
+        bets = submitted.get("bets")
+        template = next((a for a in available if a["type"] == "allocate_bets"), None)
+        targets = {p["id"] for p in template["selection"]["targets"]} if template else set()
+        if (template is None or set(submitted) != {"bets"} or not isinstance(bets, dict)
+                or set(bets) != set("HCDS") or any(
+                    value is not None and (type(value) is not int or value not in targets)
+                    for value in bets.values())):
+            return _error("not_legal", "Alocação de apostas inválida.")
+        legal = deepcopy(template)
+        legal["params"] = deepcopy(submitted)
+    elif action["type"] == "sacrifice_spell":
         submitted = action["params"]
         selected = submitted.get("artifacts")
         if (set(submitted) != {"hero_id", "artifacts"} or not isinstance(selected, list)
@@ -276,7 +313,7 @@ def apply_interaction(state, action):
     except (core.ActionError, ValueError) as exc:
         return _error("domain_error", str(exc))
     pid = action["player_id"]
-    private = action["type"] in ("resolve_artifact_choice", "decline_pact", "use_pena", "reroll_spell")
+    private = action["type"] in ("resolve_artifact_choice", "decline_pact", "use_pena", "reroll_spell", "allocate_bets")
     event = {"version": EVENT_VERSION, "type": "interaction_resolved", "turn": trial.turn,
              "phase": trial.phase.value, "participants": [pid],
              "data": {"player_id": pid, "action_type": action["type"]},

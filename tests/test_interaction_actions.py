@@ -326,6 +326,52 @@ def test_zebum_web_paridade_reinvocacao_e_restricoes():
     assert not apply_action(state, action)["success"]
 
 
+def betting_state():
+    return _new_state(72, [
+        {"name": "H", "people": "humanos", "hero_id": "miyamoto"},
+        {"name": "O", "people": "orcs", "hero_id": "arken"},
+        {"name": "G", "people": "gnomos_duendes", "hero_id": "sao_tome"},
+        {"name": "F", "people": "fadas", "hero_id": "ainai"}])
+
+
+def test_apostas_antes_curruna_save_e_determinismo():
+    state = betting_state()
+    assert state.active_player_id == 3
+    assert not state.players[0].morning_done_this_turn
+    assert legal_actions(state, 1) == []
+    before = state_to_dict(state)
+    offers = legal_actions(state, 3)
+    assert len(offers) == 1 and offers[0]["type"] == "allocate_bets"
+    assert state_to_dict(state) == before
+    action = offers[0]
+    action["params"] = {"bets": {"H": 1, "C": 2, "D": None, "S": 4}}
+    twin = state_from_dict(before)
+    result = apply_action(state, action)
+    assert result["success"]
+    assert apply_action(twin, action) == result
+    assert state_to_dict(state) == state_to_dict(twin)
+    assert state.active_player_id == state.curuna_id
+    assert state.players[0].morning_done_this_turn
+    assert not state.players[2].bets_need_realocacao
+    assert state.players[2].bet_H_target == 1
+    assert all(e["visibility"]["kind"] == "private" for e in result["events"])
+    before = state_to_dict(state)
+    assert not apply_action(state, action)["success"]
+    assert state_to_dict(state) == before
+
+
+def test_apostas_invalidas_atomicas():
+    state = betting_state()
+    action = legal_actions(state, 3)[0]
+    before = state_to_dict(state)
+    for value in (True, 3, 99, "1", [], {}):
+        action["params"] = {"bets": {"H": value, "C": None, "D": None, "S": None}}
+        assert not apply_action(state, action)["success"]
+        assert state_to_dict(state) == before
+    action["params"] = {"bets": dict.fromkeys("HCDS")}
+    assert apply_action(state, action)["success"]
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

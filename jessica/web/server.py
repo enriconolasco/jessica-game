@@ -99,8 +99,11 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
     for player in state.players:
         player.name = names[player.id]
     start_turn(state)
-    state.active_player_id = state.curuna_id
-    start_player_day(state, state.active_player_id)
+    pending = next((p for p in state.players if p.people == "gnomos_duendes"
+                    and p.city.is_alive() and p.bets_need_realocacao), None)
+    state.active_player_id = pending.id if pending else state.curuna_id
+    if pending is None:
+        start_player_day(state, state.active_player_id)
     return state
 
 

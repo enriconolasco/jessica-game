@@ -181,6 +181,28 @@ function renderActions(actions) {
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
+    if (type === "allocate_bets") {
+      const action = items[0];
+      const fields = {};
+      for (const [suit, name] of Object.entries({H:"Copas", C:"Paus", D:"Ouros", S:"Espadas"})) {
+        const label = document.createElement("label");
+        label.textContent = name + " ";
+        const select = document.createElement("select");
+        select.appendChild(new Option("Deixar vazio", ""));
+        action.selection.targets.forEach(p => select.appendChild(new Option(p.name, p.id)));
+        label.appendChild(select);
+        group.appendChild(label);
+        fields[suit] = select;
+      }
+      group.open = true;
+      const button = document.createElement("button");
+      button.textContent = "Confirmar apostas e iniciar o Dia";
+      button.onclick = () => act({...action, params: {bets: Object.fromEntries(
+        Object.entries(fields).map(([suit, select]) => [suit, select.value === "" ? null : Number(select.value)]))}});
+      group.appendChild(button);
+      root.appendChild(group);
+      return;
+    }
     if (type === "collect_resources") {
       const hint = document.createElement("p");
       hint.textContent = "Escolha uma distribuição. A coleta só pode ser feita uma vez neste turno.";
@@ -263,6 +285,7 @@ function eventText(event) {
       use_pena: "usou uma Pena", use_heal: "aplicou uma cura", hero_ability: "usou uma habilidade",
       demon_pact: "firmou um pacto", decline_pact: "recusou um pacto",
       cast_spell: "usou um feitiço", sacrifice_spell: "usou Sacrifício de Demônio",
+      allocate_bets: "confirmou as apostas",
       reroll_spell: "rerrolou o feitiço copiado"};
     return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${d.card_id}` : ""}${d.pact_id ? `: ${d.pact_id.replaceAll("_", " ")}` : ""}.`;
   }

@@ -173,6 +173,12 @@ transação. O frontend apresenta checkboxes e confirmação de morte, sem calcu
 efeitos. Essa oferta parametrizada evita crescimento exponencial de combinações.
 Eventos públicos não expõem as cartas privadas selecionadas.
 
+`allocate_bets`: `params={"bets":{"H":id_ou_null,"C":id_ou_null,
+"D":id_ou_null,"S":id_ou_null}}`. A oferta contém `selection.kind="bets"`
+e alvos vivos diferentes do próprio jogador. O servidor valida os quatro naipes,
+aplica a alocação pelo core e libera o início do Dia. Enquanto pendente, o
+jogador não recebe outras ações. Evento e projeção dessa escolha são privados.
+
 1. Mesma seed + mesmo save + mesmas ações produz o mesmo estado e eventos.
 2. Uma ação fora de `legal_actions` ainda é rejeitada por `apply_action`.
 3. Falha não produz mutação parcial.

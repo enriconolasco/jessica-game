@@ -27,6 +27,12 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
 
 ## Passos restantes
 
+Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do
+Curruna. A confirmação libera o Dia; escolhas vazias são permitidas como no
+terminal. Save/load preserva a etapa. Saves antigos já no Dia não voltam ao
+Curruna ao resolver apostas pendentes. A recorrência em novos turnos depende
+da implementação do ciclo noturno/manhã ainda pendente.
+
 Habilidades diurnas adicionais: Aiquara move inimigos; Zebum obtém/reinvoca
 heróis e oferece a sequência de anões quando disponível. Escolhas passam pelas
 funções originais do core; sem mudança de custo, imunidade ou restrição.
@@ -43,7 +49,7 @@ não considerar esse fluxo completo. Devaneio usa o caminho existente do core.
    patches do terminal a cada marco.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
 3. **Completar o Dia:** Sonho Lúcido com Luna (seleções compostas),
-   apostas antes do Dia do Curruna,
+   integração das apostas ao ciclo completo de turnos,
    Miyamoto diurno e demais janelas especiais. Aiquara diurna e Zebum já adaptados.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,
