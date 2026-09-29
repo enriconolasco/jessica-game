@@ -305,8 +305,10 @@ function renderActions(actions) {
 function eventText(event) {
   const d = event.data || {};
   if (event.type === "night_action_resolved") {
+    if (d.action_type === "night_aiquara") return `Aiquara forçou ${d.enemy_unit_id} a atacar ${d.target_id}.`;
     if (d.action_type === "night_mandinga") return `Besouro usou Mandinga: ${d.card_id}.`;
     if (d.action_type === "night_setup") {
+      if (d.kind === "aiquara") return "Aiquara não usou controle no início da Noite.";
       if (d.kind === "besouro") return "Besouro não usou Mandinga.";
       if (d.kind === "vovo") return `Vovó escolheu a posição ${d.position} nas declarações.`;
       return d.return ? "Luna retornou à origem." : "Luna permaneceu no local.";

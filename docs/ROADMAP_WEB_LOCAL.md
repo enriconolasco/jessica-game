@@ -49,7 +49,9 @@ retorno opcional da Luna depois dele, antes da montagem da fila de combate.
 Cada escolha persiste no save e não se repete ao recarregar.
 Mandinga de Besouro e combate de Iúna também adaptados. Mandinga abre antes das
 declarações e resolve escolhas de artefato pendentes antes de continuar.
-Permanecem fora: Ainai, Luide Vampa e Aiquara noturna.
+Aiquara noturna adaptada na abertura (após Mar de Chamas, antes de Luna e Mandinga),
+conforme decisão do usuário. Terminal também recebeu essa janela antes ausente.
+Permanecem fora: Ainai e Luide Vampa.
 Roteiro de fechamento e critérios de paridade: [PARIDADE_WEB_TERMINAL.md](PARIDADE_WEB_TERMINAL.md).
 
 Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do

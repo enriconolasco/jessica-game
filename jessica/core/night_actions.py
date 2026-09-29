@@ -8,14 +8,14 @@ from .state import get_player, log
 from .turn import day_order, end_turn, start_turn, start_player_day
 
 TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice",
-         "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup", "night_mandinga"}
+         "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup", "night_mandinga", "night_aiquara"}
 SUPPORTED_HEROES = {
     "miyamoto", "arken", "ori", "barbadourada", "dain", "buin", "bein", "boin",
     "tintin", "don", "din", "garoche", "valendar", "dracula", "dandara",
     "lupa_lider", "cigana", "luarado", "joao_grandao", "pe_descalco", "caroco",
     "cobra", "zoia", "cova_rasa", "guarari", "baoba_ba", "bimbo_do_mal",
     "sao_tome", "zebum", "barba_negra", "purpura", "valtherion", "belial", "tuza",
-    "rogue_devil", "vovo_gamba", "luna", "besouro", "iuna",
+    "rogue_devil", "vovo_gamba", "luna", "besouro", "iuna", "aiquara",
 }
 
 
@@ -61,6 +61,11 @@ def prepare(state):
         if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "vovo_gamba" for u in p.units):
             setup.append({"kind": "vovo", "player_id": p.id})
     setup.append({"kind": "flames"})
+    for pid in day_order(state):
+        if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"
+               and u.statuses.get("aiquara_attacked_turn") != state.turn
+               for u in get_player(state, pid).units):
+            setup.append({"kind": "aiquara", "player_id": pid})
     for pid in day_order(state):
         p = get_player(state, pid)
         if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"
@@ -182,6 +187,23 @@ def legal(state, pid):
                 "params": params, "label": label}
     setup = trial.web_night.get("setup", [])
     if setup:
+        if setup[0]["kind"] == "aiquara":
+            from .actions import aiquara_atacar, ActionError
+            options = [offer("night_setup", {"kind": "aiquara"}, "Não usar controle de Aiquara")]
+            for owner in trial.players:
+                if owner.id == pid:
+                    continue
+                for unit in owner.units:
+                    if not unit.is_alive():
+                        continue
+                    for target_type, target_id, label in find_targets(trial, unit):
+                        params = {"enemy_unit_id": unit.id, "target_type": target_type, "target_id": target_id}
+                        try:
+                            aiquara_atacar(deepcopy(trial), pid, **params)
+                        except (ActionError, combat.CombatError, ValueError):
+                            continue
+                        options.append(offer("night_aiquara", params, f"Aiquara: {unit.id} → {label}"))
+            return options
         if setup[0]["kind"] == "besouro":
             from .actions import besouro_mandinga, ActionError
             from .interaction_actions import artifact_choices
@@ -235,7 +257,12 @@ def apply(state, action):
     advance(trial)
     kind = candidate["type"]
     old_turn = trial.turn
-    if kind == "night_mandinga":
+    if kind == "night_aiquara":
+        from .actions import aiquara_atacar
+        aiquara_atacar(trial, candidate["player_id"], **candidate["params"])
+        trial.web_night["setup"].pop(0)
+        advance(trial)
+    elif kind == "night_mandinga":
         from .actions import besouro_mandinga
         besouro_mandinga(trial, candidate["player_id"], **candidate["params"])
         trial.web_night["setup"].pop(0)

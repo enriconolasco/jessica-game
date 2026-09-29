@@ -398,6 +398,38 @@ def test_mandinga_jd_scheduled_save_and_once_per_night():
     assert state.players[0].besouro_mandinga_used_turn == state.turn
 
 
+def test_aiquara_opening_control_parity_save_and_limits():
+    from jessica.core.actions import aiquara_atacar
+    state = night()
+    state.players[0].units.append(Hero(id="aiquara", owner_id=1, house="center",
+                                     life=2, life_max=2, hero_id="aiquara"))
+    state.players[1].units.append(Troop(id="controlled", owner_id=2, house="center", life=4, life_max=4))
+    state.players[2].units.append(Troop(id="target", owner_id=3, house="center", life=2, life_max=4))
+    state.players[3].units.append(Hero(id="immune", owner_id=4, house="center",
+                                     life=20, life_max=20, hero_id="valtherion"))
+    night_actions.prepare(state)
+    state = state_from_dict(state_to_dict(state))
+    before = state_to_dict(state)
+    choices = legal_actions(state, 1)
+    assert not any(a["type"] == "night_attack" for a in choices)
+    assert not any(a["params"].get("enemy_unit_id") == "immune" for a in choices)
+    assert state_to_dict(state) == before and legal_actions(state, 2) == []
+    action = next(a for a in choices if a["type"] == "night_aiquara"
+                  and a["params"]["enemy_unit_id"] == "controlled" and a["params"]["target_id"] == "target")
+    direct = state_from_dict(before)
+    aiquara_atacar(direct, 1, **action["params"])
+    direct.web_night["setup"].pop(0)
+    night_actions.advance(direct)
+    assert apply_action(state, action)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    before = state_to_dict(state)
+    assert not apply_action(state, action)["success"]
+    assert state_to_dict(state) == before
+    dead = state_from_dict(before)
+    next(u for u in dead.players[0].units if u.id == "aiquara").life = 0
+    assert not apply_action(dead, action)["success"]
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

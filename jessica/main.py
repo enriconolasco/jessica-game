@@ -2932,6 +2932,15 @@ def run_night_phase(state) -> None:
     barba_resolver_mar_de_chamas(state)
     for pid in all_pids:
         player = get_player(state, pid)
+        if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "aiquara"
+               and u.statuses.get("aiquara_attacked_turn") != state.turn for u in player.units):
+            try:
+                _aiquara_ui(state, pid)
+                _resolver_qd_pendente(state)
+            except (ActionError, CombatError) as exc:
+                console.print(f"[yellow]Aiquara: {exc}[/yellow]")
+    for pid in all_pids:
+        player = get_player(state, pid)
         _try_luna_return(state, player)
 
     _ainai_prompt_all(state, all_pids)
