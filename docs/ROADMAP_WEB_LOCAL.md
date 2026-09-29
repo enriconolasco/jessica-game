@@ -77,7 +77,7 @@ Devaneio usa o caminho existente do core.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
 3. **Completar o Dia:** Sonho Lúcido com Luna (escolhas intercaladas),
    demais decisões diurnas,
-   Miyamoto diurno e demais janelas especiais. Aiquara diurna e Zebum já adaptados.
+   demais janelas especiais. Miyamoto diurno, Aiquara diurna e Zebum já adaptados.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,
    retaliações e janelas especiais/reacionais. Nenhuma regra ficará no frontend.

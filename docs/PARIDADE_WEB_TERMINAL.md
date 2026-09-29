@@ -10,7 +10,7 @@ Não há evidência suficiente para declarar paridade total ou estimar um percen
 - Luide Vampa: janela por jogador/local, mover e lançar feitiço, reabrir locais;
   interromper a habilidade se Luide morrer.
 - Aiquara: controle de ataque noturno e limites por turno.
-- Miyamoto: declarações diurnas e limites compartilhados com a Noite.
+- Miyamoto diurno implementado: falta playtest integrado de cruzamentos e reações.
 - Luna/Sonho Lúcido: resolver cartas e escolhas intercaladas, sem impor J♦ por
   último; permitir alvos surgidos durante a própria sequência.
 - Auditar todas as ações do inventário contra as opções realmente oferecidas

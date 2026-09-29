@@ -219,6 +219,12 @@ e na web; sincroniza a prioridade do local sem consumir movimento adicional.
 `night_setup {"kind":"besouro"}` recusa a habilidade. Cartas PENA não são
 oferecidas; escolhas adicionais suspendem a fila pelo fluxo noturno de artefatos.
 
+`day_attack` recebe `attacker_unit_id,target_type="unit",target_id` apenas
+para Miyamoto vivo do jogador ativo, com alvo inimigo vivo no mesmo local.
+O adaptador consulta o limite existente e executa `resolve_attack_day` em
+cópia transacional. Visibilidade e limite final são validados pelo combate.
+O contador do motor é preservado para a Noite e no save/load.
+
 `allocate_bets`: `params={"bets":{"H":id_ou_null,"C":id_ou_null,
 "D":id_ou_null,"S":id_ou_null}}`. A oferta contém `selection.kind="bets"`
 e alvos vivos diferentes do próprio jogador. O servidor valida os quatro naipes,

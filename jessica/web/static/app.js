@@ -334,6 +334,7 @@ function eventText(event) {
       demon_pact: "firmou um pacto", decline_pact: "recusou um pacto",
       cast_spell: "usou um feitiço", sacrifice_spell: "usou Sacrifício de Demônio",
       allocate_bets: "confirmou as apostas",
+      day_attack: "atacou durante o Dia com Miyamoto",
       dream_multi: "usou Sonho Lúcido com Luna",
       reroll_spell: "rerrolou o feitiço copiado"};
     return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${d.card_id}` : ""}${d.pact_id ? `: ${d.pact_id.replaceAll("_", " ")}` : ""}.`;

@@ -416,6 +416,34 @@ def test_luna_jd_nao_precisa_ser_ultima_carta():
     assert any(e["kind"] == "J_D" and e["due_turn"] == state.turn + 3 for e in state.pending_effects)
 
 
+def test_miyamoto_day_attack_parity_and_shared_night_limit():
+    from jessica.core import combat
+    from jessica.core.turn import end_day
+    state = ready()
+    p = state.players[0]
+    p.units = [Hero(id="miyamoto", owner_id=1, house="center", life=8, life_max=8, hero_id="miyamoto")]
+    state.players[1].units.append(Troop(id="distant", owner_id=2, house="city_2", life=2, life_max=4))
+    invisible = state.players[2].units[0]
+    invisible.statuses["invisivel_until_turn"] = state.turn
+    before = state_to_dict(state)
+    offers = [a for a in legal_actions(state, 1) if a["type"] == "day_attack"]
+    assert offers and state_to_dict(state) == before
+    assert not any(a["params"]["target_id"] in ("distant", invisible.id) for a in offers)
+    action = offers[0]
+    direct = state_from_dict(before)
+    combat.resolve_attack_day(direct, combat.Attack(**action["params"]))
+    assert apply_action(state, action)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    used = state.players[0].units[0].attacks_made_this_day
+    assert used == 1
+    state = state_from_dict(state_to_dict(state))
+    end_day(state)
+    assert state.players[0].units[0].attacks_made_this_day == used
+    before = state_to_dict(state)
+    assert not apply_action(state, action)["success"]
+    assert state_to_dict(state) == before
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

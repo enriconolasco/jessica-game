@@ -6,6 +6,7 @@ import json
 
 from . import actions as core, artifacts_effects, heroes, peoples
 from . import spell_choices
+from . import combat
 from .artifacts import card_display
 from .constants import CENTER, CITY_HOUSES, Phase, TroopArchetype
 from .models import Hero
@@ -19,6 +20,7 @@ LABELS = {
     "sacrifice_spell": "Sacrifício de Demônio",
     "allocate_bets": "Apostas do início do turno",
     "dream_multi": "Luna: Sonho Lúcido com várias cartas",
+    "day_attack": "Miyamoto: atacar durante o Dia",
 }
 ABILITIES = {
     "arken": (core.arken_espolia, "Arken: Espoliar"),
@@ -149,6 +151,17 @@ def _candidates(state, player):
                 yield _offer("play_artifact", pid, {"card_id": card, "choice": choice},
                              card_display(card) + (f" → {label}" if label else ""))
     living = {u.hero_id for u in player.units if isinstance(u, Hero) and u.is_alive()}
+    miyamoto = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                     and u.hero_id == "miyamoto"), None)
+    if miyamoto is not None and peoples.miyamoto_attacks_remaining(state, player) > 0:
+        for owner in state.players:
+            if owner.id == pid or not owner.city.is_alive():
+                continue
+            for target in owner.units:
+                if target.is_alive() and target.house == miyamoto.house:
+                    yield _offer("day_attack", pid,
+                                 {"attacker_unit_id": miyamoto.id, "target_type": "unit", "target_id": target.id},
+                                 f"Miyamoto → {target.id} ({owner.name}, {target.life}/{target.life_max})")
     if "aiquara" in living:
         for owner in state.players:
             if owner.id == pid:
@@ -216,6 +229,8 @@ def execute(state, action):
             state.active_player_id = pending.id if pending else state.curuna_id
         if pending is None and not day_already_started:
             start_player_day(state, state.active_player_id)
+    elif kind == "day_attack":
+        combat.resolve_attack_day(state, combat.Attack(**params))
     elif kind == "play_artifact":
         core.play_artifact(state, pid, **params)
     elif kind in ("cast_spell", "dream_multi"):
@@ -259,7 +274,7 @@ def legal_interactions(state, player_id):
     for candidate in _candidates(state, player):
         try:
             execute(deepcopy(state), candidate)
-        except (core.ActionError, ValueError):
+        except (core.ActionError, combat.CombatError, ValueError):
             continue
         result.append(candidate)
     spell = spell_choices.effective_spell(player)
@@ -339,7 +354,7 @@ def apply_interaction(state, action):
     trial = deepcopy(state)
     try:
         execute(trial, legal)
-    except (core.ActionError, ValueError) as exc:
+    except (core.ActionError, combat.CombatError, ValueError) as exc:
         return _error("domain_error", str(exc))
     pid = action["player_id"]
     private = action["type"] in ("resolve_artifact_choice", "decline_pact", "use_pena", "reroll_spell", "allocate_bets")
@@ -348,7 +363,7 @@ def apply_interaction(state, action):
              "data": {"player_id": pid, "action_type": action["type"]},
              "visibility": {"kind": "private" if private else "public",
                             "player_ids": [pid] if private else []}}
-    for key in ("card_id", "ability", "pact_id"):
+    for key in ("card_id", "ability", "pact_id", "attacker_unit_id", "target_id"):
         if key in legal["params"]:
             event["data"][key] = legal["params"][key]
     if action["type"] in ("cast_spell", "reroll_spell", "sacrifice_spell", "dream_multi"):
