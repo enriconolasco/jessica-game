@@ -31,8 +31,11 @@ Noite básica disponível: tropas, Miyamoto, Arken e Ori; prioridade por local/j
 ataque/retaliação, passar, encerramento e próxima manhã. Fila persistida em save/load.
 Seleção de alvos e ordem foram extraídas do terminal para `night_rules.py`; ambos
 reutilizam essas funções. Dano e mortes continuam em `combat.resolve_attack`.
-Heróis não adaptados, Q♦ ativo e escolhas pendentes bloqueiam essa fatia com aviso
+Heróis não adaptados e pactos pendentes bloqueiam essa fatia com aviso
 explícito. Não interpretar isso como cobertura noturna dos 12 povos.
+Q♦ ativo já é permitido: quando dispara, a Noite passa ao dono da carta,
+oferece Ouro/Magia e retoma a fila. Escolhas J♦/Feliz já pendentes também usam
+a resolução existente. A interrupção é preservada em save/load.
 
 Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do
 Curruna. A confirmação libera o Dia; escolhas vazias são permitidas como no

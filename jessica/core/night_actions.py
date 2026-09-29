@@ -7,7 +7,7 @@ from .night_rules import find_targets, order_players_for_house
 from .state import get_player, log
 from .turn import day_order, end_turn, start_turn, start_player_day
 
-TYPES = {"night_attack", "night_pass", "finish_night"}
+TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice"}
 SUPPORTED_HEROES = {"miyamoto", "arken", "ori"}
 
 
@@ -31,11 +31,16 @@ def blockers(state):
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id not in SUPPORTED_HEROES
            for p in state.players for u in p.units):
         result.append("Há heróis com janelas noturnas ainda não adaptadas; nesta etapa: Miyamoto, Arken e Ori.")
-    if any(p.pending_artifact_choice or p.demon_pact_offers for p in state.players):
-        result.append("Há escolhas de artefato ou pacto pendentes.")
-    if any(a.card_id == "Q_D" for p in state.players for a in p.field_artifacts):
-        result.append("Reação de Dama de Ouros ainda não adaptada à Noite.")
+    if any(p.demon_pact_offers for p in state.players):
+        result.append("Há escolhas de pacto pendentes.")
+    if any(p.pending_artifact_choice and p.pending_artifact_choice.get("kind")
+           not in ("Q_D", "J_D", "BOIN") for p in state.players):
+        result.append("Há uma escolha de artefato ainda não adaptada.")
     return result
+
+
+def pending_owner(state):
+    return next((p for p in state.players if p.pending_artifact_choice), None)
 
 
 def prepare(state):
@@ -69,6 +74,10 @@ def attacks(state, entry):
 
 
 def advance(state):
+    pending = pending_owner(state)
+    if pending is not None:
+        state.active_player_id = pending.id
+        return
     queue = state.web_night["queue"]
     while queue and not attacks(state, queue[0]):
         queue.pop(0)
@@ -80,13 +89,22 @@ def advance(state):
 
 def legal(state, pid):
     from .headless import ACTION_VERSION
-    if state.phase != Phase.NIGHT or state.game_over or blockers(state):
+    if state.phase != Phase.NIGHT or (state.game_over and pending_owner(state) is None) or blockers(state):
         return []
     trial = deepcopy(state)
     prepare(trial)
     advance(trial)
     if type(pid) is not int or pid != trial.active_player_id:
         return []
+    pending = pending_owner(trial)
+    if pending is not None:
+        from .interaction_actions import _candidates
+        options = []
+        for candidate in _candidates(trial, pending):
+            if candidate["type"] == "resolve_artifact_choice":
+                candidate["type"] = "night_resolve_choice"
+                options.append(candidate)
+        return options
     def offer(kind, params, label):
         return {"version": ACTION_VERSION, "type": kind, "player_id": pid,
                 "params": params, "label": label}
@@ -115,7 +133,14 @@ def apply(state, action):
     advance(trial)
     kind = candidate["type"]
     old_turn = trial.turn
-    if kind == "night_attack":
+    if kind == "night_resolve_choice":
+        from .actions import resolve_pending_artifact_choice, ActionError
+        try:
+            resolve_pending_artifact_choice(trial, candidate["player_id"], **candidate["params"])
+        except (ActionError, ValueError) as exc:
+            return _error("domain_error", str(exc))
+        advance(trial)
+    elif kind == "night_attack":
         combat.resolve_attack(trial, combat.Attack(**candidate["params"]))
         advance(trial)
     elif kind == "night_pass":
@@ -136,7 +161,8 @@ def apply(state, action):
     event = {"version": EVENT_VERSION, "type": "night_action_resolved", "turn": old_turn,
              "phase": "night", "participants": [pid],
              "data": {"action_type": kind, **candidate["params"]},
-             "visibility": {"kind": "public", "player_ids": []}}
+             "visibility": {"kind": "private" if kind == "night_resolve_choice" else "public",
+                            "player_ids": [pid] if kind == "night_resolve_choice" else []}}
     projection = {"version": EVENT_VERSION, "type": "player_view_updated", "turn": trial.turn,
                   "phase": trial.phase.value, "participants": [pid],
                   "data": {"view": view_for_player(trial, pid)},

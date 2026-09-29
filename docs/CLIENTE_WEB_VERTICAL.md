@@ -47,7 +47,8 @@ rola apenas para Caroços que ainda não rolaram naquele turno.
 
 Ao terminar as quatro janelas do Dia, a partida entra na Noite. A fatia básica
 permite tropas, Miyamoto, Arken e Ori: atacar, receber retaliação, passar e
-iniciar o próximo turno. Outras janelas de herói, Q♦ ativo e escolhas pendentes
+iniciar o próximo turno. Q♦ interrompe a fila para a escolha de Ouro/Magia e
+retoma o combate após resolvida, inclusive ao carregar um save. Outras janelas de herói e pactos pendentes
 ainda bloqueiam a Noite com aviso; não são ignoradas. Sacrifício de Demônio permite selecionar herói e múltiplas
 cartas da mão/campo, inclusive quando copiado pelos Gnomos. Sonho Lúcido oferece
 uma carta com escolha imediata; Luna também monta uma sequência de várias cartas

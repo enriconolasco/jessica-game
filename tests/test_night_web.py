@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from jessica.web.server import _new_state
 from jessica.core import combat, night_actions
 from jessica.core.constants import Phase
-from jessica.core.models import Troop, Hero
+from jessica.core.models import Troop, Hero, ArtifactOnField
 from jessica.core.headless import legal_actions, apply_action, view_for_player, apply_event_to_view
 from jessica.core.serialize import state_to_dict, state_from_dict
 from jessica.core.turn import end_day
@@ -178,6 +178,40 @@ def test_pass_persists_and_does_not_consume_attack_or_rng():
     resumed = state_from_dict(state_to_dict(state))
     assert legal_actions(resumed, 1) == []
     assert any(a["type"] == "night_attack" for a in legal_actions(resumed, 2))
+
+
+def test_qd_interrupts_combat_third_player_save_and_resumes():
+    from jessica.core.actions import resolve_pending_artifact_choice
+    state = night()
+    state.players[0].units.append(Troop(id="attacker", owner_id=1, house="center",
+                                      life=4, life_max=4))
+    state.players[1].units.append(Troop(id="marked", owner_id=2, house="center",
+                                      life=1, life_max=6))
+    state.players[2].field_artifacts.append(ArtifactOnField(
+        card_id="Q_D", owner_id=3, extra={"target_unit_id": "marked"}))
+    attack = next(a for a in legal_actions(state, 1) if a["type"] == "night_attack")
+    assert apply_action(state, attack)["success"]
+    assert state.active_player_id == 3
+    assert legal_actions(state, 1) == []
+    state = state_from_dict(state_to_dict(state))
+    before = state_to_dict(state)
+    offered = legal_actions(state, 3)
+    assert len(offered) == 2 and all(a["type"] == "night_resolve_choice" for a in offered)
+    assert state_to_dict(state) == before
+    choice = next(a for a in offered if a["params"] == {"resource": "magic"})
+    invalid = deepcopy(choice)
+    invalid["params"] = {"resource": "unknown"}
+    assert not apply_action(state, invalid)["success"]
+    assert state_to_dict(state) == before
+    direct = deepcopy(state)
+    resolve_pending_artifact_choice(direct, 3, resource="magic")
+    night_actions.advance(direct)
+    result = apply_action(state, choice)
+    assert result["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    assert all(e["visibility"]["kind"] == "private" for e in result["events"])
+    assert not state.players[2].pending_artifact_choice
+    assert any(a["type"] == "finish_night" for a in legal_actions(state, 1))
 
 
 if __name__ == "__main__":

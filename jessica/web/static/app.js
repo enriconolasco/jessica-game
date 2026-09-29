@@ -177,7 +177,7 @@ function renderActions(actions) {
   grouped.forEach((items, type) => {
     const group = document.createElement("details");
     group.className = "action-group";
-    group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "demon_pact"].includes(type);
+    group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "night_resolve_choice", "demon_pact"].includes(type);
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
@@ -304,6 +304,7 @@ function renderActions(actions) {
 function eventText(event) {
   const d = event.data || {};
   if (event.type === "night_action_resolved") {
+    if (d.action_type === "night_resolve_choice") return "Escolha de artefato resolvida; combate liberado para continuar.";
     if (d.action_type === "night_attack") return `${d.attacker_unit_id} atacou ${d.target_id}.`;
     if (d.action_type === "night_pass") return `${d.unit_id} não declarou ataque.`;
     return "Noite encerrada.";

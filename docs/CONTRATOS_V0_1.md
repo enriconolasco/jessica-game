@@ -189,6 +189,13 @@ a fila; saves anteriores usam dicionário vazio e a inicializam ao entrar na Noi
 Ao encerrar a Noite, o motor executa fim de turno/vitória e início do próximo,
 abrindo apostas pendentes antes do Dia do Curruna.
 
+`night_resolve_choice` reutiliza os parâmetros de `resolve_artifact_choice`:
+recurso para Q♦ ou cartas mantidas para J♦/Feliz. A fila é suspensa e
+`active_player_id` passa ao dono da pendência. Apenas ele recebe as opções;
+outras ações são rejeitadas. Resolução chama o core em cópia transacional,
+retoma a fila e produz evento e projeção privados. A resolução de uma pendência
+já criada continua possível se o ataque tiver encerrado a partida.
+
 `allocate_bets`: `params={"bets":{"H":id_ou_null,"C":id_ou_null,
 "D":id_ou_null,"S":id_ou_null}}`. A oferta contém `selection.kind="bets"`
 e alvos vivos diferentes do próprio jogador. O servidor valida os quatro naipes,
