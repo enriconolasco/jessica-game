@@ -300,8 +300,6 @@ def apply_interaction(state, action):
         for card, target in zip(cards, targets):
             if json.dumps({"flip_cards": [card], "artifact_choices": [target]}, sort_keys=True) not in options:
                 return _error("not_legal", "Carta ou alvo indisponível.")
-        if any(peoples.sonho_lucido_flip(c) == "J_D" for c in cards[:-1]):
-            return _error("not_legal", "Coloque a carta que abre escolha de compra por último.")
         legal = deepcopy(template)
         legal["params"] = deepcopy(submitted)
     elif action["type"] == "allocate_bets":

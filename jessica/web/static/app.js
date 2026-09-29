@@ -208,7 +208,7 @@ function renderActions(actions) {
         artifact_choices: selected.map(o => o.choice.artifact_choices[0]),
       }}});
       const hint = document.createElement("p");
-      hint.textContent = "As cartas serão resolvidas na ordem abaixo. Uma carta que abre escolha de compra deve ficar por último. O motor valida quantidades e alvos.";
+      hint.textContent = "As cartas serão resolvidas na ordem abaixo. O motor valida quantidades e alvos.";
       group.append(hint, select, add, list, clear, submit);
       root.appendChild(group);
       return;
@@ -305,7 +305,9 @@ function renderActions(actions) {
 function eventText(event) {
   const d = event.data || {};
   if (event.type === "night_action_resolved") {
+    if (d.action_type === "night_mandinga") return `Besouro usou Mandinga: ${d.card_id}.`;
     if (d.action_type === "night_setup") {
+      if (d.kind === "besouro") return "Besouro não usou Mandinga.";
       if (d.kind === "vovo") return `Vovó escolheu a posição ${d.position} nas declarações.`;
       return d.return ? "Luna retornou à origem." : "Luna permaneceu no local.";
     }

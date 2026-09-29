@@ -164,7 +164,7 @@ com `choice={"flip_cards":[id],"artifact_choices":[escolha]}`;
 `dream_multi` usa essas mesmas listas, com múltiplos elementos em ordem de execução.
 A oferta `selection.kind="dream"` enumera opções individuais, sem gerar todas as
 combinações. Servidor valida quantidades, Luna viva e opções antes de executar
-a sequência em cópia transacional. J♦ transformado só é aceito na última posição;
+a sequência em cópia transacional. J♦ segue o agendamento T+3, sem restrição de posição;
 alvos que surgem no meio da sequência ainda não são oferecidos.
 não há promessa de cobertura total dos feitiços.
 
@@ -213,6 +213,11 @@ Vovós → Mar de Chamas → Lunas → montagem da fila. Heróis mortos antes da
 janela são pulados. Save antigo sem `setup` preserva a fila já iniciada.
 O retorno da Luna usa a mesma função em `night_rules.return_luna` no terminal
 e na web; sincroniza a prioridade do local sem consumir movimento adicional.
+
+`night_mandinga` recebe `card_id` e `choice`, validados por
+`besouro_mandinga`. A janela vem após Luna e antes da fila de combate.
+`night_setup {"kind":"besouro"}` recusa a habilidade. Cartas PENA não são
+oferecidas; escolhas adicionais suspendem a fila pelo fluxo noturno de artefatos.
 
 `allocate_bets`: `params={"bets":{"H":id_ou_null,"C":id_ou_null,
 "D":id_ou_null,"S":id_ou_null}}`. A oferta contém `selection.kind="bets"`

@@ -8,14 +8,14 @@ from .state import get_player, log
 from .turn import day_order, end_turn, start_turn, start_player_day
 
 TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice",
-         "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup"}
+         "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup", "night_mandinga"}
 SUPPORTED_HEROES = {
     "miyamoto", "arken", "ori", "barbadourada", "dain", "buin", "bein", "boin",
     "tintin", "don", "din", "garoche", "valendar", "dracula", "dandara",
     "lupa_lider", "cigana", "luarado", "joao_grandao", "pe_descalco", "caroco",
     "cobra", "zoia", "cova_rasa", "guarari", "baoba_ba", "bimbo_do_mal",
     "sao_tome", "zebum", "barba_negra", "purpura", "valtherion", "belial", "tuza",
-    "rogue_devil", "vovo_gamba", "luna",
+    "rogue_devil", "vovo_gamba", "luna", "besouro", "iuna",
 }
 
 
@@ -66,6 +66,11 @@ def prepare(state):
         if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"
                and "luna_origin_house" in u.statuses for u in p.units):
             setup.append({"kind": "luna", "player_id": pid})
+    for pid in day_order(state):
+        p = get_player(state, pid)
+        if (p.hand and p.besouro_mandinga_used_turn != state.turn
+                and any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "besouro" for u in p.units)):
+            setup.append({"kind": "besouro", "player_id": pid})
     state.web_night = {"turn": state.turn, "queue": [], "setup": setup, "ready": False}
     advance(state)
 
@@ -115,7 +120,7 @@ def advance(state):
                 return
             continue
         p = get_player(state, entry["player_id"])
-        hid = "vovo_gamba" if entry["kind"] == "vovo" else "luna"
+        hid = "vovo_gamba" if entry["kind"] == "vovo" else entry["kind"]
         if not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == hid for u in p.units):
             setup.pop(0)
             continue
@@ -177,6 +182,23 @@ def legal(state, pid):
                 "params": params, "label": label}
     setup = trial.web_night.get("setup", [])
     if setup:
+        if setup[0]["kind"] == "besouro":
+            from .actions import besouro_mandinga, ActionError
+            from .interaction_actions import artifact_choices
+            from .artifacts import card_display
+            player = get_player(trial, pid)
+            options = [offer("night_setup", {"kind": "besouro"}, "Não usar Mandinga")]
+            for card in dict.fromkeys(player.hand):
+                if card == "PENA":
+                    continue
+                for choice, label in artifact_choices(trial, player, card):
+                    try:
+                        besouro_mandinga(deepcopy(trial), pid, card, choice)
+                    except (ActionError, ValueError):
+                        continue
+                    options.append(offer("night_mandinga", {"card_id": card, "choice": choice},
+                                         f"Mandinga: {card_display(card)} {label}"))
+            return options
         if setup[0]["kind"] == "vovo":
             return [offer("night_setup", {"kind": "vovo", "position": i},
                           f"Vovó: declarar na posição {i}") for i in range(1, 5)]
@@ -213,11 +235,16 @@ def apply(state, action):
     advance(trial)
     kind = candidate["type"]
     old_turn = trial.turn
-    if kind == "night_setup":
+    if kind == "night_mandinga":
+        from .actions import besouro_mandinga
+        besouro_mandinga(trial, candidate["player_id"], **candidate["params"])
+        trial.web_night["setup"].pop(0)
+        advance(trial)
+    elif kind == "night_setup":
         p = get_player(trial, candidate["player_id"])
         if candidate["params"]["kind"] == "vovo":
             p.vovo_position = candidate["params"]["position"]
-        elif candidate["params"]["return"]:
+        elif candidate["params"].get("return"):
             from .night_rules import return_luna
             return_luna(trial, p)
         trial.web_night["setup"].pop(0)

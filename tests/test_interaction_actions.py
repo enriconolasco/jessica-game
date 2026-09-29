@@ -400,6 +400,22 @@ def test_luna_multicartas_paridade_ordem_save_e_atomicidade():
         assert state_to_dict(rejected) == before
 
 
+def test_luna_jd_nao_precisa_ser_ultima_carta():
+    state = ready()
+    p = state.players[0]
+    p.people = "fadas"
+    p.hand = ["J_H", "K_H"]
+    p.units.append(Hero(id="luna", owner_id=1, house="center", life=2, life_max=2, hero_id="luna"))
+    action = next(a for a in legal_actions(state, 1) if a["type"] == "dream_multi")
+    choice = {"flip_cards": ["J_H", "K_H"], "artifact_choices": [{}, {}]}
+    action["params"] = {"choice": choice}
+    direct = state_from_dict(state_to_dict(state))
+    actions.cast_spell(direct, 1, choice)
+    assert apply_action(state, action)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    assert any(e["kind"] == "J_D" and e["due_turn"] == state.turn + 3 for e in state.pending_effects)
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

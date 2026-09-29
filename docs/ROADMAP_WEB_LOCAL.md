@@ -47,7 +47,10 @@ Matriz de paridade cobre ataque de cada herói liberado, não todas as combinaç
 Vovó e Luna também adaptadas: posição da Vovó antes de Mar de Chamas e
 retorno opcional da Luna depois dele, antes da montagem da fila de combate.
 Cada escolha persiste no save e não se repete ao recarregar.
-Permanecem fora: Ainai, Luide Vampa, Aiquara noturna, Besouro e Iúna.
+Mandinga de Besouro e combate de Iúna também adaptados. Mandinga abre antes das
+declarações e resolve escolhas de artefato pendentes antes de continuar.
+Permanecem fora: Ainai, Luide Vampa e Aiquara noturna.
+Roteiro de fechamento e critérios de paridade: [PARIDADE_WEB_TERMINAL.md](PARIDADE_WEB_TERMINAL.md).
 
 Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do
 Curruna. A confirmação libera o Dia; escolhas vazias são permitidas como no
@@ -65,8 +68,8 @@ todas as combinações. Testes cobrem paridade, duplicatas, rejeição e save/lo
 Sonho Lúcido disponível para uma carta, incluindo escolha do artefato transformado.
 Cópia gnômica corrigida no motor e terminal: usa a mesma transformação/ativação
 imediata das Fadas. Luna agora permite uma sequência de várias cartas e alvos.
-Limitação do adaptador: J♦ transformado deve ser a última carta; alvos são os
-disponíveis antes da sequência. Escolhas intercaladas ainda pendentes.
+Alvos são os disponíveis antes da sequência. Escolhas intercaladas ainda pendentes.
+A antiga restrição de J♦ por último foi removida: o core agenda sua escolha para T+3.
 Devaneio usa o caminho existente do core.
 
 1. **Sincronizar o motor atual:** concluído para o lote acima; sincronizar novos

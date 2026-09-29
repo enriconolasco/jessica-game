@@ -373,6 +373,31 @@ def test_luna_may_decline_return_without_moving():
     assert not any(a["type"] == "night_setup" for a in legal_actions(state, 1))
 
 
+def test_mandinga_jd_scheduled_save_and_once_per_night():
+    from jessica.core.actions import besouro_mandinga
+    state = night()
+    p = state.players[0]
+    p.units.append(Hero(id="besouro", owner_id=1, house="center", life=4, life_max=4, hero_id="besouro"))
+    p.hand = ["J_D", "PENA"]
+    night_actions.prepare(state)
+    before = state_to_dict(state)
+    offers = legal_actions(state, 1)
+    assert not any(a["params"].get("card_id") == "PENA" for a in offers)
+    action = next(a for a in offers if a["type"] == "night_mandinga")
+    assert state_to_dict(state) == before
+    direct = state_from_dict(before)
+    besouro_mandinga(direct, 1, **action["params"])
+    direct.web_night["setup"].pop(0)
+    night_actions.advance(direct)
+    assert apply_action(state, action)["success"]
+    assert state_to_dict(state) == state_to_dict(direct)
+    assert state.players[0].pending_artifact_choice is None
+    assert any(e["kind"] == "J_D" and e["due_turn"] == state.turn + 3 for e in state.pending_effects)
+    state = state_from_dict(state_to_dict(state))
+    assert not apply_action(state, action)["success"]
+    assert state.players[0].besouro_mandinga_used_turn == state.turn
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):
