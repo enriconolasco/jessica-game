@@ -12,6 +12,7 @@ from .state import get_player
 from .turn import day_order, end_day, start_player_day
 from . import peoples
 from . import interaction_actions
+from . import night_actions
 
 
 ACTION_VERSION = "action-v0.1"
@@ -60,6 +61,8 @@ def _action(action_type: str, player_id: int, **params) -> dict:
 
 def legal_actions(state: GameState, player_id: int) -> list[dict]:
     """Enumera as ações já migradas para a porta v0.1."""
+    if state.phase == Phase.NIGHT:
+        return night_actions.legal(state, player_id)
     try:
         player = get_player(state, player_id)
     except ValueError:
@@ -172,6 +175,8 @@ def apply_action(state: GameState, action: dict) -> dict:
     if action.get("version") != ACTION_VERSION:
         return _error("unsupported_action_version", "Versão de ação não suportada.")
     action_type = action.get("type")
+    if isinstance(action_type, str) and action_type in night_actions.TYPES:
+        return night_actions.apply(state, action)
     if isinstance(action_type, str) and action_type in interaction_actions.LABELS:
         return interaction_actions.apply_interaction(state, action)
     if action_type not in {"collect_resources", "raise_city_life", "build_monument",
@@ -246,6 +251,8 @@ def apply_action(state: GameState, action: dict) -> dict:
             else:
                 state.active_player_id = None
                 end_day(state)
+                if not night_actions.blockers(state):
+                    night_actions.prepare(state)
     except (ActionError, ValueError) as exc:
         return _error("domain_error", str(exc))
 
@@ -360,6 +367,8 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         "active_player_id": state.active_player_id,
         "game_over": state.game_over,
         "winner_id": state.winner_id,
+        "night_limitations": night_actions.blockers(state) if state.phase == Phase.NIGHT else [],
+        "night_window": night_actions.public_window(state),
         "players": players,
         "board": board,
         "shop": {"size": state.shop.size()},
@@ -408,7 +417,7 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
         projected = deepcopy(updated)
         projected["events"] = deepcopy(view.get("events", [])) + [deepcopy(event)]
         return projected
-    if event.get("type") == "interaction_resolved":
+    if event.get("type") in ("interaction_resolved", "night_action_resolved"):
         projected["events"].append(deepcopy(event))
         return projected
     if event.get("type") in {"resources_collected", "city_life_raised", "monument_built",

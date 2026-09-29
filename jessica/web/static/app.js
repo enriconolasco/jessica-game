@@ -303,6 +303,11 @@ function renderActions(actions) {
 }
 function eventText(event) {
   const d = event.data || {};
+  if (event.type === "night_action_resolved") {
+    if (d.action_type === "night_attack") return `${d.attacker_unit_id} atacou ${d.target_id}.`;
+    if (d.action_type === "night_pass") return `${d.unit_id} não declarou ataque.`;
+    return "Noite encerrada.";
+  }
   if (event.type === "resources_collected") return `J${d.player_id} recebeu ${d.gold} Ouro e ${d.magic} Magia.`;
   if (event.type === "city_life_raised") return `J${d.player_id} aumentou a Cidade de ${d.life_before} para ${d.life_after}.`;
   if (event.type === "monument_built") return `J${d.player_id} construiu um Monumento.`;
@@ -355,6 +360,17 @@ async function refresh(allowPlayerSwitch = false) {
   playerId = view.active_player_id || playerId;
   const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
   $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
+  if (view.game_over) {
+    const winner = view.players.find(p => p.id === view.winner_id);
+    $("status").textContent = `Partida encerrada · Vencedor: ${winner?.name || "sem vencedor"}`;
+  }
+  if (view.night_limitations?.length)
+    $("status").textContent += " · Noite ainda indisponível: " + view.night_limitations.join(" ");
+  if (view.night_window?.house) {
+    const names = view.night_window.declaration_order.map(id =>
+      view.players.find(p => p.id === id)?.name || `J${id}`).join(" → ");
+    $("status").textContent += ` · Combate: ${HOUSE_NAMES[view.night_window.house] || view.night_window.house} · Ordem restante: ${names}`;
+  }
   $("players").replaceChildren();
   view.players.forEach(p => {
     const node = document.createElement("div");
@@ -372,6 +388,7 @@ async function refresh(allowPlayerSwitch = false) {
 }
 async function act(action) {
   if (action.type === "end_turn" && !confirm("Encerrar a janela deste jogador?")) return;
+  if (action.type === "finish_night" && !confirm("Encerrar a Noite e avançar o turno?")) return;
   try {
     document.querySelectorAll("#actions button").forEach(button => button.disabled = true);
     await api(`/matches/${matchId}/actions`, {method:"POST", body:JSON.stringify(action)});

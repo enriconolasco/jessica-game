@@ -1,6 +1,6 @@
 # Roteiro para a versão web local
 
-Status em 2026-09-28: ações e escolhas do Dia ampliadas no navegador. O motor continua
+Status em 2026-09-28: Dia ampliado e primeira fatia da Noite jogável. O motor continua
 sendo a única autoridade mecânica. Multiplayer online não faz parte deste roteiro.
 
 ## Concluído
@@ -27,11 +27,18 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
 
 ## Passos restantes
 
+Noite básica disponível: tropas, Miyamoto, Arken e Ori; prioridade por local/jogador,
+ataque/retaliação, passar, encerramento e próxima manhã. Fila persistida em save/load.
+Seleção de alvos e ordem foram extraídas do terminal para `night_rules.py`; ambos
+reutilizam essas funções. Dano e mortes continuam em `combat.resolve_attack`.
+Heróis não adaptados, Q♦ ativo e escolhas pendentes bloqueiam essa fatia com aviso
+explícito. Não interpretar isso como cobertura noturna dos 12 povos.
+
 Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do
 Curruna. A confirmação libera o Dia; escolhas vazias são permitidas como no
 terminal. Save/load preserva a etapa. Saves antigos já no Dia não voltam ao
-Curruna ao resolver apostas pendentes. A recorrência em novos turnos depende
-da implementação do ciclo noturno/manhã ainda pendente.
+Curruna ao resolver apostas pendentes. A recorrência funciona após noites
+compatíveis com a fatia noturna acima.
 
 Habilidades diurnas adicionais: Aiquara move inimigos; Zebum obtém/reinvoca
 heróis e oferece a sequência de anões quando disponível. Escolhas passam pelas
@@ -51,7 +58,7 @@ Devaneio usa o caminho existente do core.
    patches do terminal a cada marco.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
 3. **Completar o Dia:** Sonho Lúcido com Luna (escolhas intercaladas),
-   integração das apostas ao ciclo completo de turnos,
+   demais decisões diurnas,
    Miyamoto diurno e demais janelas especiais. Aiquara diurna e Zebum já adaptados.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,

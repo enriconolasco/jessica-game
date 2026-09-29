@@ -305,7 +305,7 @@ def test_terminal_summons_use_engine_port():
 def test_end_turn_advances_active_player_and_enters_night_after_last():
     state = make_state()
     state.active_player_id = 1
-    for expected in (2, 3, 4, None):
+    for expected in (2, 3, 4, 1):
         action = next(a for a in legal_actions(state, state.active_player_id)
                       if a["type"] == "end_turn")
         result = apply_action(state, action)

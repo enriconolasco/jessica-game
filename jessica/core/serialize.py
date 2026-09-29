@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+from copy import deepcopy
 from .models import City, Player, Unit, Hero, Troop, GameState, ArtifactOnField
 from .artifacts import Shop
 from .rng import DeterministicRNG
@@ -237,6 +238,7 @@ def state_to_dict(s: GameState) -> dict:
             for house, queue in s.night_priority_by_house.items()
         },
         "demon_pacts": [dict(e) for e in s.demon_pacts],
+        "web_night": deepcopy(s.web_night),
     }
 
 
@@ -268,6 +270,7 @@ def state_from_dict(d: dict) -> GameState:
         for house, queue in d.get("night_priority_by_house", {}).items()
     }
     state.demon_pacts = [dict(e) for e in d.get("demon_pacts", [])]
+    state.web_night = deepcopy(d.get("web_night", {}))
     # Compatibilidade com saves produzidos pelos patches v5v9 antigos.
     for pid_s, value in d.get("miyamoto_bonus", {}).items():
         player = next((p for p in state.players if str(p.id) == str(pid_s)), None)

@@ -45,8 +45,10 @@ adicionar/remover/trocar, cópias desses feitiços pelos Gnomos e rerrolagem de 
 O histórico mostra todos os eventos visíveis, separados por turno. Cabaça Cheia
 rola apenas para Caroços que ainda não rolaram naquele turno.
 
-Ao terminar as quatro janelas do Dia, a partida entra na Noite. A Noite ainda não é
-jogável nesta versão. Sacrifício de Demônio permite selecionar herói e múltiplas
+Ao terminar as quatro janelas do Dia, a partida entra na Noite. A fatia básica
+permite tropas, Miyamoto, Arken e Ori: atacar, receber retaliação, passar e
+iniciar o próximo turno. Outras janelas de herói, Q♦ ativo e escolhas pendentes
+ainda bloqueiam a Noite com aviso; não são ignoradas. Sacrifício de Demônio permite selecionar herói e múltiplas
 cartas da mão/campo, inclusive quando copiado pelos Gnomos. Sonho Lúcido oferece
 uma carta com escolha imediata; Luna também monta uma sequência de várias cartas
 com seus alvos atuais (J♦ transformado deve ficar por último). Escolhas intercaladas e algumas habilidades

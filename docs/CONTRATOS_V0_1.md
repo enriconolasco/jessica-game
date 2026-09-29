@@ -177,6 +177,18 @@ transação. O frontend apresenta checkboxes e confirmação de morte, sem calcu
 efeitos. Essa oferta parametrizada evita crescimento exponencial de combinações.
 Eventos públicos não expõem as cartas privadas selecionadas.
 
+Fatia noturna: `night_attack` recebe `attacker_unit_id,target_type,target_id`;
+`night_pass`, `unit_id`; `finish_night`, parâmetros vazios.
+Só o declarante atual recebe ações. A fila usa ordem por jogador/local do terminal;
+ataques são validados e executados por `combat.resolve_attack` em cópia transacional.
+`night_action_resolved` registra a decisão pública, seguido da projeção privada do
+ator. As outras telas consultam novamente PlayerView; o evento público isolado
+não reconstrói todo o dano. `night_window` mostra local, unidade e ordem restante;
+`night_limitations` informa condições não adaptadas. `GameState.web_night` persiste
+a fila; saves anteriores usam dicionário vazio e a inicializam ao entrar na Noite.
+Ao encerrar a Noite, o motor executa fim de turno/vitória e início do próximo,
+abrindo apostas pendentes antes do Dia do Curruna.
+
 `allocate_bets`: `params={"bets":{"H":id_ou_null,"C":id_ou_null,
 "D":id_ou_null,"S":id_ou_null}}`. A oferta contém `selection.kind="bets"`
 e alvos vivos diferentes do próprio jogador. O servidor valida os quatro naipes,
