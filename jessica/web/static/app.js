@@ -178,7 +178,7 @@ function renderActions(actions) {
     const group = document.createElement("details");
     group.className = "action-group";
     group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "night_resolve_choice",
-                  "demon_pact", "night_pact", "night_decline_pact", "night_clock", "night_skip_clock"].includes(type);
+                  "demon_pact", "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup"].includes(type);
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
@@ -305,6 +305,10 @@ function renderActions(actions) {
 function eventText(event) {
   const d = event.data || {};
   if (event.type === "night_action_resolved") {
+    if (d.action_type === "night_setup") {
+      if (d.kind === "vovo") return `Vovó escolheu a posição ${d.position} nas declarações.`;
+      return d.return ? "Luna retornou à origem." : "Luna permaneceu no local.";
+    }
     if (d.action_type === "night_pact") return "Pacto firmado durante a Noite.";
     if (d.action_type === "night_decline_pact") return "Oferta de pacto recusada.";
     if (d.action_type === "night_clock") return `Rogue usou o Relógio de bolso: ${HOUSE_NAMES[d.destination] || d.destination}.`;

@@ -8,14 +8,14 @@ from .state import get_player, log
 from .turn import day_order, end_turn, start_turn, start_player_day
 
 TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice",
-         "night_pact", "night_decline_pact", "night_clock", "night_skip_clock"}
+         "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup"}
 SUPPORTED_HEROES = {
     "miyamoto", "arken", "ori", "barbadourada", "dain", "buin", "bein", "boin",
     "tintin", "don", "din", "garoche", "valendar", "dracula", "dandara",
     "lupa_lider", "cigana", "luarado", "joao_grandao", "pe_descalco", "caroco",
     "cobra", "zoia", "cova_rasa", "guarari", "baoba_ba", "bimbo_do_mal",
     "sao_tome", "zebum", "barba_negra", "purpura", "valtherion", "belial", "tuza",
-    "rogue_devil",
+    "rogue_devil", "vovo_gamba", "luna",
 }
 
 
@@ -56,8 +56,21 @@ def pending_owner(state):
 def prepare(state):
     if state.web_night.get("turn") == state.turn:
         return
-    from .actions import barba_resolver_mar_de_chamas
-    barba_resolver_mar_de_chamas(state)
+    setup = []
+    for p in state.players:
+        if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "vovo_gamba" for u in p.units):
+            setup.append({"kind": "vovo", "player_id": p.id})
+    setup.append({"kind": "flames"})
+    for pid in day_order(state):
+        p = get_player(state, pid)
+        if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"
+               and "luna_origin_house" in u.statuses for u in p.units):
+            setup.append({"kind": "luna", "player_id": pid})
+    state.web_night = {"turn": state.turn, "queue": [], "setup": setup, "ready": False}
+    advance(state)
+
+
+def build_queue(state):
     queue = []
     houses = [CENTER] + [f"city_{pid}" for pid in reversed(day_order(state))]
     for house in houses:
@@ -66,8 +79,8 @@ def prepare(state):
         for pid in order_players_for_house(state, pids, house):
             queue.extend({"house": house, "player_id": pid, "unit_id": u.id}
                          for u in get_player(state, pid).units if u.is_alive() and u.house == house)
-    state.web_night = {"turn": state.turn, "queue": queue}
-    advance(state)
+    state.web_night["queue"] = queue
+    state.web_night["ready"] = True
 
 
 def attacks(state, entry):
@@ -90,6 +103,26 @@ def advance(state):
     if pending is not None:
         state.active_player_id = pending.id
         return
+    setup = state.web_night.get("setup", [])
+    while setup:
+        entry = setup[0]
+        if entry["kind"] == "flames":
+            from .actions import barba_resolver_mar_de_chamas
+            setup.pop(0)
+            barba_resolver_mar_de_chamas(state)
+            if pending_owner(state) is not None:
+                advance(state)
+                return
+            continue
+        p = get_player(state, entry["player_id"])
+        hid = "vovo_gamba" if entry["kind"] == "vovo" else "luna"
+        if not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == hid for u in p.units):
+            setup.pop(0)
+            continue
+        state.active_player_id = p.id
+        return
+    if not state.web_night.get("ready", True):
+        build_queue(state)
     queue = state.web_night["queue"]
     while queue and not attacks(state, queue[0]):
         queue.pop(0)
@@ -142,6 +175,14 @@ def legal(state, pid):
     def offer(kind, params, label):
         return {"version": ACTION_VERSION, "type": kind, "player_id": pid,
                 "params": params, "label": label}
+    setup = trial.web_night.get("setup", [])
+    if setup:
+        if setup[0]["kind"] == "vovo":
+            return [offer("night_setup", {"kind": "vovo", "position": i},
+                          f"Vovó: declarar na posição {i}") for i in range(1, 5)]
+        return [offer("night_setup", {"kind": "luna", "return": value},
+                      "Luna: retornar à origem" if value else "Luna: permanecer aqui")
+                for value in (True, False)]
     queue = trial.web_night["queue"]
     if not queue:
         if clock_owner(trial) is not None:
@@ -163,7 +204,8 @@ def legal(state, pid):
 def apply(state, action):
     from .headless import _error, EVENT_VERSION, view_for_player
     candidate = next((a for a in legal(state, action.get("player_id"))
-                      if a["type"] == action.get("type") and a["params"] == action.get("params")), None)
+                      if a["type"] == action.get("type") and a["params"] == action.get("params")
+                      and all(type(action["params"][k]) is type(v) for k, v in a["params"].items())), None)
     if candidate is None:
         return _error("not_legal", "Declaração noturna indisponível.")
     trial = deepcopy(state)
@@ -171,7 +213,16 @@ def apply(state, action):
     advance(trial)
     kind = candidate["type"]
     old_turn = trial.turn
-    if kind in ("night_pact", "night_decline_pact"):
+    if kind == "night_setup":
+        p = get_player(trial, candidate["player_id"])
+        if candidate["params"]["kind"] == "vovo":
+            p.vovo_position = candidate["params"]["position"]
+        elif candidate["params"]["return"]:
+            from .night_rules import return_luna
+            return_luna(trial, p)
+        trial.web_night["setup"].pop(0)
+        advance(trial)
+    elif kind in ("night_pact", "night_decline_pact"):
         from .interaction_actions import execute
         original = dict(candidate, type="demon_pact" if kind == "night_pact" else "decline_pact")
         execute(trial, original)

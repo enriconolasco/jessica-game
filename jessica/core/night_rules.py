@@ -4,6 +4,18 @@ from .state import get_player
 from . import peoples
 from .state import declaration_order_for_house
 
+
+def return_luna(state, player):
+    from .state import sync_house_priority
+    luna = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                 and u.hero_id == "luna" and "luna_origin_house" in u.statuses), None)
+    if luna is None:
+        raise ValueError("Luna não pode retornar.")
+    origin = luna.statuses.pop("luna_origin_house")
+    current = luna.house
+    luna.house = origin
+    sync_house_priority(state, current, origin)
+
 def find_targets(state, unit):
     # Espoliado nao pode atacar nem declarar em cidade
     if unit.statuses.get("cannot_attack_on_turn") == state.turn:

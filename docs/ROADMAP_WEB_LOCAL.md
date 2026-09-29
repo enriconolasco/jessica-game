@@ -44,7 +44,10 @@ com aceitar/recusar e ofertas de Rogue; Relógio de bolso opcional uma vez antes
 do encerramento; Mar de Chamas preparado no Dia aplicado uma vez ao preparar
 a Noite. Belial já executa seu efeito pelo hook existente de início da Noite.
 Matriz de paridade cobre ataque de cada herói liberado, não todas as combinações.
-Permanecem fora: Ainai, Luna, Vovó, Luide Vampa, Aiquara noturna, Besouro e Iúna.
+Vovó e Luna também adaptadas: posição da Vovó antes de Mar de Chamas e
+retorno opcional da Luna depois dele, antes da montagem da fila de combate.
+Cada escolha persiste no save e não se repete ao recarregar.
+Permanecem fora: Ainai, Luide Vampa, Aiquara noturna, Besouro e Iúna.
 
 Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do
 Curruna. A confirmação libera o Dia; escolhas vazias são permitidas como no

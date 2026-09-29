@@ -2714,10 +2714,8 @@ def _try_luna_return(state, player) -> None:
     opts = ["Sim", "Nao"]
     idx = pick_index("Luna:", opts)
     if idx == 0:
-        current = luna.house
-        luna.house = origin
-        sync_house_priority(state, current, origin)
-        luna.statuses.pop("luna_origin_house", None)
+        from .core.night_rules import return_luna
+        return_luna(state, player)
         console.print(f"[green]Luna retornou para {house_short(state, origin)}.[/green]")
 
 

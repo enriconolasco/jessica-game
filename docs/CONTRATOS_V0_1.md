@@ -207,6 +207,13 @@ declarações, para Rogue vivo com Relógio, e a conclusão fica em
 Mar de Chamas é executado no preparo da Noite, protegido pelo marcador de
 turno já persistido em `web_night`; consultas usam cópia e não alteram o estado.
 
+`night_setup` recebe `{"kind":"vovo","position":1..4}` ou
+`{"kind":"luna","return":true|false}`. `web_night.setup` preserva a sequência:
+Vovós → Mar de Chamas → Lunas → montagem da fila. Heróis mortos antes da sua
+janela são pulados. Save antigo sem `setup` preserva a fila já iniciada.
+O retorno da Luna usa a mesma função em `night_rules.return_luna` no terminal
+e na web; sincroniza a prioridade do local sem consumir movimento adicional.
+
 `allocate_bets`: `params={"bets":{"H":id_ou_null,"C":id_ou_null,
 "D":id_ou_null,"S":id_ou_null}}`. A oferta contém `selection.kind="bets"`
 e alvos vivos diferentes do próprio jogador. O servidor valida os quatro naipes,

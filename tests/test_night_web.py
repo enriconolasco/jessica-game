@@ -223,6 +223,9 @@ def test_supported_hero_catalog_parity_matrix():
         state.players[0].units.append(hero)
         state.players[1].units.append(Troop(id="target", owner_id=2, house="center", life=1, life_max=4))
         night_actions.prepare(state)
+        setup = next((a for a in legal_actions(state, 1) if a["type"] == "night_setup"), None)
+        if setup:
+            assert apply_action(state, setup)["success"]
         before = state_to_dict(state)
         action = next(a for a in legal_actions(state, 1) if a["type"] == "night_attack")
         assert state_to_dict(state) == before, hero_id
@@ -323,6 +326,51 @@ def test_night_rogue_quest_rewards_on_signing_and_rejects_repeat():
     before = state_to_dict(state)
     assert not apply_action(state, action)["success"]
     assert state_to_dict(state) == before
+
+
+def test_vovo_flames_luna_order_save_and_return():
+    state = night()
+    state.players[0].units.append(Hero(id="vovo", owner_id=1, house="center",
+                                     life=3, life_max=3, hero_id="vovo_gamba"))
+    state.players[1].units.append(Hero(id="luna", owner_id=2, house="center",
+                                     life=2, life_max=2, hero_id="luna",
+                                     statuses={"luna_origin_house": "city_2"}))
+    state.players[2].people = "dragoes"
+    state.players[2].units.append(Hero(id="barba", owner_id=3, house="center",
+                                     life=3, life_max=3, hero_id="barba_negra",
+                                     statuses={"mar_chamas_queued_turn": state.turn}))
+    night_actions.prepare(state)
+    assert state.active_player_id == 1 and state.players[1].units[0].life == 2
+    state = state_from_dict(state_to_dict(state))
+    before = state_to_dict(state)
+    offers = legal_actions(state, 1)
+    assert len(offers) == 4 and state_to_dict(state) == before
+    invalid = deepcopy(offers[0])
+    invalid["params"]["position"] = True
+    assert not apply_action(state, invalid)["success"]
+    assert state_to_dict(state) == before
+    assert apply_action(state, offers[1])["success"]
+    assert state.players[0].vovo_position == 2
+    assert state.players[1].units[0].life == 1 and state.active_player_id == 2
+    state = state_from_dict(state_to_dict(state))
+    offers = legal_actions(state, 2)
+    assert len(offers) == 2
+    assert apply_action(state, next(a for a in offers if a["params"]["return"]))["success"]
+    luna = state.players[1].units[0]
+    assert luna.house == "city_2" and "luna_origin_house" not in luna.statuses
+    assert state.web_night["ready"] and not state.web_night["setup"]
+    assert luna.life == 1
+
+
+def test_luna_may_decline_return_without_moving():
+    state = night()
+    state.players[0].units.append(Hero(id="luna", owner_id=1, house="center",
+                                     life=2, life_max=2, hero_id="luna",
+                                     statuses={"luna_origin_house": "city_1"}))
+    offer = next(a for a in legal_actions(state, 1) if a["params"].get("return") is False)
+    assert apply_action(state, offer)["success"]
+    assert state.players[0].units[0].house == "center"
+    assert not any(a["type"] == "night_setup" for a in legal_actions(state, 1))
 
 
 if __name__ == "__main__":
