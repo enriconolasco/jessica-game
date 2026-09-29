@@ -202,6 +202,15 @@ class Handler(BaseHTTPRequestHandler):
                 match = MATCHES.get(match_id)
                 if not match:
                     return self._json(404, {"error": "Partida não encontrada."})
+                if resource == "dream-preview":
+                    from ..core.interaction_actions import dream_preview
+                    from ..core.actions import ActionError
+                    from ..core.combat import CombatError
+                    try:
+                        result = dream_preview(match["state"], body.get("player_id"), body.get("choice"))
+                    except (ActionError, CombatError, TypeError, ValueError) as exc:
+                        return self._json(422, {"error": str(exc)})
+                    return self._json(200, result)
                 if resource == "actions":
                     result = apply_action(match["state"], body)
                     if result["success"]:

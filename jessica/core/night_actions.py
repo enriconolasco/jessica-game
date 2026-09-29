@@ -3,11 +3,12 @@ from copy import deepcopy
 from . import combat, peoples
 from .constants import CENTER, Phase
 from .models import Hero
-from .night_rules import find_targets, order_players_for_house
+from .night_rules import find_targets, order_players_for_house, ainai_destinations, teleport_ainai
 from .state import get_player, log
 from .turn import day_order, end_turn, start_turn, start_player_day
 
 TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice",
+         "night_ainai", "night_luide_move", "night_luide_spell", "night_window_done",
          "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup", "night_mandinga", "night_aiquara"}
 SUPPORTED_HEROES = {
     "miyamoto", "arken", "ori", "barbadourada", "dain", "buin", "bein", "boin",
@@ -15,7 +16,7 @@ SUPPORTED_HEROES = {
     "lupa_lider", "cigana", "luarado", "joao_grandao", "pe_descalco", "caroco",
     "cobra", "zoia", "cova_rasa", "guarari", "baoba_ba", "bimbo_do_mal",
     "sao_tome", "zebum", "barba_negra", "purpura", "valtherion", "belial", "tuza",
-    "rogue_devil", "vovo_gamba", "luna", "besouro", "iuna", "aiquara",
+    "rogue_devil", "vovo_gamba", "luna", "besouro", "iuna", "aiquara", "ainai", "luide_vampa",
 }
 
 
@@ -25,7 +26,7 @@ def public_window(state):
     trial = deepcopy(state)
     prepare(trial)
     advance(trial)
-    queue = trial.web_night["queue"]
+    queue = [e for e in trial.web_night["queue"] if "unit_id" in e]
     if not queue:
         return {"house": None, "declaration_order": [], "unit_id": None}
     house = queue[0]["house"]
@@ -71,6 +72,7 @@ def prepare(state):
         if any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "luna"
                and "luna_origin_house" in u.statuses for u in p.units):
             setup.append({"kind": "luna", "player_id": pid})
+    setup.extend({"kind": "ainai", "player_id": pid} for pid in day_order(state))
     for pid in day_order(state):
         p = get_player(state, pid)
         if (p.hand and p.besouro_mandinga_used_turn != state.turn
@@ -80,17 +82,33 @@ def prepare(state):
     advance(state)
 
 
-def build_queue(state):
+def house_entries(state, house):
     queue = []
+    pids = [pid for pid in day_order(state) if any(
+        u.is_alive() and u.house == house for u in get_player(state, pid).units)]
+    for pid in order_players_for_house(state, pids, house):
+        queue.append({"kind": "luide", "house": house, "player_id": pid})
+        queue.extend({"house": house, "player_id": pid, "unit_id": u.id}
+                     for u in get_player(state, pid).units if u.is_alive() and u.house == house)
+    return queue
+
+
+def build_queue(state):
     houses = [CENTER] + [f"city_{pid}" for pid in reversed(day_order(state))]
-    for house in houses:
-        pids = [pid for pid in day_order(state) if any(
-            u.is_alive() and u.house == house for u in get_player(state, pid).units)]
-        for pid in order_players_for_house(state, pids, house):
-            queue.extend({"house": house, "player_id": pid, "unit_id": u.id}
-                         for u in get_player(state, pid).units if u.is_alive() and u.house == house)
-    state.web_night["queue"] = queue
+    state.web_night["queue"] = [{"kind": "house", "house": h} for h in houses]
     state.web_night["ready"] = True
+
+
+def luide_alive(state, pid):
+    p = get_player(state, pid)
+    return p.people == "vampiros" and any(isinstance(u, Hero) and u.is_alive()
+        and u.hero_id == "luide_vampa" for u in p.units)
+
+
+def schedule_arrival(state, unit):
+    if unit.house in state.web_night.get("processed", []):
+        state.web_night["queue"].insert(0, {"house": unit.house,
+            "player_id": unit.owner_id, "unit_id": unit.id})
 
 
 def attacks(state, entry):
@@ -125,6 +143,9 @@ def advance(state):
                 return
             continue
         p = get_player(state, entry["player_id"])
+        if entry["kind"] == "ainai" and not ainai_destinations(state, p):
+            setup.pop(0)
+            continue
         hid = "vovo_gamba" if entry["kind"] == "vovo" else entry["kind"]
         if not any(isinstance(u, Hero) and u.is_alive() and u.hero_id == hid for u in p.units):
             setup.pop(0)
@@ -134,8 +155,31 @@ def advance(state):
     if not state.web_night.get("ready", True):
         build_queue(state)
     queue = state.web_night["queue"]
-    while queue and not attacks(state, queue[0]):
-        queue.pop(0)
+    while queue:
+        entry = queue[0]
+        kind = entry.get("kind")
+        if kind == "house":
+            queue.pop(0)
+            queue[:0] = house_entries(state, entry["house"]) + [{"kind": "end_house", "house": entry["house"]}]
+        elif kind == "end_house":
+            queue.pop(0)
+            state.web_night.setdefault("processed", []).append(entry["house"])
+            queue[:0] = [{"kind": "ainai", "player_id": pid} for pid in day_order(state)]
+        elif kind == "ainai":
+            if ainai_destinations(state, get_player(state, entry["player_id"])):
+                break
+            queue.pop(0)
+        elif kind == "luide":
+            if luide_alive(state, entry["player_id"]) and (entry.get("opened") or any(
+                    u.is_alive() and u.house == entry["house"] and find_targets(state, u)
+                    for u in get_player(state, entry["player_id"]).units)):
+                entry["opened"] = True
+                break
+            queue.pop(0)
+        elif attacks(state, entry):
+            break
+        else:
+            queue.pop(0)
     if not queue:
         clock = clock_owner(state)
         if clock is not None:
@@ -186,6 +230,33 @@ def legal(state, pid):
         return {"version": ACTION_VERSION, "type": kind, "player_id": pid,
                 "params": params, "label": label}
     setup = trial.web_night.get("setup", [])
+    window = setup[0] if setup else (trial.web_night["queue"][0] if trial.web_night["queue"] else {})
+    if window.get("kind") == "ainai":
+        return [offer("night_ainai", {"destination": h}, f"Ainai: teleportar para {h}")
+                for h in ainai_destinations(trial, get_player(trial, pid))] + [
+                    offer("night_window_done", {}, "Não teleportar Ainai")]
+    if window.get("kind") == "luide":
+        from .actions import move_unit, cast_spell, ActionError
+        result = [offer("night_window_done", {}, "Concluir janela de Luide e declarar combates")]
+        player = get_player(trial, pid)
+        for unit in player.units:
+            if not unit.is_alive():
+                continue
+            if unit.house == window["house"]:
+                for destination in [CENTER] + [f"city_{p.id}" for p in trial.players]:
+                    try:
+                        move_unit(deepcopy(trial), pid, unit.id, destination)
+                    except (ActionError, ValueError):
+                        continue
+                    result.append(offer("night_luide_move", {"unit_id": unit.id, "destination": destination},
+                                        f"Mover {unit.id} para {destination}"))
+            if not player.has_cast_spell_this_turn:
+                try:
+                    cast_spell(deepcopy(trial), pid, {"unit_id": unit.id})
+                except (ActionError, ValueError):
+                    continue
+                result.append(offer("night_luide_spell", {"unit_id": unit.id}, f"Feitiço vampiro: {unit.id}"))
+        return result
     if setup:
         if setup[0]["kind"] == "aiquara":
             from .actions import aiquara_atacar, ActionError
@@ -257,7 +328,22 @@ def apply(state, action):
     advance(trial)
     kind = candidate["type"]
     old_turn = trial.turn
-    if kind == "night_aiquara":
+    if kind in ("night_ainai", "night_window_done"):
+        source = trial.web_night["setup"] or trial.web_night["queue"]
+        source.pop(0)
+        if kind == "night_ainai":
+            unit = teleport_ainai(trial, get_player(trial, candidate["player_id"]), candidate["params"]["destination"])
+            schedule_arrival(trial, unit)
+        advance(trial)
+    elif kind in ("night_luide_move", "night_luide_spell"):
+        from .actions import move_unit, cast_spell
+        if kind == "night_luide_move":
+            move_unit(trial, candidate["player_id"], **candidate["params"])
+            schedule_arrival(trial, combat._find_unit(trial, candidate["params"]["unit_id"]))
+        else:
+            cast_spell(trial, candidate["player_id"], candidate["params"])
+        advance(trial)
+    elif kind == "night_aiquara":
         from .actions import aiquara_atacar
         aiquara_atacar(trial, candidate["player_id"], **candidate["params"])
         trial.web_night["setup"].pop(0)

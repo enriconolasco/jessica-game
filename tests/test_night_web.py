@@ -78,12 +78,88 @@ def test_house_order_and_special_guard():
         state.players[pid - 1].units.append(Troop(id=f"u{pid}", owner_id=pid,
                                                house=house, life=4, life_max=4))
     night_actions.prepare(state)
-    houses = [e["house"] for e in state.web_night["queue"]]
-    assert houses == ["city_1", "city_2"]
+    assert state.web_night["queue"][0]["house"] == "city_1"
     state.players[0].units.append(Hero(id="hero", owner_id=1, house="center",
-                                     life=4, life_max=4, hero_id="ainai"))
+                                     life=4, life_max=4, hero_id="unknown_hero"))
     assert legal_actions(state, 1) == []
     assert view_for_player(state, 1)["night_limitations"]
+
+
+def test_ainai_opening_save_and_single_use():
+    state = night()
+    p = state.players[0]
+    p.units = [Hero(id="ainai", owner_id=1, house="center", life=4, life_max=4, hero_id="ainai")]
+    state.fae_fallen_this_turn = [(1, "city_2"), (2, "city_3")]
+    night_actions.prepare(state)
+    before = state_to_dict(state)
+    options = legal_actions(state, 1)
+    assert state_to_dict(state) == before
+    action = next(a for a in options if a["type"] == "night_ainai")
+    assert action["params"] == {"destination": "city_2"}
+    restored = state_from_dict(before)
+    assert apply_action(state, action) == apply_action(restored, action)
+    assert state_to_dict(state) == state_to_dict(restored)
+    assert state.players[0].units[0].house == "city_2"
+    assert state.players[0].city.magic == p.city.magic + 1
+    assert not apply_action(state, action)["success"]
+
+
+def test_luide_reentry_save_and_death_gate():
+    state = night()
+    p = state.players[0]
+    p.people = "vampiros"
+    p.units = [Hero(id="luide", owner_id=1, house="city_4", life=8, life_max=8, hero_id="luide_vampa")]
+    state.players[1].units = [Troop(id="enemy", owner_id=2, house="center", life=8, life_max=8)]
+    state.players[2].units = [Troop(id="local_enemy", owner_id=3, house="city_4", life=8, life_max=8)]
+    night_actions.prepare(state)
+    assert "center" in state.web_night["processed"]
+    action = next(a for a in legal_actions(state, 1) if a["type"] == "night_luide_move")
+    restored = state_from_dict(state_to_dict(state))
+    assert apply_action(state, action) == apply_action(restored, action)
+    assert state_to_dict(state) == state_to_dict(restored)
+    assert any(a["type"] == "night_attack" for a in legal_actions(state, 1))
+    passed = next(a for a in legal_actions(state, 1) if a["type"] == "night_pass")
+    assert apply_action(state, passed)["success"]
+    assert any(a["type"] == "night_window_done" for a in legal_actions(state, 1))
+    state.players[0].units[0].life = 0
+    assert not any(a["type"].startswith("night_luide") for a in legal_actions(state, 1))
+
+
+def test_luide_spell_then_move_to_future_house():
+    state = night()
+    p = state.players[0]
+    p.people = "vampiros"
+    p.city.magic = 20
+    p.units = [Hero(id="luide", owner_id=1, house="center", life=8, life_max=8, hero_id="luide_vampa")]
+    state.players[1].units = [Troop(id="enemy", owner_id=2, house="center", life=8, life_max=8)]
+    state.players[2].units = [Troop(id="future", owner_id=3, house="city_4", life=8, life_max=8)]
+    night_actions.prepare(state)
+    spell = next(a for a in legal_actions(state, 1) if a["type"] == "night_luide_spell")
+    assert apply_action(state, spell)["success"]
+    move = next(a for a in legal_actions(state, 1) if a["type"] == "night_luide_move"
+                and a["params"]["destination"] == "city_4")
+    assert apply_action(state, move)["success"]
+    for _ in range(12):
+        actions = legal_actions(state, state.active_player_id)
+        if state.web_night["queue"][0].get("house") == "city_4":
+            break
+        action = next(a for a in actions if a["type"] in ("night_window_done", "night_pass"))
+        assert apply_action(state, action)["success"]
+    assert any(e.get("unit_id") == "luide" and e["house"] == "city_4" for e in state.web_night["queue"])
+
+
+def test_ainai_after_house_reopens_processed_location():
+    state = night()
+    state.players[0].units = [Hero(id="ainai", owner_id=1, house="city_1", life=4, life_max=4, hero_id="ainai")]
+    state.players[1].units = [Troop(id="enemy", owner_id=2, house="center", life=4, life_max=4)]
+    state.fae_fallen_this_turn = [(1, "center")]
+    night_actions.prepare(state)
+    decline = next(a for a in legal_actions(state, 1) if a["type"] == "night_window_done")
+    assert apply_action(state, decline)["success"]
+    assert "center" in state.web_night["processed"]
+    teleport = next(a for a in legal_actions(state, 1) if a["type"] == "night_ainai")
+    assert apply_action(state, teleport)["success"]
+    assert any(a["type"] == "night_attack" for a in legal_actions(state, 1))
 
 
 def test_supported_heroes_attack_and_retaliation_match_core():

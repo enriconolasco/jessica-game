@@ -2668,11 +2668,8 @@ def _try_ainai_teleport(state, player) -> bool:
     if idx == 0:
         return False
     destino = casas[idx - 1]
-    origem = ainai.house
-    ainai.house = destino
-    sync_house_priority(state, origem, destino)
-    ainai.statuses["ainai_used_turn"] = state.turn
-    player.city.magic += 1
+    from .core.night_rules import teleport_ainai
+    teleport_ainai(state, player, destino)
     console.print(f"[green]Ainai teleportou para {house_short(state, destino)} (+1 Magia).[/green]")
     return True
 

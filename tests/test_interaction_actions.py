@@ -400,6 +400,38 @@ def test_luna_multicartas_paridade_ordem_save_e_atomicidade():
         assert state_to_dict(rejected) == before
 
 
+def test_luna_preview_invoca_e_oferece_novo_alvo_sem_mutacao():
+    from jessica.core.interaction_actions import dream_preview
+    state = ready()
+    p = state.players[0]
+    p.people = "fadas"
+    p.chosen_hero_id = "luna"
+    p.hand = ["J_D", "K_S"]
+    p.units = [Hero(id="luna", owner_id=1, house="center", life=2, life_max=2, hero_id="luna")]
+    before = state_to_dict(state)
+    prefix = {"flip_cards": ["J_D"], "artifact_choices": [{"hero_id": "ainai"}]}
+    preview = dream_preview(state, 1, prefix)
+    assert state_to_dict(state) == before
+    next_choice = next(o["choice"] for o in preview["options"]
+                       if o["choice"]["artifact_choices"] == [{"unit_id": "p1_hero_extra_1"}])
+    choice = {"flip_cards": prefix["flip_cards"] + next_choice["flip_cards"],
+              "artifact_choices": prefix["artifact_choices"] + next_choice["artifact_choices"]}
+    action = next(a for a in legal_actions(state, 1) if a["type"] == "dream_multi")
+    action["params"] = {"choice": choice}
+    direct = state_from_dict(before)
+    restored = state_from_dict(before)
+    actions.cast_spell(direct, 1, choice)
+    assert apply_action(state, action) == apply_action(restored, action)
+    assert state_to_dict(state) == state_to_dict(direct) == state_to_dict(restored)
+    hero = next(u for u in state.players[0].units if u.id == "p1_hero_extra_1")
+    assert hero.double_damage and hero.resistance_stacks == 1
+    assert not apply_action(state, action)["success"]
+    rejected = state_from_dict(before)
+    action["params"]["choice"]["artifact_choices"][1] = {"unit_id": "missing"}
+    assert not apply_action(rejected, action)["success"]
+    assert state_to_dict(rejected) == before
+
+
 def test_luna_jd_nao_precisa_ser_ultima_carta():
     state = ready()
     p = state.players[0]

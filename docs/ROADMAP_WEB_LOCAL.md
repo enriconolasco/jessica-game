@@ -51,7 +51,7 @@ Mandinga de Besouro e combate de Iúna também adaptados. Mandinga abre antes da
 declarações e resolve escolhas de artefato pendentes antes de continuar.
 Aiquara noturna adaptada na abertura (após Mar de Chamas, antes de Luna e Mandinga),
 conforme decisão do usuário. Terminal também recebeu essa janela antes ausente.
-Permanecem fora: Ainai e Luide Vampa.
+Ainai e Luide Vampa integrados: teleporte no início e entre locais, janela de movimento/feitiço por jogador/local e retorno a locais resolvidos. Fila e escolhas persistem no save; falta playtest manual de paridade.
 Roteiro de fechamento e critérios de paridade: [PARIDADE_WEB_TERMINAL.md](PARIDADE_WEB_TERMINAL.md).
 
 Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do
@@ -70,15 +70,16 @@ todas as combinações. Testes cobrem paridade, duplicatas, rejeição e save/lo
 Sonho Lúcido disponível para uma carta, incluindo escolha do artefato transformado.
 Cópia gnômica corrigida no motor e terminal: usa a mesma transformação/ativação
 imediata das Fadas. Luna agora permite uma sequência de várias cartas e alvos.
-Alvos são os disponíveis antes da sequência. Escolhas intercaladas ainda pendentes.
+A prévia resolve cada carta no servidor e atualiza os próximos alvos, incluindo
+unidades invocadas na sequência. Confirmar executa tudo atomicamente; limpar não
+gasta o feitiço. Falta playtest integrado de reações durante a sequência.
 A antiga restrição de J♦ por último foi removida: o core agenda sua escolha para T+3.
 Devaneio usa o caminho existente do core.
 
 1. **Sincronizar o motor atual:** concluído para o lote acima; sincronizar novos
    patches do terminal a cada marco.
 2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
-3. **Completar o Dia:** Sonho Lúcido com Luna (escolhas intercaladas),
-   demais decisões diurnas,
+3. **Completar o Dia:** auditar demais decisões diurnas,
    demais janelas especiais. Miyamoto diurno, Aiquara diurna e Zebum já adaptados.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,

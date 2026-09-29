@@ -164,8 +164,14 @@ com `choice={"flip_cards":[id],"artifact_choices":[escolha]}`;
 `dream_multi` usa essas mesmas listas, com múltiplos elementos em ordem de execução.
 A oferta `selection.kind="dream"` enumera opções individuais, sem gerar todas as
 combinações. Servidor valida quantidades, Luna viva e opções antes de executar
-a sequência em cópia transacional. J♦ segue o agendamento T+3, sem restrição de posição;
-alvos que surgem no meio da sequência ainda não são oferecidos.
+a sequência em cópia transacional. `POST /matches/{id}/dream-preview` recebe
+`{player_id, choice}` com o prefixo selecionado (listas vazias são permitidas)
+e devolve somente `{options}` da próxima carta. A consulta simula o prefixo
+com o mesmo helper de resolução do core, sem alterar estado, RNG, logs ou save.
+Assim, alvos invocados ou modificados por cartas anteriores são oferecidos.
+A confirmação `dream_multi` revalida cada escolha no estado correspondente e
+executa a sequência inteira em uma transação; limpar a prévia não gasta o feitiço.
+J♦ segue o agendamento T+3, sem restrição de posição.
 não há promessa de cobertura total dos feitiços.
 
 `sacrifice_spell` aceita `params={"hero_id": unit_id, "artifacts": [{"zone":
@@ -236,3 +242,16 @@ jogador não recebe outras ações. Evento e projeção dessa escolha são priva
 3. Falha não produz mutação parcial.
 4. Nenhuma `PlayerView` revela mão adversária, RNG ou ordem da loja.
 5. O terminal atual continua funcionando enquanto a camada v0.1 é introduzida.
+
+### Janelas Ainai e Luide (ações v0.1)
+
+- `night_ainai`: `{destination}`; teleporte validado pelo helper compartilhado com o terminal.
+- `night_luide_move`: `{unit_id, destination}`; usa `move_unit`.
+- `night_luide_spell`: `{unit_id}`; usa `cast_spell`.
+- `night_window_done`: `{}`; recusa teleporte ou conclui a janela de Luide.
+
+As ofertas dependem da janela corrente e de heróis vivos. `web_night` persiste
+marcadores de locais, locais processados e janela aberta. A prioridade de cada
+local é calculada ao abri-lo; entrada em local processado antepõe a declaração
+do recém-chegado sem renovar seu limite de ataques. Eventos usam
+`night_action_resolved`, sem cálculos de regras no navegador.

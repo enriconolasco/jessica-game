@@ -13,6 +13,7 @@ class Element {
 const root = new Element("div");
 const sent = [];
 const context = vm.createContext({
+  matchId: "preview-test",
   Option: function(text, value) { this.textContent = text; this.value = value; },
   document: {createElement: tag => new Element(tag)},
   $: () => root,
@@ -34,7 +35,8 @@ assert.deepEqual(sent, actions);
 context.renderActions([]);
 assert.equal(root.children.length, 0);
 console.log("UI: três distribuições exibidas e enviadas corretamente.");
-const dream = {type:"dream_multi", label:"Luna", params:{}, selection:{options:[
+(async () => {
+const dream = {type:"dream_multi", label:"Luna", player_id:1, params:{}, selection:{options:[
   {label:"Primeira", choice:{flip_cards:["K_H"], artifact_choices:[{}]}},
   {label:"Segunda", choice:{flip_cards:["K_S"], artifact_choices:[{unit_id:"target"}]}},
 ]}};
@@ -42,14 +44,25 @@ context.renderActions([dream]);
 const group = root.children[0];
 const select = group.children.find(el => el.tag === "select");
 const controls = group.children.filter(el => el.tag === "button");
+assert.equal(controls[2].disabled, true);
+const previews = [];
+context.api = async (route, options) => {
+  previews.push({route, body:JSON.parse(options.body)});
+  return {options: [dream.selection.options[0]]};
+};
 select.value = "1";
-controls[0].onclick();
+await controls[0].onclick();
+assert.equal(previews[0].route, "/matches/preview-test/dream-preview");
+assert.equal(select.children.length, 1);
 select.value = "0";
-controls[0].onclick();
+await controls[0].onclick();
 controls[2].onclick();
 assert.equal(JSON.stringify(sent.at(-1).params.choice), JSON.stringify({
   flip_cards:["K_S","K_H"], artifact_choices:[{unit_id:"target"},{}],
 }));
 controls[1].onclick();
 assert.equal(group.children.find(el => el.tag === "ol").children.length, 0);
-console.log("UI: ordem e limpeza da sequência de Luna verificadas.");
+assert.equal(controls[2].disabled, true);
+assert.equal(select.children.length, 2);
+console.log("UI: prévia, atualização dos alvos, ordem e limpeza da sequência de Luna verificadas.");
+})().catch(error => { console.error(error); process.exitCode = 1; });

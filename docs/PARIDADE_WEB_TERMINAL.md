@@ -6,13 +6,14 @@ Não há evidência suficiente para declarar paridade total ou estimar um percen
 
 ## 1. Fechar fluxos mecânicos ainda ausentes
 
-- Ainai: teleporte, entrada em local já resolvido, nova declaração e prioridade.
-- Luide Vampa: janela por jogador/local, mover e lançar feitiço, reabrir locais;
-  interromper a habilidade se Luide morrer.
+- Ainai: implementado teleporte e reabertura de local; validar em playtest.
+- Luide Vampa: implementada janela por jogador/local, movimento, feitiço e reabertura;
+  morte interrompe a janela. Validar em playtest.
 - Aiquara: controle noturno implementado na abertura; falta playtest integrado.
 - Miyamoto diurno implementado: falta playtest integrado de cruzamentos e reações.
-- Luna/Sonho Lúcido: resolver cartas e escolhas intercaladas, sem impor J♦ por
-  último; permitir alvos surgidos durante a própria sequência.
+- Luna/Sonho Lúcido: prévia intercalada implementada; permite alvos surgidos
+  durante a sequência e confirma tudo atomicamente. J♦ mantém agendamento T+3.
+  Validar em playtest, incluindo reações/pactos gerados por artefatos.
 - Auditar todas as ações do inventário contra as opções realmente oferecidas
   pela porta comum. Não assumir que liberar um hero_id equivale a completar
   todas as suas habilidades.

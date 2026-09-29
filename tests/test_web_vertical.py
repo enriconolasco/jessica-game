@@ -68,6 +68,43 @@ def test_http_vertical_action_view_events_and_autosave():
             server.SAVES = old_saves
 
 
+def test_http_dream_preview_privacy_and_no_state_or_save_mutation():
+    from jessica.core.models import Hero
+    from jessica.core.serialize import state_to_dict
+    with tempfile.TemporaryDirectory() as tmp:
+        old_saves = server.SAVES
+        server.SAVES = Path(tmp)
+        httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        base = f"http://127.0.0.1:{httpd.server_port}"
+        try:
+            _, created = _request(base, "/matches", "POST", {"seed": 72})
+            match_id = created["match_id"]
+            state = server.MATCHES[match_id]["state"]
+            p = state.players[0]
+            p.people = "fadas"
+            p.chosen_hero_id = "luna"
+            p.hand = ["J_D", "K_S"]
+            p.units = [Hero(id="luna", owner_id=1, house="center", life=2, life_max=2, hero_id="luna")]
+            before = state_to_dict(state)
+            save = (Path(tmp) / f"{match_id}.json").read_bytes()
+            route = f"/matches/{match_id}/dream-preview"
+            body = {"player_id": 1, "choice": {"flip_cards": ["J_D"],
+                                                 "artifact_choices": [{"hero_id": "ainai"}]}}
+            _, preview = _request(base, route, "POST", body)
+            assert any(o["choice"]["artifact_choices"] == [{"unit_id": "p1_hero_extra_1"}]
+                       for o in preview["options"])
+            assert set(preview) == {"options"}
+            body["player_id"] = 2
+            assert _error_request(base, route, body)[0] == 422
+            assert state_to_dict(state) == before
+            assert (Path(tmp) / f"{match_id}.json").read_bytes() == save
+            assert server.MATCHES[match_id]["events"] == []
+        finally:
+            httpd.shutdown()
+            server.SAVES = old_saves
+
+
 def test_all_people_icons_and_map_template_exist():
     root = Path(__file__).resolve().parents[1] / "assets"
     files = ("humanos", "anoes", "orcs", "fadas", "vampiros", "lobisomens",
@@ -126,6 +163,7 @@ def test_catalogo_e_setup_completo_da_partida_web():
 
 def run_all():
     tests = [test_http_vertical_action_view_events_and_autosave,
+             test_http_dream_preview_privacy_and_no_state_or_save_mutation,
              test_all_people_icons_and_map_template_exist,
              test_web_ui_expoe_area_privada_e_eventos_legiveis,
              test_catalogo_e_setup_completo_da_partida_web]

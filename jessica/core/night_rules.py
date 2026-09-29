@@ -4,6 +4,29 @@ from .state import get_player
 from . import peoples
 from .state import declaration_order_for_house
 
+def ainai_destinations(state, player):
+    hero = next((u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                 and u.hero_id == "ainai"), None)
+    if hero is None or hero.statuses.get("ainai_used_turn") == state.turn:
+        return []
+    return sorted({h for pid, h in state.fae_fallen_this_turn
+                   if pid == player.id and h != hero.house})
+
+
+def teleport_ainai(state, player, destination):
+    from .state import sync_house_priority, log
+    if destination not in ainai_destinations(state, player):
+        raise ValueError("Destino de Ainai indisponível.")
+    hero = next(u for u in player.units if isinstance(u, Hero) and u.is_alive()
+                and u.hero_id == "ainai")
+    origin = hero.house
+    hero.house = destination
+    sync_house_priority(state, origin, destination)
+    hero.statuses["ainai_used_turn"] = state.turn
+    player.city.magic += 1
+    log(state, f"Ainai teleportou para {destination} (+1 Magia).")
+    return hero
+
 
 def return_luna(state, player):
     from .state import sync_house_priority

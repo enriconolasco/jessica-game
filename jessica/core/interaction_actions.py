@@ -290,6 +290,50 @@ def legal_interactions(state, player_id):
     return result
 
 
+def _dream_trial(state, player_id, choice):
+    if not isinstance(choice, dict) or set(choice) != {"flip_cards", "artifact_choices"}:
+        raise ValueError("Escolha de Sonho Lúcido inválida.")
+    cards, targets = choice["flip_cards"], choice["artifact_choices"]
+    if (not isinstance(cards, list) or not all(isinstance(c, str) for c in cards)
+            or not isinstance(targets, list) or len(cards) != len(targets)
+            or Counter(cards) - Counter(get_player(state, player_id).hand)):
+        raise ValueError("Quantidade de cartas indisponível.")
+    trial = deepcopy(state)
+    player = get_player(trial, player_id)
+    for card, target in zip(cards, targets):
+        transformed = peoples.sonho_lucido_flip(card)
+        if (card not in player.hand or transformed == card or not isinstance(target, dict)
+                or not any(json.dumps(target, sort_keys=True) == json.dumps(option, sort_keys=True)
+                           for option, _ in artifact_choices(trial, player, transformed))):
+            raise ValueError("Carta ou alvo indisponível nesta etapa da sequência.")
+        core.sonho_lucido_play_card(trial, player, card, target)
+    return trial
+
+
+def dream_preview(state, player_id, choice):
+    if type(player_id) is not int or not any(a["type"] == "dream_multi"
+            for a in legal_interactions(state, player_id)):
+        raise ValueError("Sonho Lúcido indisponível.")
+    trial = _dream_trial(state, player_id, choice)
+    player = get_player(trial, player_id)
+    remaining = Counter(get_player(state, player_id).hand) - Counter(choice["flip_cards"])
+    options = []
+    for card in dict.fromkeys(player.hand):
+        transformed = peoples.sonho_lucido_flip(card)
+        if remaining[card] <= 0 or transformed == card:
+            continue
+        for target, label in artifact_choices(trial, player, transformed):
+            try:
+                check = deepcopy(trial)
+                core.sonho_lucido_play_card(check, get_player(check, player_id), card, target)
+            except (core.ActionError, combat.CombatError, ValueError):
+                continue
+            options.append({"choice": {"flip_cards": [card], "artifact_choices": [target]},
+                            "label": f"{card_display(card)} → {card_display(transformed)}"
+                                     + (f" · {label}" if label else "")})
+    return {"options": options}
+
+
 def apply_interaction(state, action):
     from .headless import EVENT_VERSION, _error, view_for_player
     if type(action.get("player_id")) is not int or not isinstance(action.get("params"), dict):
@@ -311,10 +355,10 @@ def apply_interaction(state, action):
                 or not isinstance(targets, list) or len(cards) != len(targets)
                 or Counter(cards) - Counter(get_player(state, action["player_id"]).hand)):
             return _error("not_legal", "Quantidade de cartas indisponível.")
-        options = {json.dumps(o["choice"], sort_keys=True) for o in template["selection"]["options"]}
-        for card, target in zip(cards, targets):
-            if json.dumps({"flip_cards": [card], "artifact_choices": [target]}, sort_keys=True) not in options:
-                return _error("not_legal", "Carta ou alvo indisponível.")
+        try:
+            _dream_trial(state, action["player_id"], choice)
+        except (core.ActionError, combat.CombatError, ValueError) as exc:
+            return _error("not_legal", str(exc))
         legal = deepcopy(template)
         legal["params"] = deepcopy(submitted)
     elif action["type"] == "allocate_bets":

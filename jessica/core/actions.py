@@ -643,25 +643,29 @@ def _spell_sonho_lucido(state, player, choice):
             if cid not in player.hand:
                 raise ActionError(f"Nao tem {cid} na mao.")
         artifact_choices = choice.get("artifact_choices", [])
-        from . import artifacts_effects as _ae  # v5v10c #15
         for index, cid in enumerate(list(cards)):
-            new_card = peoples.sonho_lucido_flip(cid)
-            if new_card == cid:
-                log(state, f"Sonho Lucido: {card_display(cid)} nao mudou de naipe.")
-                continue
-            player.hand.remove(cid)
-            player.hand.append(new_card)
-            log(state, f"Sonho Lucido: {card_display(cid)} -> {card_display(new_card)}.")
             artifact_choice = artifact_choices[index] if index < len(artifact_choices) else {}
-            if _ae.needs_choice(new_card) and not artifact_choice:
-                raise ActionError(f"{card_display(new_card)} precisa de escolha imediata.")
-            try:
-                play_artifact(state, player.id, new_card, choice=artifact_choice)
-                log(state, f"  jogado: {card_display(new_card)}.")
-            except ActionError as e:
-                player.hand.remove(new_card)
-                player.hand.append(cid)
-                log(state, f"  {card_display(new_card)} nao jogado: {e}")
+            sonho_lucido_play_card(state, player, cid, artifact_choice)
+
+
+def sonho_lucido_play_card(state, player, cid, artifact_choice):
+    from . import artifacts_effects
+    new_card = peoples.sonho_lucido_flip(cid)
+    if new_card == cid:
+        log(state, f"Sonho Lucido: {card_display(cid)} nao mudou de naipe.")
+        return
+    player.hand.remove(cid)
+    player.hand.append(new_card)
+    log(state, f"Sonho Lucido: {card_display(cid)} -> {card_display(new_card)}.")
+    if artifacts_effects.needs_choice(new_card) and not artifact_choice:
+        raise ActionError(f"{card_display(new_card)} precisa de escolha imediata.")
+    try:
+        play_artifact(state, player.id, new_card, choice=artifact_choice)
+        log(state, f"  jogado: {card_display(new_card)}.")
+    except ActionError as e:
+        player.hand.remove(new_card)
+        player.hand.append(cid)
+        log(state, f"  {card_display(new_card)} nao jogado: {e}")
 
 
 def _spell_sacrificio_demonio(state: GameState, player, choice: dict) -> None:

@@ -1,5 +1,10 @@
 # Cliente web vertical
 
+Sonho Lúcido com Luna: ao adicionar uma carta, o servidor simula a sequência e
+atualiza as opções seguintes, incluindo heróis recém-invocados. A prévia não gasta
+recursos nem altera a partida; “Lançar Sonho Lúcido” confirma toda a sequência.
+Limpar a sequência permite recomeçar. Validação de alvos e resultados fica no core.
+
 Coleta: as três distribuições de recursos são apresentadas como botões separados,
 sem pré-seleção automática. O motor continua limitando a coleta a uma por turno.
 Teste de apresentação e envio: `node tests/web_actions_ui.cjs` (DOM simulado;

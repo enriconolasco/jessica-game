@@ -185,30 +185,57 @@ function renderActions(actions) {
     if (type === "dream_multi") {
       const action = items[0];
       const selected = [];
+      let options = action.selection.options;
+      group.open = true;
       const select = document.createElement("select");
       select.setAttribute("aria-label", "Carta transformada e alvo");
-      action.selection.options.forEach((option, i) => select.appendChild(new Option(option.label, i)));
+      const refreshOptions = () => {
+        select.replaceChildren();
+        options.forEach((option, i) => select.appendChild(new Option(option.label, i)));
+        select.value = "0";
+        select.disabled = options.length === 0;
+        add.disabled = options.length === 0;
+        submit.disabled = selected.length === 0;
+      };
+      const sequenceChoice = sequence => ({
+        flip_cards: sequence.map(o => o.choice.flip_cards[0]),
+        artifact_choices: sequence.map(o => o.choice.artifact_choices[0]),
+      });
       const list = document.createElement("ol");
       const add = document.createElement("button");
       add.textContent = "Adicionar à sequência";
-      add.onclick = () => {
-        const option = action.selection.options[Number(select.value)];
-        selected.push(option);
-        const row = document.createElement("li");
-        row.textContent = option.label;
-        list.appendChild(row);
+      add.onclick = async () => {
+        const option = options[Number(select.value)];
+        if (!option) return;
+        [select, add, clear, submit].forEach(control => { control.disabled = true; });
+        try {
+          const preview = await api(`/matches/${matchId}/dream-preview`, {method:"POST", body:JSON.stringify({
+            player_id: action.player_id, choice: sequenceChoice([...selected, option]),
+          })});
+          selected.push(option);
+          options = preview.options;
+          const row = document.createElement("li");
+          row.textContent = option.label;
+          list.appendChild(row);
+          $("message").textContent = options.length ? "Escolha a próxima carta ou confirme o feitiço." : "Sequência pronta para confirmar.";
+        } catch (error) { $("message").textContent = error.message; }
+        finally { clear.disabled = false; refreshOptions(); }
       };
       const clear = document.createElement("button");
       clear.textContent = "Limpar sequência";
-      clear.onclick = () => { selected.length = 0; list.replaceChildren(); };
+      clear.onclick = () => {
+        selected.length = 0; list.replaceChildren();
+        options = action.selection.options;
+        refreshOptions();
+      };
       const submit = document.createElement("button");
       submit.textContent = "Lançar Sonho Lúcido";
-      submit.onclick = () => act({...action, params: {choice: {
-        flip_cards: selected.map(o => o.choice.flip_cards[0]),
-        artifact_choices: selected.map(o => o.choice.artifact_choices[0]),
-      }}});
+      submit.onclick = () => {
+        if (selected.length) act({...action, params: {choice: sequenceChoice(selected)}});
+      };
       const hint = document.createElement("p");
-      hint.textContent = "As cartas serão resolvidas na ordem abaixo. O motor valida quantidades e alvos.";
+      hint.textContent = "A prévia resolve cada carta para atualizar os próximos alvos. Confirme para lançar a sequência inteira.";
+      refreshOptions();
       group.append(hint, select, add, list, clear, submit);
       root.appendChild(group);
       return;
@@ -305,6 +332,10 @@ function renderActions(actions) {
 function eventText(event) {
   const d = event.data || {};
   if (event.type === "night_action_resolved") {
+    if (d.action_type === "night_ainai") return `Ainai teleportou para ${HOUSE_NAMES[d.destination] || d.destination}.`;
+    if (d.action_type === "night_luide_move") return `${d.unit_id} moveu para ${HOUSE_NAMES[d.destination] || d.destination} na janela de Luide.`;
+    if (d.action_type === "night_luide_spell") return `Feitiço vampiro aplicado a ${d.unit_id}.`;
+    if (d.action_type === "night_window_done") return "Janela opcional concluída.";
     if (d.action_type === "night_aiquara") return `Aiquara forçou ${d.enemy_unit_id} a atacar ${d.target_id}.`;
     if (d.action_type === "night_mandinga") return `Besouro usou Mandinga: ${d.card_id}.`;
     if (d.action_type === "night_setup") {
