@@ -7,8 +7,16 @@ from .night_rules import find_targets, order_players_for_house
 from .state import get_player, log
 from .turn import day_order, end_turn, start_turn, start_player_day
 
-TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice"}
-SUPPORTED_HEROES = {"miyamoto", "arken", "ori"}
+TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice",
+         "night_pact", "night_decline_pact", "night_clock", "night_skip_clock"}
+SUPPORTED_HEROES = {
+    "miyamoto", "arken", "ori", "barbadourada", "dain", "buin", "bein", "boin",
+    "tintin", "don", "din", "garoche", "valendar", "dracula", "dandara",
+    "lupa_lider", "cigana", "luarado", "joao_grandao", "pe_descalco", "caroco",
+    "cobra", "zoia", "cova_rasa", "guarari", "baoba_ba", "bimbo_do_mal",
+    "sao_tome", "zebum", "barba_negra", "purpura", "valtherion", "belial", "tuza",
+    "rogue_devil",
+}
 
 
 def public_window(state):
@@ -30,9 +38,10 @@ def blockers(state):
     result = []
     if any(isinstance(u, Hero) and u.is_alive() and u.hero_id not in SUPPORTED_HEROES
            for p in state.players for u in p.units):
-        result.append("Há heróis com janelas noturnas ainda não adaptadas; nesta etapa: Miyamoto, Arken e Ori.")
-    if any(p.demon_pact_offers for p in state.players):
-        result.append("Há escolhas de pacto pendentes.")
+        from .heroes import hero_name
+        names = sorted({hero_name(u.hero_id) for p in state.players for u in p.units
+                        if isinstance(u, Hero) and u.is_alive() and u.hero_id not in SUPPORTED_HEROES})
+        result.append("Janelas noturnas ainda não adaptadas: " + ", ".join(names))
     if any(p.pending_artifact_choice and p.pending_artifact_choice.get("kind")
            not in ("Q_D", "J_D", "BOIN") for p in state.players):
         result.append("Há uma escolha de artefato ainda não adaptada.")
@@ -40,12 +49,15 @@ def blockers(state):
 
 
 def pending_owner(state):
-    return next((p for p in state.players if p.pending_artifact_choice), None)
+    return (next((p for p in state.players if p.pending_artifact_choice), None)
+            or next((p for p in state.players if p.demon_pact_offers), None))
 
 
 def prepare(state):
     if state.web_night.get("turn") == state.turn:
         return
+    from .actions import barba_resolver_mar_de_chamas
+    barba_resolver_mar_de_chamas(state)
     queue = []
     houses = [CENTER] + [f"city_{pid}" for pid in reversed(day_order(state))]
     for house in houses:
@@ -81,10 +93,24 @@ def advance(state):
     queue = state.web_night["queue"]
     while queue and not attacks(state, queue[0]):
         queue.pop(0)
+    if not queue:
+        clock = clock_owner(state)
+        if clock is not None:
+            state.active_player_id = clock.id
+            return
     alive = [p.id for p in state.players if p.city.is_alive()]
     state.active_player_id = (queue[0]["player_id"] if queue else
                               state.curuna_id if state.curuna_id in alive else
                               alive[0] if alive else state.curuna_id)
+
+
+def clock_owner(state):
+    if not state.combats_this_night or state.game_over:
+        return None
+    done = state.web_night.get("clock_done", [])
+    return next((p for p in state.players if p.id not in done and p.city.is_alive()
+                 and any(isinstance(u, Hero) and u.is_alive() and u.hero_id == "rogue_devil"
+                         and "relogio" in u.statuses.get("rogue_items", []) for u in p.units)), None)
 
 
 def legal(state, pid):
@@ -98,18 +124,30 @@ def legal(state, pid):
         return []
     pending = pending_owner(trial)
     if pending is not None:
-        from .interaction_actions import _candidates
+        from .interaction_actions import _candidates, execute
         options = []
         for candidate in _candidates(trial, pending):
-            if candidate["type"] == "resolve_artifact_choice":
-                candidate["type"] = "night_resolve_choice"
-                options.append(candidate)
+            kinds = {"resolve_artifact_choice": "night_resolve_choice",
+                     "demon_pact": "night_pact", "decline_pact": "night_decline_pact"}
+            if candidate["type"] not in kinds:
+                continue
+            from .actions import ActionError
+            try:
+                execute(deepcopy(trial), candidate)
+            except (ActionError, ValueError):
+                continue
+            candidate["type"] = kinds[candidate["type"]]
+            options.append(candidate)
         return options
     def offer(kind, params, label):
         return {"version": ACTION_VERSION, "type": kind, "player_id": pid,
                 "params": params, "label": label}
     queue = trial.web_night["queue"]
     if not queue:
+        if clock_owner(trial) is not None:
+            return ([offer("night_clock", {"destination": house}, f"Relógio: ir para {house}")
+                     for house in dict.fromkeys(trial.combats_this_night)]
+                    + [offer("night_skip_clock", {}, "Não usar Relógio de bolso")])
         return [offer("finish_night", {}, "Encerrar Noite e iniciar próximo turno")]
     entry = queue[0]
     options = attacks(trial, entry)
@@ -133,7 +171,18 @@ def apply(state, action):
     advance(trial)
     kind = candidate["type"]
     old_turn = trial.turn
-    if kind == "night_resolve_choice":
+    if kind in ("night_pact", "night_decline_pact"):
+        from .interaction_actions import execute
+        original = dict(candidate, type="demon_pact" if kind == "night_pact" else "decline_pact")
+        execute(trial, original)
+        advance(trial)
+    elif kind in ("night_clock", "night_skip_clock"):
+        if kind == "night_clock":
+            from .actions import rogue_clock_move
+            rogue_clock_move(trial, candidate["player_id"], candidate["params"]["destination"])
+        trial.web_night.setdefault("clock_done", []).append(candidate["player_id"])
+        advance(trial)
+    elif kind == "night_resolve_choice":
         from .actions import resolve_pending_artifact_choice, ActionError
         try:
             resolve_pending_artifact_choice(trial, candidate["player_id"], **candidate["params"])
@@ -161,8 +210,8 @@ def apply(state, action):
     event = {"version": EVENT_VERSION, "type": "night_action_resolved", "turn": old_turn,
              "phase": "night", "participants": [pid],
              "data": {"action_type": kind, **candidate["params"]},
-             "visibility": {"kind": "private" if kind == "night_resolve_choice" else "public",
-                            "player_ids": [pid] if kind == "night_resolve_choice" else []}}
+             "visibility": {"kind": "private" if kind in ("night_resolve_choice", "night_pact", "night_decline_pact") else "public",
+                            "player_ids": [pid] if kind in ("night_resolve_choice", "night_pact", "night_decline_pact") else []}}
     projection = {"version": EVENT_VERSION, "type": "player_view_updated", "turn": trial.turn,
                   "phase": trial.phase.value, "participants": [pid],
                   "data": {"view": view_for_player(trial, pid)},

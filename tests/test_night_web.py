@@ -214,6 +214,117 @@ def test_qd_interrupts_combat_third_player_save_and_resumes():
     assert any(a["type"] == "finish_night" for a in legal_actions(state, 1))
 
 
+def test_supported_hero_catalog_parity_matrix():
+    for hero_id in sorted(night_actions.SUPPORTED_HEROES):
+        state = night()
+        hero = Hero(id="hero", owner_id=1, house="center", life=10, life_max=10, hero_id=hero_id)
+        if hero_id == "barba_negra":
+            hero.statuses["barba_hero_mode_turn"] = state.turn
+        state.players[0].units.append(hero)
+        state.players[1].units.append(Troop(id="target", owner_id=2, house="center", life=1, life_max=4))
+        night_actions.prepare(state)
+        before = state_to_dict(state)
+        action = next(a for a in legal_actions(state, 1) if a["type"] == "night_attack")
+        assert state_to_dict(state) == before, hero_id
+        direct = state_from_dict(before)
+        combat.resolve_attack(direct, combat.Attack(**action["params"]))
+        night_actions.advance(direct)
+        assert apply_action(state, action)["success"], hero_id
+        assert state_to_dict(state) == state_to_dict(direct), hero_id
+
+
+def test_belial_pact_interrupt_accept_decline_and_save():
+    for accept in (True, False):
+        state = night()
+        state.players[0].units.append(Hero(id="killer", owner_id=1, house="center",
+                                          life=8, life_max=8, hero_id="miyamoto"))
+        state.players[1].units.append(Hero(id="victim", owner_id=2, house="center",
+                                          life=1, life_max=1, hero_id="arken"))
+        state.players[2].people = "demonios"
+        state.players[2].units.append(Hero(id="belial", owner_id=3, house="city_3",
+                                          life=2, life_max=2, hero_id="belial"))
+        attack = next(a for a in legal_actions(state, 1) if a["type"] == "night_attack")
+        assert apply_action(state, attack)["success"]
+        assert state.players[0].demon_pact_offers
+        state = state_from_dict(state_to_dict(state))
+        before = state_to_dict(state)
+        offers = legal_actions(state, 1)
+        assert offers and {a["type"] for a in offers} <= {"night_pact", "night_decline_pact"}
+        assert legal_actions(state, 2) == [] and state_to_dict(state) == before
+        action = next(a for a in offers if a["type"] == ("night_pact" if accept else "night_decline_pact"))
+        if accept:
+            action = next(a for a in offers if a["params"].get("pact_id") == "sacrifique_futuro")
+        direct = state_from_dict(before)
+        from jessica.core.interaction_actions import execute
+        execute(direct, dict(action, type="demon_pact" if accept else "decline_pact"))
+        night_actions.advance(direct)
+        assert apply_action(state, action)["success"]
+        assert state_to_dict(state) == state_to_dict(direct)
+        assert not state.players[0].demon_pact_offers
+
+
+def test_rogue_clock_once_at_night_end_and_save():
+    state = night()
+    state.players[1].units.append(Hero(id="rogue", owner_id=2, house="city_2",
+                                     life=2, life_max=2, hero_id="rogue_devil",
+                                     statuses={"rogue_items": ["relogio"]}))
+    state.combats_this_night = ["center", "city_1"]
+    night_actions.prepare(state)
+    assert state.active_player_id == 2
+    state = state_from_dict(state_to_dict(state))
+    choices = legal_actions(state, 2)
+    assert len(choices) == 3
+    declined = state_from_dict(state_to_dict(state))
+    skip = next(a for a in choices if a["type"] == "night_skip_clock")
+    assert apply_action(declined, skip)["success"]
+    assert declined.players[1].units[0].house == "city_2"
+    assert legal_actions(declined, 1)[0]["type"] == "finish_night"
+    action = next(a for a in choices if a["params"].get("destination") == "center")
+    assert apply_action(state, action)["success"]
+    assert state.players[1].units[0].house == "center"
+    assert not any(a["type"] == "night_clock" for a in legal_actions(state, 2))
+    assert legal_actions(state, 1)[0]["type"] == "finish_night"
+
+
+def test_barba_flames_only_once_across_queries_and_save():
+    state = night()
+    state.players[0].people = "dragoes"
+    state.players[0].units.append(Hero(id="barba", owner_id=1, house="center",
+                                     life=3, life_max=3, hero_id="barba_negra",
+                                     statuses={"mar_chamas_queued_turn": state.turn}))
+    state.players[1].units.append(Troop(id="target", owner_id=2, house="center", life=4, life_max=4))
+    before = state_to_dict(state)
+    legal_actions(state, 1)
+    view_for_player(state, 1)
+    assert state_to_dict(state) == before
+    night_actions.prepare(state)
+    assert state.players[1].units[0].life == 3
+    state = state_from_dict(state_to_dict(state))
+    night_actions.prepare(state)
+    assert state.players[1].units[0].life == 3
+
+
+def test_night_rogue_quest_rewards_on_signing_and_rejects_repeat():
+    state = night()
+    p = state.players[0]
+    p.people = "demonios"
+    p.units.append(Hero(id="rogue", owner_id=1, house="city_1",
+                        life=0, life_max=0, hero_id="rogue_devil"))
+    p.demon_pact_offers = [{"source": "rogue_devil", "demon_player_id": 1, "turn": state.turn}]
+    offered = legal_actions(state, 1)
+    assert offered and all(a["type"] == "night_pact" for a in offered)
+    action = next(a for a in offered if a["params"].get("pact_id") == "banho_sangue"
+                  and a["params"].get("item") == "capa")
+    hand_before = len(p.hand)
+    assert apply_action(state, action)["success"]
+    p = state.players[0]
+    assert p.units[0].life == 1 and p.units[0].life_max == 1
+    assert "capa" in p.rogue_items and len(p.hand) == hand_before + 1
+    before = state_to_dict(state)
+    assert not apply_action(state, action)["success"]
+    assert state_to_dict(state) == before
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

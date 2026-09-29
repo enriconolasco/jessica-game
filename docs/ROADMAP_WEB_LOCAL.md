@@ -1,6 +1,6 @@
 # Roteiro para a versão web local
 
-Status em 2026-09-28: Dia ampliado e primeira fatia da Noite jogável. O motor continua
+Status em 2026-09-29: Dia ampliado e Noite expandida em lote. O motor continua
 sendo a única autoridade mecânica. Multiplayer online não faz parte deste roteiro.
 
 ## Concluído
@@ -27,15 +27,24 @@ sendo a única autoridade mecânica. Multiplayer online não faz parte deste rot
 
 ## Passos restantes
 
-Noite básica disponível: tropas, Miyamoto, Arken e Ori; prioridade por local/jogador,
+Noite disponível para tropas e os heróis enumerados em
+`night_actions.SUPPORTED_HEROES`; prioridade por local/jogador,
 ataque/retaliação, passar, encerramento e próxima manhã. Fila persistida em save/load.
 Seleção de alvos e ordem foram extraídas do terminal para `night_rules.py`; ambos
 reutilizam essas funções. Dano e mortes continuam em `combat.resolve_attack`.
-Heróis não adaptados e pactos pendentes bloqueiam essa fatia com aviso
+Heróis com janelas ainda não adaptadas bloqueiam essa fatia com aviso nominal
 explícito. Não interpretar isso como cobertura noturna dos 12 povos.
 Q♦ ativo já é permitido: quando dispara, a Noite passa ao dono da carta,
 oferece Ouro/Magia e retoma a fila. Escolhas J♦/Feliz já pendentes também usam
 a resolução existente. A interrupção é preservada em save/load.
+
+Lote noturno adicional: heróis de combate/passivas já resolvidos no core,
+incluindo anões, lobisomens, gigantes, mortos-vivos e dragões; pactos de Belial
+com aceitar/recusar e ofertas de Rogue; Relógio de bolso opcional uma vez antes
+do encerramento; Mar de Chamas preparado no Dia aplicado uma vez ao preparar
+a Noite. Belial já executa seu efeito pelo hook existente de início da Noite.
+Matriz de paridade cobre ataque de cada herói liberado, não todas as combinações.
+Permanecem fora: Ainai, Luna, Vovó, Luide Vampa, Aiquara noturna, Besouro e Iúna.
 
 Apostas: novas partidas abrem a alocação dos quatro naipes antes do Dia do
 Curruna. A confirmação libera o Dia; escolhas vazias são permitidas como no

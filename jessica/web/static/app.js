@@ -177,7 +177,8 @@ function renderActions(actions) {
   grouped.forEach((items, type) => {
     const group = document.createElement("details");
     group.className = "action-group";
-    group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "night_resolve_choice", "demon_pact"].includes(type);
+    group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "night_resolve_choice",
+                  "demon_pact", "night_pact", "night_decline_pact", "night_clock", "night_skip_clock"].includes(type);
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
@@ -304,6 +305,10 @@ function renderActions(actions) {
 function eventText(event) {
   const d = event.data || {};
   if (event.type === "night_action_resolved") {
+    if (d.action_type === "night_pact") return "Pacto firmado durante a Noite.";
+    if (d.action_type === "night_decline_pact") return "Oferta de pacto recusada.";
+    if (d.action_type === "night_clock") return `Rogue usou o Relógio de bolso: ${HOUSE_NAMES[d.destination] || d.destination}.`;
+    if (d.action_type === "night_skip_clock") return "Rogue não usou o Relógio de bolso.";
     if (d.action_type === "night_resolve_choice") return "Escolha de artefato resolvida; combate liberado para continuar.";
     if (d.action_type === "night_attack") return `${d.attacker_unit_id} atacou ${d.target_id}.`;
     if (d.action_type === "night_pass") return `${d.unit_id} não declarou ataque.`;

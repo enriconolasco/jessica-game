@@ -196,6 +196,17 @@ outras ações são rejeitadas. Resolução chama o core em cópia transacional,
 retoma a fila e produz evento e projeção privados. A resolução de uma pendência
 já criada continua possível se o ataque tiver encerrado a partida.
 
+`night_pact` e `night_decline_pact` reutilizam os parâmetros e executores das
+ofertas diurnas (`offer_index`, pacto e item quando aplicável). As opções são
+revalidadas antes de exibir e executar; a pendência suspende a fila, inclusive
+quando surge por morte em retaliação. Eventos de decisão são privados.
+`night_clock` recebe `destination` entre os locais de combates ocorridos;
+`night_skip_clock` recebe parâmetros vazios. A oportunidade só abre após as
+declarações, para Rogue vivo com Relógio, e a conclusão fica em
+`web_night.clock_done`. Não reabre ataques após esse deslocamento final.
+Mar de Chamas é executado no preparo da Noite, protegido pelo marcador de
+turno já persistido em `web_night`; consultas usam cópia e não alteram o estado.
+
 `allocate_bets`: `params={"bets":{"H":id_ou_null,"C":id_ou_null,
 "D":id_ou_null,"S":id_ou_null}}`. A oferta contém `selection.kind="bets"`
 e alvos vivos diferentes do próprio jogador. O servidor valida os quatro naipes,
