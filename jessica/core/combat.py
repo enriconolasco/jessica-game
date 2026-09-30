@@ -468,10 +468,36 @@ def _city_life_lost(state: GameState, target_pid: int, amount: int) -> None:
     peoples.on_action_performed(state, target_pid, "lose_city_life")
 
 
+def can_attack_unit(state: GameState, attacker: Unit, target: Unit) -> bool:
+    if (isinstance(target, Hero) and target.hero_id == "barba_negra"
+            and target.statuses.get("barba_hero_mode_turn") != state.turn):
+        return not (isinstance(attacker, Hero) or (
+            isinstance(attacker, Troop) and peoples.demon_military_pact_active(state, attacker.owner_id)))
+    return True
+
+
+def apply_area_damage(state: GameState, source: Unit, target: Unit, damage: int) -> None:
+    damage, notes = _apply_defense(state, target, damage, source)
+    before = target.life
+    target.life = max(0, before - damage)
+    taken = before - target.life
+    bump_stat(state, source.owner_id, "damage_dealt", taken)
+    bump_stat(state, target.owner_id, "damage_taken", taken)
+    detail = f" [{'; '.join(notes)}]" if notes else ""
+    log(state, f"  Dano em área: {source.id} → {target.id}: {before} -> {target.life}{detail}.")
+    if not target.is_alive():
+        target.statuses["life_at_death"] = before
+        target.killed_by_player_id = source.owner_id
+        target.killed_by_unit_id = source.id
+
+
 def resolve_attack(state: GameState, attack: Attack) -> None:
     attacker = _find_unit(state, attack.attacker_unit_id)
     if attacker is None:
         raise CombatError(f"Atacante {attack.attacker_unit_id} nao encontrado.")
+    target_preview = _find_unit(state, attack.target_id) if attack.target_type == "unit" else None
+    if target_preview is not None and not can_attack_unit(state, attacker, target_preview):
+        raise CombatError("Barba Negra combate como Base e nao pode ser atacado por Heroi.")
     if attacker.house not in state.combats_this_night:
         state.combats_this_night.append(attacker.house)
     # A alianca efetiva e o owner_id atual. Controles temporarios mudam esse
@@ -605,6 +631,8 @@ def resolve_attack_day(state: GameState, attack: Attack) -> None:
     target = _find_unit(state, attack.target_id)
     if target is None:
         raise CombatError(f"Alvo nao encontrado.")
+    if not can_attack_unit(state, attacker, target):
+        raise CombatError("Barba Negra combate como Base e nao pode ser atacado por Heroi.")
     if target.owner_id == attacker.owner_id:
         raise CombatError("Nao pode atacar aliado.")
     if target.statuses.get("invisivel_until_turn", -1) >= state.turn:

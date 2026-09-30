@@ -2663,6 +2663,9 @@ def find_targets(state, unit):
             if u.house == house and u.is_alive():
                 if u.statuses.get("invisivel_until_turn", -1) >= state.turn:
                     continue
+                from .core.combat import can_attack_unit
+                if not can_attack_unit(state, unit, u):
+                    continue
                 kind = "Heroi" if isinstance(u, Hero) else "Tropa"
                 targets.append(("unit", u.id,
                                 f"{kind} {u.id} de {other.name} ({u.life})"))

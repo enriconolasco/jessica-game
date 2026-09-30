@@ -1140,13 +1140,9 @@ def barba_resolver_mar_de_chamas(state: GameState) -> None:
             for unit in other.units:
                 if (unit.is_alive() and unit.house == barba.house
                         and not unit.statuses.get("dragon_base")):
-                    before = unit.life
-                    unit.life = max(0, unit.life - 1)
+                    from .combat import apply_area_damage
+                    apply_area_damage(state, barba, unit, 1)
                     hits += 1
-                    if not unit.is_alive():
-                        unit.statuses["life_at_death"] = before
-                        unit.killed_by_player_id = player.id
-                        unit.killed_by_unit_id = barba.id
         from .combat import _cleanup_dead
         _cleanup_dead(state)
         log(state, f"{player.name}: Mar de Chamas atingiu {hits} inimigo(s).")

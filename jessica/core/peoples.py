@@ -484,12 +484,9 @@ def apply_belial_night_start(state: GameState) -> None:
                     if unit is not belial:
                         unit.life = min(unit.life_max, unit.life + 1)
                 else:
-                    before = unit.life
-                    unit.life = max(0, unit.life - 1)
+                    from .combat import apply_area_damage
+                    apply_area_damage(state, belial, unit, 1)
                     if not unit.is_alive():
-                        unit.statuses["life_at_death"] = before
-                        unit.killed_by_player_id = demon.id
-                        unit.killed_by_unit_id = belial.id
                         any_death = True
         log(state, f"{demon.name}: Belial espalhou as Chamas no inicio da Noite.")
     if any_death:
