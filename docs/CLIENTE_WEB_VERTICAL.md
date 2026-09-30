@@ -80,3 +80,7 @@ ainda aguardam adaptação: o cliente
 não é uma partida completa. O histórico de eventos agora acompanha o save.
 
 Próximas etapas: [ROADMAP_WEB_LOCAL.md](ROADMAP_WEB_LOCAL.md).
+
+Mapa/HUD, relatórios numéricos e gráficos, atalhos e verificações de 30/09:
+[USABILIDADE_WEB_LOCAL.md](USABILIDADE_WEB_LOCAL.md). Os ícones agora permanecem
+no mapa também em celular; a rolagem preserva seus tamanhos e as cinco casas.

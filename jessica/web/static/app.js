@@ -77,7 +77,7 @@ function renderUnitGroups(root, units, players) {
       const group = document.createElement("section");
       group.className = "unit-group";
       const title = document.createElement("h4");
-      title.textContent = `J${unit.owner_id} · ${people} · ${units.filter(item => item.owner_id === unit.owner_id).length}`;
+      title.textContent = `J${unit.owner_id} ${player?.name || ""} · ${people}${unit.owner_id === currentView?.curuna_id ? " · ★ Curruna" : ""}`;
       const items = document.createElement("div");
       items.className = "unit-group-items";
       group.append(title, items);
@@ -112,13 +112,16 @@ function renderUnitGroups(root, units, players) {
     life.textContent = `${unit.life}/${unit.life_max}`;
     marker.appendChild(life);
     ["focus", "click"].forEach(event => marker.addEventListener(event, () => showUnit(unit, player, people)));
-    marker.addEventListener("mouseenter", () => { if (!selectedUnitId) showUnit(unit, player, people, false); });
+    marker.addEventListener("mouseenter", () => showUnit(unit, player, people, false));
     groups.get(unit.owner_id).appendChild(marker);
   });
 }
 function renderMap(view) {
   const players = new Map(view.players.map(player => [player.id, player]));
-  const units = [...view.board.units].sort((a,b) => a.owner_id-b.owner_id || Number(b.kind === "hero")-Number(a.kind === "hero") || a.id.localeCompare(b.id));
+  const units = view.board.units.filter(unit => unit.life > 0).sort((a,b) => a.owner_id-b.owner_id || Number(b.kind === "hero")-Number(a.kind === "hero") || a.id.localeCompare(b.id));
+  const curuna = players.get(view.curuna_id);
+  $("mapCuruna").textContent = curunaLabel(view, peopleName);
+  $("mapNavigation").replaceChildren();
   if (!units.some(unit => unit.id === selectedUnitId)) {
     selectedUnitId = null;
     $("unitDetails").textContent = "Selecione uma unidade para consultar vida e condições públicas.";
@@ -136,7 +139,7 @@ function renderMap(view) {
     const list = document.createElement("div");
     list.className = "roster-units";
     roster.append(title, list);
-    $("minimap").after(roster);
+    $("minimap").parentElement.after(roster);
   }
   const renderRoster = () => {
     const present = units.filter(unit => unit.house === selectedHouse);
@@ -149,23 +152,22 @@ function renderMap(view) {
   };
   document.querySelectorAll(".house").forEach(house => {
     const id = house.dataset.house;
-    house.className = `house ${HOUSE_POSITIONS[id]}`;
     const present = units.filter(unit => unit.house === id);
     const player = view.players.find(player => id === `city_${player.id}`);
+    const isCuruna = player?.id === curuna?.id && Boolean(player);
+    house.className = `house ${HOUSE_POSITIONS[id]}${isCuruna ? " curuna-house" : ""}`;
     const button = document.createElement("button");
     button.className = "house-inspect";
     button.type = "button";
     button.dataset.house = id;
+    button.dataset.mapHouse = id;
     button.setAttribute("aria-controls", "houseRoster");
-    button.setAttribute("aria-label", `${HOUSE_NAMES[id]}${player ? ` · ${player.name} · ${peopleName(player.people)}` : ""}: ${present.length} unidades visíveis. Consultar unidades.`);
-    button.textContent = id === "center" ? "Centro" : `Cidade ${player?.id || id.slice(-1)}`;
+    button.setAttribute("aria-label", `${HOUSE_NAMES[id]}${player ? ` · ${player.name} · ${peopleName(player.people)}` : ""}${isCuruna ? " · Curruna" : ""}: ${present.length} unidades visíveis. Consultar unidades.`);
+    button.textContent = HOUSE_NAMES[id] + (isCuruna ? " · ★ Curruna" : "");
     const caption = document.createElement("span");
     caption.className = "house-caption";
-    caption.textContent = player ? peopleName(player.people) : "Encontro dos povos";
-    const count = document.createElement("span");
-    count.className = "house-count";
-    count.textContent = `${present.length} unidade${present.length === 1 ? "" : "s"}`;
-    button.append(caption, count);
+    caption.textContent = player ? `J${player.id} ${player.name} · ${peopleName(player.people)} · Base ${player.city.life}/${player.city.life_max}` : "Encontro dos povos";
+    button.appendChild(caption);
     button.onclick = () => {
       if (selectedHouse !== id) {
         selectedUnitId = null;
@@ -177,6 +179,12 @@ function renderMap(view) {
     };
     house.querySelector("h3").replaceChildren(button);
     renderUnitGroups(house.querySelector(".house-units"), present, players);
+    const jump = document.createElement("button");
+    jump.type = "button"; jump.dataset.mapHouse = id;
+    jump.textContent = id === "center" ? "Centro" : `J${player?.id}${isCuruna ? " ★ Curruna" : ""}`;
+    jump.title = button.getAttribute("aria-label");
+    jump.onclick = () => { button.click(); button.focus(); };
+    $("mapNavigation").appendChild(jump);
   });
   renderRoster();
   const selected = units.find(unit => unit.id === selectedUnitId);
@@ -200,6 +208,7 @@ function renderActions(actions) {
   grouped.forEach((items, type) => {
     const group = document.createElement("details");
     group.className = "action-group";
+    group.setAttribute("data-action-type", type);
     group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "night_resolve_choice",
                   "demon_pact", "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup"].includes(type);
     const summary = document.createElement("summary");
@@ -469,7 +478,8 @@ async function refresh(allowPlayerSwitch = false) {
   playerId = view.active_player_id || playerId;
   currentView = view;
   const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
-  $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
+  const active = view.players.find(p => p.id === view.active_player_id);
+  $("status").textContent = `Turno ${view.turn} · ${view.phase === "day" ? "Dia" : "Noite"} · Jogando: ${active?.name || "—"} · ${curunaLabel(view, peopleName)}`;
   if (view.self.armor_reaction) $("status").textContent += " · Armadura: resolução aguardando pagamento";
   if (view.game_over) {
     const winner = view.players.find(p => p.id === view.winner_id);
@@ -483,18 +493,28 @@ async function refresh(allowPlayerSwitch = false) {
     $("status").textContent += ` · Combate: ${HOUSE_NAMES[view.night_window.house] || view.night_window.house} · Ordem restante: ${names}`;
   }
   $("players").replaceChildren();
+  const presence = hudPresence(view);
+  const leader = document.createElement("p"); leader.className = "curuna-banner";
+  leader.textContent = curunaLabel(view, peopleName);
+  $("players").appendChild(leader);
   view.players.forEach(p => {
     const node = document.createElement("div");
     node.className = `player ${p.id === view.active_player_id ? "active" : ""}`;
-    node.textContent = `J${p.id} ${p.name} — ${peopleName(p.people)} · Herói: ${heroName(p.chosen_hero_id) || "escolha em jogo"} · Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic} · Em campo: ${(p.field_artifacts || []).map(cardName).join(", ") || "nenhum"} · Canastra: ${(p.canastra || []).map(cardName).join(", ") || "vazia"}`;
+    node.textContent = `${p.id === view.curuna_id ? "★ CURRUNA · " : ""}${p.id === view.active_player_id ? "▶ Jogando · " : ""}J${p.id} ${p.name} — ${peopleName(p.people)} · Herói: ${heroName(p.chosen_hero_id) || "escolha em jogo"} · Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic} · Em campo: ${(p.field_artifacts || []).map(cardName).join(", ") || "nenhum"}${presence.canastra ? ` · Canastra: ${(p.canastra || []).map(cardName).join(", ") || "vazia"}` : ""}`;
     $("players").appendChild(node);
   });
   const hand = view.self.hand.length ? view.self.hand.map(cardName).join(" · ") : "vazia";
-  const bets = Object.entries(view.self.bets).filter(([, target]) => target).map(([suit,target]) => `${suit}→J${target}`).join(" · ") || "nenhuma";
+  const suits = {H:"Copas", D:"Ouros", C:"Paus", S:"Espadas"};
+  const bets = Object.entries(view.self.bets).filter(([, target]) => target).map(([suit,target]) => `${suits[suit] || suit} → J${target} ${view.players.find(p => p.id === target)?.name || ""}`).join(" · ") || "nenhuma";
   const pending = view.self.pending_choice ? " | Resolva a escolha pendente nas ações abaixo." : "";
-  const offers = view.self.demon_pact_offers?.length ? " | Há uma oferta de pacto nas ações abaixo." : "";
+  const offers = presence.pacts && view.self.demon_pact_offers?.length ? " | Há uma oferta de pacto nas ações abaixo." : "";
   const copiedSpell = view.self.spell_copia_id ? ` | Feitiço copiado: ${view.self.spell_copia_id.replaceAll("_", " ")}` : "";
-  $("self").textContent = `Mão: ${hand} | Apostas: ${bets} | Corretas: ${view.self.correct_bets} | Curas: ${view.self.pending_heals || 0}${copiedSpell}${pending}${offers}`;
+  $("self").textContent = `Mão: ${hand}${presence.bets ? ` | Apostas: ${bets} | Corretas: ${view.self.correct_bets}` : ""} | Curas: ${view.self.pending_heals || 0}${copiedSpell}${pending}${offers}`;
+  if (presence.pacts) {
+    const pacts = document.createElement("p");
+    pacts.textContent = `Pactos: ${(view.demon_pacts || []).map(p => pactLabel(p, catalog, peopleName)).join(" · ") || "nenhum firmado"}`;
+    $("self").appendChild(pacts);
+  }
   $("self").appendChild(document.createElement("br"));
   const extra = document.createElement("span");
   extra.textContent = `Feitiço disponível a partir de T${view.self.spell_cooldown_until_turn} · ${view.self.has_cast_spell_this_turn ? "já usado neste turno" : "não usado"}${view.self.baoba_payments ? ` · Baobá: ${view.self.baoba_payments}/3 pagamentos` : ""}${view.self.rogue_items?.length ? ` · Rogue: ${view.self.rogue_items.join(", ")}` : ""}${view.self.inherited_peoples?.length ? ` · Passivas de São Tomé: ${view.self.inherited_peoples.map(peopleName).join(", ")}` : ""}`;
@@ -502,6 +522,7 @@ async function refresh(allowPlayerSwitch = false) {
   ["undo", "mola"].forEach(id => { $(id).disabled = !view.local_controls?.[id]; });
   renderReports(view);
   renderMap(view); renderActions(actions); renderEvents(events);
+  annotateShortcuts();
 }
 async function act(action) {
   if (action.type === "end_turn" && !await confirmAction("Encerrar a janela deste jogador?")) return;
@@ -551,6 +572,7 @@ function renderSetup() {
     updateHeroSelect(row, defaultPeople);
     const help = document.createElement("button");
     help.type = "button"; help.textContent = "Consultar povo e heróis";
+    help.dataset.shortcut = `Alt+${index+1}`;
     help.onclick = () => showHelp(peopleSelect.value);
     row.appendChild(help);
     root.appendChild(row);
@@ -622,17 +644,39 @@ function confirmAction(message) {
 
 function renderReports(view) {
   const root = $("reports"); root.replaceChildren();
+  const controls = document.createElement("div"); controls.className = "report-controls";
+  const label = document.createElement("label"); label.textContent = "Relatório ";
+  const select = document.createElement("select"); select.setAttribute("aria-label", "Escolher relatório");
+  Object.entries(REPORT_NAMES).forEach(([key,name]) => select.appendChild(new Option(name,key)));
+  select.value = reportSelection;
+  select.onchange = () => { reportSelection = select.value; reportMetric = ""; renderReports(currentView); root.querySelector("select").focus(); };
+  label.appendChild(select); controls.appendChild(label); root.appendChild(controls);
+  if (REPORT_FIELDS[reportSelection]) {
+    const fields = REPORT_FIELDS[reportSelection];
+    if (!fields[reportMetric]) reportMetric = Object.keys(fields)[0];
+    const metricLabel = document.createElement("label"); metricLabel.textContent = "Gráfico ";
+    const metric = document.createElement("select"); metric.setAttribute("aria-label", "Escolher indicador do gráfico");
+    Object.entries(fields).forEach(([key,name]) => metric.appendChild(new Option(name,key)));
+    metric.value = reportMetric;
+    metric.onchange = () => { reportMetric = metric.value; renderReports(currentView); root.querySelectorAll("select")[1].focus(); };
+    metricLabel.appendChild(metric); controls.appendChild(metricLabel);
+    drawReport(root, view, reportSelection, reportMetric); return;
+  }
   const line = text => { const p = document.createElement("p"); p.textContent = text; root.appendChild(p); };
+  if (reportSelection === "conditions") {
+  let count = 0;
   view.board.units.filter(u => publicStates(u).length).forEach(u =>
-    line(`J${u.owner_id} · ${unitName(u)} · ${HOUSE_NAMES[u.house]} · ${publicStates(u).join(" · ")}`));
+    { count++; line(`J${u.owner_id} · ${unitName(u)} · ${HOUSE_NAMES[u.house]} · ${publicStates(u).join(" · ")}`); });
   (view.conditions || []).forEach(c => {
+    count++;
     const sig = c.signature || {};
     line(`${c.condition} · ${sig.kind === "hero" ? heroName(sig.id) : troopNames[sig.id] || sig.id} · J${c.owner_id ?? "?"}${c.controller_id ? ` · infectado por J${c.controller_id}` : ""}${c.release_curuna_id ? ` · libera quando J${c.release_curuna_id} for Curuna` : ""}`);
   });
-  const stats = {gold_collected:"Ouro coletado", magic_collected:"Magia coletada", troops_summoned:"Tropas invocadas", heroes_summoned:"Heróis invocados", spells_cast:"Feitiços", damage_dealt:"Dano causado", damage_taken:"Dano recebido", kills:"Abates", deaths:"Mortes", artifacts_bought:"Artefatos comprados", artifacts_played:"Artefatos jogados", artifacts_sold:"Artefatos vendidos"};
+  if (!count) line("Nenhuma condição pública registrada.");
+  return;
+  }
   view.players.forEach(p => {
-    const title = document.createElement("h3"); title.textContent = `${p.name} · estatísticas`; root.appendChild(title);
-    line(Object.entries(stats).map(([key, text]) => `${text}: ${p.stats?.[key] || 0}`).join(" · "));
+    const title = document.createElement("h3"); title.textContent = p.name; root.appendChild(title);
     if (p.armor_active_until_turn >= view.turn) line("Armadura de Ouro ativa: cada golpe permite escolher o pagamento.");
     if (p.spell_cooldown_until_turn > view.turn) line(`Feitiço disponível em T${p.spell_cooldown_until_turn}.`);
     if (p.next_monument_turn != null) line(`Monumento: próximo artefato em T${p.next_monument_turn}.`);
@@ -644,7 +688,6 @@ function renderReports(view) {
   });
   line(`Loja: ${view.shop.size} artefatos · ${Object.entries(view.shop.counts || {}).sort().map(([id, count]) => `${cardName(id)}: ${count}`).join(" · ")}`);
   (view.scheduled_effects || []).forEach(e => line(`J${e.player_id}: ${cardName(e.kind)} previsto para T${e.due_turn}.`));
-  (view.timeline || []).forEach(e => line(`Fim de T${e.turn}: ${Object.entries(e.resources).map(([id, r]) => `J${id} ${r.gold} Ouro / ${r.magic} Magia / ${r.life} vida`).join(" · ")}`));
   line(view.turn < 13 ? "A partir de T13 não se pode aumentar Muralha." : "T13+: aumentar Muralha está bloqueado.");
 }
 
@@ -653,9 +696,9 @@ function createGameplayControls() {
     const node = document.createElement("button"); node.type = "button"; node.textContent = text;
     if (id) node.id = id; node.onclick = handler; root.appendChild(node); return node;
   };
-  button($("start"), "Consultar todos os povos e artefatos", () => showHelp());
+  button($("start"), "Consultar todos os povos e artefatos", () => showHelp(), "setupRules");
   const toolbar = $("save").parentElement;
-  button(toolbar, "Consultar regras", () => showHelp());
+  button(toolbar, "Consultar regras", () => showHelp(), "rulesButton");
   ["undo", "mola"].forEach(operation => button(toolbar,
     operation === "undo" ? "Refazer meu Dia" : "Mola: jogador anterior", async () => {
       if (!await confirmAction("Restaurar estado, recursos e RNG? Ações posteriores a esse ponto serão desfeitas.")) return;
@@ -669,11 +712,24 @@ function createGameplayControls() {
     $("game").hidden = true; $("start").hidden = false;
     currentView = null; matchId = null;
     refreshSaves().catch(error => { $("setupMessage").textContent = error.message; });
-  });
+  }, "newGame");
   const reports = document.createElement("details"); reports.className = "card";
-  const title = document.createElement("summary"); title.textContent = "Condições e relatórios da partida";
+  const title = document.createElement("summary"); title.id = "reportsToggle"; title.textContent = "Condições e relatórios da partida";
   const body = document.createElement("div"); body.id = "reports"; reports.append(title, body);
   $("game").appendChild(reports);
+  button(toolbar, "Relatórios", () => { reports.open = !reports.open; if (reports.open) title.focus(); }, "reportsButton");
+  const map = $("minimap");
+  const viewport = document.createElement("div"); viewport.className = "map-viewport";
+  viewport.tabIndex = 0; viewport.setAttribute("aria-label", "Mapa rolável; use as setas ou os botões de casas");
+  map.before(viewport); viewport.appendChild(map);
+  const mapCuruna = document.createElement("p"); mapCuruna.id = "mapCuruna"; mapCuruna.className = "curuna-banner";
+  const navigation = document.createElement("nav"); navigation.id = "mapNavigation";
+  navigation.setAttribute("aria-label", "Ir para uma casa do mapa");
+  viewport.before(mapCuruna, navigation);
+  button(toolbar, "Mapa", () => { viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth)/2; viewport.focus(); viewport.scrollIntoView({block:"center"}); }, "mapToggle");
+  const mapHint = document.createElement("p"); mapHint.className = "hint";
+  mapHint.textContent = "Ícones: tropas 32px, heróis 64px. Toque, foque ou passe o mouse para inspecionar. Arraste o mapa nas telas estreitas; cada casa tem sua própria rolagem de unidades. Atalhos aparecem ao passar o mouse nos botões.";
+  viewport.before(mapHint);
   const order = document.createElement("label"); order.textContent = "Ordem inicial ";
   const select = document.createElement("select"); select.id = "orderMode";
   select.append(new Option("D20 — como no terminal", "d20"), new Option("Fixa J1 → J2 → J3 → J4", "fixed"));
@@ -735,6 +791,7 @@ function createSaveControls() {
   select.onchange = () => { $("saveId").value = select.value; };
   label.appendChild(select);
   const update = document.createElement("button");
+  update.id = "refreshSaves";
   update.textContent = "Atualizar lista";
   update.onclick = () => refreshSaves().catch(error => { $("setupMessage").textContent = error.message; });
   const importLabel = document.createElement("label");
@@ -758,6 +815,7 @@ function createSaveControls() {
   controls.append(label, update, importLabel);
   $("start").appendChild(controls);
   const exportButton = document.createElement("button");
+  exportButton.id = "exportGame";
   exportButton.textContent = "Exportar partida";
   exportButton.title = "Baixar estado completo, incluindo mãos dos jogadores";
   exportButton.onclick = async () => {
@@ -785,4 +843,5 @@ $("revealPlayer").onclick = async () => {
 };
 createSaveControls();
 createGameplayControls();
+installShortcuts();
 api("/catalog").then(async data => { catalog = data; renderSetup(); await refreshSaves(); }).catch(error => { $("setupMessage").textContent = error.message; });

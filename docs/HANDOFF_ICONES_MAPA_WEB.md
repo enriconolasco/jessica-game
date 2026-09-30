@@ -29,13 +29,14 @@ O fundo estrutural continua sendo
 - ordenação estável por jogador, heróis antes de tropas e identificador;
 - geometria 3:2 e coordenadas percentuais do SVG, centralizadas em `map.css`;
   o fundo não usa `cover`, e nenhuma casa muda de posição nos breakpoints;
-- acima de 1100 px, ícones agrupados por jogador dentro da casa, com rolagem;
-  em telas menores, cada casa mostra sua contagem e abre a lista ampliada abaixo;
-- contagem explícita por casa e por grupo; a lista ampliada conserva os tamanhos
-  32×32/64×64 e permite consultar individualmente todas as unidades;
+- ícones agrupados por jogador dentro de cada casa em todas as larguras, com rolagem;
+  em telas estreitas, o mapa de largura mínima 1100 px rola horizontalmente;
+- navegação direta para as cinco casas e lista ampliada abaixo, preservando os tamanhos
+  32×32/64×64 e acesso individual a todas as unidades, sem substituí-las por contagens;
 - foco, mouse ou toque abrem os mesmos detalhes públicos;
 - vida numérica sempre visível e fallback `?` com descrição textual para povo desconhecido.
 - seleção por clique/foco persistente; passar o mouse não desfaz uma seleção;
+- dono, povo e vida da Base no título de cada cidade; Curruna destacado textualmente;
 - título da lista anuncia a troca de casa para leitores de tela.
 
 ## Verificação reproduzível

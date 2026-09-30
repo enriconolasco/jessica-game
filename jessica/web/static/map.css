@@ -1,11 +1,14 @@
 /* Coordinates match the 1200 × 800 SVG at every viewport size. */
-.minimap{position:relative;aspect-ratio:3/2;min-height:0;background:#071820 url('/assets/visual-direction-v0.1/map/minimap-template-cross-v0.1.svg') center/100% 100% no-repeat}
+.map-viewport{overflow:auto;max-width:100%;border:1px solid #31545a;border-radius:8px}
+.map-viewport:focus-visible{outline:2px solid #e0bb72;outline-offset:2px}
+.minimap{position:relative;aspect-ratio:3/2;min-width:1100px;min-height:0;background:#071820 url('/assets/visual-direction-v0.1/map/minimap-template-cross-v0.1.svg') center/100% 100% no-repeat}
 .minimap .north{left:37.5%;top:5.25%;width:25%;height:25.5%}
 .minimap .west{left:5.6667%;top:37.25%;width:26.6667%;height:25.5%}
 .minimap .east{left:67.6667%;top:37.25%;width:26.6667%;height:25.5%}
 .minimap .south{left:37.5%;top:69.25%;width:25%;height:25.5%}
 .minimap .center{left:36%;top:35%;width:28%;height:30%}
 .minimap .house{position:absolute;display:flex;flex-direction:column;padding:.6rem;overflow:hidden;border-radius:18px;gap:.3rem;scrollbar-color:#8b744b #0a2028}
+.minimap .curuna-house{outline:2px solid #e0bb72;outline-offset:-2px}
 .house h3{position:static;flex:none;padding:0;margin:0;background:none;font-size:.8rem}
 .house h3::after{content:none}
 .house-inspect{display:block;width:100%;margin:0;padding:.15rem .2rem;background:transparent;color:#e9e2cc;border:0;border-radius:4px;text-align:left;font:600 .85rem/1.3 system-ui,sans-serif}
@@ -39,12 +42,21 @@
 @media(max-width:1100px){
   .map-card .section-title{display:block;margin-bottom:.5rem}
   .map-card .section-title span{display:block;margin-top:.25rem}
-  .minimap .house{padding:2px;border-radius:6px;justify-content:center;gap:0}
-  .house h3{height:100%}
-  .minimap .house-units{display:none}
-  .house-inspect{height:100%;min-height:0;text-align:center;padding:2px;font-size:clamp(.68rem,2.6vw,.95rem)}
-  .house-caption{display:none}
-  .house-count{font-size:clamp(.63rem,2.4vw,.8rem);margin-top:3px}
+  .minimap .house{padding:6px;border-radius:8px}
   .house-roster{padding:.75rem 0}
   .roster-units{max-height:290px}
 }
+.curuna-banner{font-weight:650;color:#f2cf84;border-left:3px solid #e0bb72;padding:.45rem .65rem;margin:.5rem 0}
+#mapNavigation{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.5rem}
+#mapNavigation button{font-family:system-ui,sans-serif;font-size:.85rem}
+.report-controls{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
+.report-controls label{display:flex;flex-direction:column;min-width:0;max-width:100%}
+.report-controls select{max-width:100%;background:#071a25;color:#e9e2cc}
+.report-table-scroll{overflow:auto;max-width:100%;margin:1rem 0}
+.report-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.report-table caption{text-align:left;font-weight:600;padding:.5rem 0}
+.report-table th,.report-table td{text-align:left;padding:.55rem;border-bottom:1px solid #31545a;white-space:nowrap}
+.report-chart{display:block;width:100%;min-width:0;height:auto;margin:1rem 0;background:#071a25;border-radius:6px}
+.report-chart-scroll{overflow:auto;max-width:100%}
+.report-chart-scroll .report-chart{min-width:640px}
+.report-chart text{fill:#e9e2cc;font:13px system-ui,sans-serif}
