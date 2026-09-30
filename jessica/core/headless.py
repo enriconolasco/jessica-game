@@ -80,6 +80,8 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
         return []
     if interaction_actions.blocked_by_choice(player):
         return interaction_actions.legal_interactions(state, player_id)
+    if player.skip_day_turn == state.turn:
+        return []
     actions = []
     if not player.has_collected_this_turn:
         actions.extend(

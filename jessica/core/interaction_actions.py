@@ -221,14 +221,10 @@ def execute(state, action):
             else:
                 core.gnomo_alocar_aposta(state, pid, suit, target)
         player.bets_need_realocacao = False
-        from .turn import start_player_day
-        pending = next((p for p in state.players if p.city.is_alive()
-                        and p.people == peoples.PEOPLE_GNOMOS and p.bets_need_realocacao), None)
         day_already_started = any(p.morning_done_this_turn for p in state.players)
         if not day_already_started:
-            state.active_player_id = pending.id if pending else state.curuna_id
-        if pending is None and not day_already_started:
-            start_player_day(state, state.active_player_id)
+            from .day_flow import open_day
+            open_day(state)
     elif kind == "day_attack":
         combat.resolve_attack_day(state, combat.Attack(**params))
     elif kind == "play_artifact":
@@ -269,7 +265,9 @@ def legal_interactions(state, player_id):
     except ValueError:
         return []
     if (state.game_over or state.phase != Phase.DAY or not player.city.is_alive()
-            or state.active_player_id not in (None, player_id)):
+            or state.active_player_id not in (None, player_id)
+            or (player.skip_day_turn == state.turn
+                and not (player.people == peoples.PEOPLE_GNOMOS and player.bets_need_realocacao))):
         return []
     result = []
     for candidate in _candidates(state, player):

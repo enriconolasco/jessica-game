@@ -16,7 +16,7 @@ from ..core.setup import run_setup
 from ..core.setup import roll_d20_order, horario_from
 from ..core.state import make_rng
 from ..core import constants
-from ..core.turn import start_player_day, start_turn
+from ..core.turn import start_turn
 
 
 ROOT = Path(__file__).resolve().parent
@@ -130,11 +130,8 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
     for player in state.players:
         player.name = names[player.id]
     start_turn(state)
-    pending = next((p for p in state.players if p.people == "gnomos_duendes"
-                    and p.city.is_alive() and p.bets_need_realocacao), None)
-    state.active_player_id = pending.id if pending else state.curuna_id
-    if pending is None:
-        start_player_day(state, state.active_player_id)
+    from ..core.day_flow import open_day
+    open_day(state)
     return state
 
 

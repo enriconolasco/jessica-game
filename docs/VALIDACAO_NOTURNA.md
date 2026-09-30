@@ -18,7 +18,7 @@ quatro jogadores não podem alterar o estado nem consumir RNG.
 
 ## Cobertura deste lote
 
-Nove testes, com 30 cenários:
+Dez testes, com 32 cenários:
 
 - ocupação inicial, chegada posterior, abandono completo e reentrada;
 - ordem das quatro cidades para cada um dos quatro Currunas;
@@ -29,6 +29,8 @@ Nove testes, com 30 cenários:
 - Iúna atacando e retaliando, com oito seeds para cada caso;
 - tropa controlada por Q♣ declarando pelo controlador contra o dono original;
 - local ocupado sem alvos: sozinho, todos invisíveis ou todos espoliados.
+- Luide: feitiço e movimento na mesma janela, seguido de ataque em local futuro
+  ou já processado; executa a janela real do terminal com escolhas programadas.
 
 Corrigido um erro de apresentação: locais ocupados sem alvos anunciavam
 “combate iniciado”. Agora o evento tem ordem vazia e o histórico informa
@@ -37,13 +39,16 @@ Corrigido um erro de apresentação: locais ocupados sem alvos anunciavam
 ## Limites e próxima integração
 
 Não certifica toda combinação nem substitui playtest. Este comparador não
-aciona as janelas de Ainai, Luna, Besouro ou Luide; seus testes existentes
+aciona as janelas de Ainai, Luna ou Besouro; seus testes existentes
 continuam separados. Não inclui fim da Noite/próxima manhã, pagamentos de
 Armadura, pactos ou escolhas privadas no meio destes cenários.
 
 Próximo lote: cruzar essas interrupções com mortes/eliminação e conferir a
 transição para a manhã seguinte. Persistência de cada janela já tem testes;
 a comparação integrada desses cruzamentos permanece pendente.
+
+O lote seguinte já cobre transição diurna e reações encadeadas:
+ver `VALIDACAO_CICLO.md`.
 
 Verificação deste marco: suíte completa com 384 aprovações e zero falhas;
 quatro testes de interface Node, sintaxe de `app.js` e `git diff --check`

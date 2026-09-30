@@ -86,9 +86,11 @@ Devaneio usa o caminho existente do core.
 4. **Validar a Noite:** implementados ordem por local/jogador, declarar ou passar,
    ataques, retaliações, janelas especiais e escolhas de Armadura. Nenhuma regra
    foi movida para o frontend. Primeiro lote diferencial terminal/web aprovado:
-   `VALIDACAO_NOTURNA.md`. Faltam cruzamentos de janelas/reação e fim da Noite.
+   `VALIDACAO_NOTURNA.md`. Luide e o primeiro encadeamento Armadura/Q♦/Belial
+   comparados; faltam outras janelas intercaladas e partidas cruzadas completas.
 5. **Fechar o ciclo da partida:** manhã, mudança de fase, fim do turno, vitória,
-   eliminação e início automático do turno seguinte.
+   eliminação e início automático do turno seguinte implementados e cobertos em
+   `VALIDACAO_CICLO.md`; corrigido Curruna com Dia pulado. Ampliar cruzamentos.
 6. **Save local completo:** lista, cópias nomeadas, exportar/importar e recuperar
    autosave implementados. Cinco recuperações anteriores e importação diurna do
    terminal implementadas; pendentes migrações futuras e saves noturnos sem fila.

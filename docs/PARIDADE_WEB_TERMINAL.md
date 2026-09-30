@@ -36,6 +36,12 @@ Vovó, Bater Primeiro, morte durante ataques múltiplos, Noite pulada, Q♣ e RN
 Iúna. Executa a orquestração terminal e a web separadamente; não certifica ainda
 os cruzamentos com as janelas especiais abaixo.
 
+Segundo lote aprovado: `VALIDACAO_CICLO.md` — Dias pulados, próxima manhã nos
+12 povos, controle/expiração, mortes adiadas, Armadura/Q♦/Belial e vitória durante
+reação. Luide também tem comparação com a janela real do terminal, incluindo
+chegada a local futuro ou processado. Continuam pendentes partidas cruzadas
+completas e outras janelas intercaladas.
+
 - Comparar filas web e terminal local a local, incluindo Bater Primeiro, Vovó,
   entrada/saída, morte, controle temporário e múltiplos ataques.
 - Validar Dia/Noite pulados, jogador eliminado, vitória durante reação,

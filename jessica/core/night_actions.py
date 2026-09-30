@@ -5,7 +5,7 @@ from .constants import CENTER, Phase
 from .models import Hero
 from .night_rules import find_targets, order_players_for_house, ainai_destinations, teleport_ainai
 from .state import get_player, log
-from .turn import day_order, end_turn, start_turn, start_player_day
+from .turn import day_order, end_turn, start_turn
 
 TYPES = {"night_attack", "night_pass", "finish_night", "night_resolve_choice",
          "night_ainai", "night_luide_move", "night_luide_spell", "night_window_done",
@@ -400,11 +400,8 @@ def apply(state, action):
         if not trial.game_over:
             start_turn(trial)
             trial.web_night = {}
-            pending = next((p for p in trial.players if p.city.is_alive()
-                            and p.people == peoples.PEOPLE_GNOMOS and p.bets_need_realocacao), None)
-            trial.active_player_id = pending.id if pending else trial.curuna_id
-            if pending is None:
-                start_player_day(trial, trial.active_player_id)
+            from .day_flow import open_day
+            open_day(trial)
     pid = candidate["player_id"]
     event = {"version": EVENT_VERSION, "type": "night_action_resolved", "turn": old_turn,
              "phase": "night", "participants": [pid],

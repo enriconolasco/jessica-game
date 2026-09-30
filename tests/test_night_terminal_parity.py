@@ -23,7 +23,7 @@ def mechanics(state):
     return data
 
 
-def compare(state, plan):
+def compare(state, plan, terminal_picker=None, web_windows=None):
     direct = state_from_dict(state_to_dict(state))
     terminal_trace = []
     remaining = deepcopy(plan)
@@ -44,8 +44,12 @@ def compare(state, plan):
         patches.enter_context(patch.object(terminal, "console", Mock()))
         for name in ("show_hud", "show_map", "_ask_vovo_position", "_try_luna_return",
                      "_ainai_prompt_all", "_try_besouro_mandinga", "_night_info_prompt",
-                     "_mostrar_resumo_local", "_luide_janela_noturna"):
+                     "_mostrar_resumo_local"):
             patches.enter_context(patch.object(terminal, name, lambda *a, **kw: None))
+        if terminal_picker is None:
+            patches.enter_context(patch.object(terminal, "_luide_janela_noturna", lambda *a, **kw: None))
+        else:
+            patches.enter_context(patch.object(terminal, "pick_index", terminal_picker))
         patches.enter_context(patch.object(terminal, "prompt_attack", prompt))
         terminal.run_night_phase(direct)
 
@@ -69,6 +73,13 @@ def compare(state, plan):
         if choices[0]["type"] == "night_setup":
             action = next(a for a in choices if a["params"].get("position") ==
                           state.players[a["player_id"] - 1].vovo_position)
+        elif any(a["type"] == "night_window_done" for a in choices):
+            if web_windows:
+                wanted = web_windows.pop(0)
+                action = next(a for a in choices if a["type"] == wanted["type"]
+                              and a["params"] == wanted["params"])
+            else:
+                action = next(a for a in choices if a["type"] == "night_window_done")
         else:
             action = None
             for candidate in choices:
@@ -238,6 +249,33 @@ def test_occupied_house_without_targets_announces_no_combat():
                       and e["data"]["house"] == "center")
         assert center["data"]["order"] == []
         assert [a["type"] for a in legal_actions(state, 1)] == ["finish_night"]
+
+
+def test_luide_spell_move_and_attack_future_or_processed_house():
+    for reentry in (False, True):
+        state = night()
+        origin, destination = ("city_4", "center") if reentry else ("center", "city_4")
+        state.players[0].people = "vampiros"
+        state.players[0].city.magic = 20
+        state.players[0].units = [Hero(id="luide", owner_id=1, house=origin, life=8,
+                                     life_max=8, hero_id="luide_vampa")]
+        troop(state, 2, "center_enemy")
+        troop(state, 3, "city_enemy", "city_4")
+        selected = ["Lancar feitico", "Mover unidade"]
+
+        def picker(title, labels):
+            if "(Luide Vampa)" in title:
+                return labels.index(selected.pop(0)) if selected else len(labels) - 1
+            if title == "Destino":
+                return 0 if destination == "center" else 3
+            return 0
+
+        windows = [{"type": "night_luide_spell", "params": {"unit_id": "luide"}},
+                   {"type": "night_luide_move", "params": {"unit_id": "luide", "destination": destination}}]
+        target = "center_enemy" if reentry else "city_enemy"
+        final, trace = compare(state, {"luide": [("unit", target)]}, picker, windows)
+        assert len(trace) == 1 and not selected and not windows
+        assert final.players[0].units[0].house == destination
 
 
 if __name__ == "__main__":
