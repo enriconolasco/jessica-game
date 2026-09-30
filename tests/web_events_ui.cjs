@@ -16,8 +16,8 @@ const events = [
 ];
 context.rememberPublicUnitNames(view,events);
 const event = data=>({type:'night_action_resolved',data});
-assert.equal(context.eventText(event({action_type:'night_attack',attacker_unit_id:'attacker',target_kind:'unit',target_id:'defender'})), 'Arken atacou Tuza.');
-assert.equal(context.eventText(event({action_type:'night_attack',attacker_unit_id:'attacker',target_kind:'city',target_id:'2'})), 'Arken atacou Cidade 2 (Leste).');
+assert.equal(context.eventText(event({action_type:'night_attack',attacker_unit_id:'attacker',target_type:'unit',target_id:'defender'})), 'Arken atacou Tuza.');
+assert.equal(context.eventText(event({action_type:'night_attack',attacker_unit_id:'attacker',target_type:'city',target_id:'2'})), 'Arken atacou Cidade 2 (Leste).');
 assert.equal(context.eventText(event({action_type:'night_pass',unit_id:'attacker'})), 'Arken não declarou ataque.');
 assert.equal(context.eventText(event({action_type:'night_luide_move',unit_id:'defender',destination:'center'})), 'Tuza moveu para Centro na janela de Luide.');
 assert.equal(context.eventText({type:'artifact_sold',data:{player_id:1,card_id:'K_H'}}), 'J1 vendeu Rei de Copas.');

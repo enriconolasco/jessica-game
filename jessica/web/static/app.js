@@ -436,7 +436,7 @@ function eventText(event) {
     if (d.action_type === "night_clock") return `Rogue usou o Relógio de bolso: ${HOUSE_NAMES[d.destination] || d.destination}.`;
     if (d.action_type === "night_skip_clock") return "Rogue não usou o Relógio de bolso.";
     if (d.action_type === "night_resolve_choice") return "Escolha de artefato resolvida; combate liberado para continuar.";
-    if (d.action_type === "night_attack") return `${publicUnitName(d.attacker_unit_id)} atacou ${d.target_kind === "city" ? HOUSE_NAMES[`city_${d.target_id}`] || `Cidade ${d.target_id}` : publicUnitName(d.target_id)}.`;
+    if (d.action_type === "night_attack") return `${publicUnitName(d.attacker_unit_id)} atacou ${d.target_type === "city" ? HOUSE_NAMES[`city_${d.target_id}`] || `Cidade ${d.target_id}` : publicUnitName(d.target_id)}.`;
     if (d.action_type === "night_pass") return `${publicUnitName(d.unit_id)} não declarou ataque.`;
     return "Noite encerrada.";
   }

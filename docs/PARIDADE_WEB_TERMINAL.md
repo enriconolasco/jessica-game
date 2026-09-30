@@ -86,6 +86,9 @@ Escolhas complexas verificadas no navegador: Sacrifício, sequência de Luna e
 Armadura, incluindo passagem de aparelho e largura de celular. Correções apenas
 de apresentação e relatório em [VALIDACAO_ESCOLHAS_WEB.md](VALIDACAO_ESCOLHAS_WEB.md).
 
+Luide também foi corrigido para abrir a janela sem inimigos no local ocupado,
+em ambas as interfaces; testes e limites em [FIX_LUIDE_SEM_ALVOS.md](FIX_LUIDE_SEM_ALVOS.md).
+
 ## 5. Empacotar e entregar
 
 - Comando/atalho único para iniciar, dependências fixadas e manual curto.

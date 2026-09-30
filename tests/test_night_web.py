@@ -525,6 +525,45 @@ def test_barba_base_nao_oferece_alvo_para_heroi_ate_ativar_modo():
                for a in legal_actions(state, 2))
 
 
+def test_luide_empty_house_still_opens_window():
+    state = night()
+    p = state.players[0]
+    p.people, p.city.magic = "vampiros", 20
+    p.units = [Hero(id="luide", owner_id=1, house="center", life=8, life_max=8,
+                    hero_id="luide_vampa"),
+               Troop(id="alone", owner_id=1, house="city_1", life=4, life_max=4,
+                     moves_this_turn=1, max_moves_this_turn=1)]
+    night_actions.prepare(state)
+    choices = legal_actions(state, 1)
+    assert any(a["type"] == "night_luide_move" for a in choices)
+    assert not any(a["type"] == "night_attack" for a in choices)
+    assert apply_action(state, next(a for a in choices if a["type"] == "night_window_done"))["success"]
+    assert state.web_night["queue"][0]["house"] == "city_1"
+    choices = legal_actions(state, 1)
+    spell = next(a for a in choices if a["type"] == "night_luide_spell" and a["params"]["unit_id"] == "alone")
+    restored = state_from_dict(state_to_dict(state))
+    assert apply_action(state, spell) == apply_action(restored, spell)
+    assert state_to_dict(state) == state_to_dict(restored)
+    move = next(a for a in legal_actions(state, 1) if a["type"] == "night_luide_move"
+                and a["params"] == {"unit_id": "alone", "destination": "center"})
+    assert apply_action(state, move)["success"]
+    assert apply_action(state, next(a for a in legal_actions(state, 1)
+                                   if a["type"] == "night_window_done"))["success"]
+    assert [a["type"] for a in legal_actions(state, 1)] == ["finish_night"]
+    assert not state.combats_this_night
+
+
+def test_luide_dead_does_not_open_empty_windows():
+    state = night()
+    p = state.players[0]
+    p.people = "vampiros"
+    p.units = [Hero(id="luide", owner_id=1, house="center", life=0, life_max=8,
+                    hero_id="luide_vampa"),
+               Troop(id="alone", owner_id=1, house="city_1", life=4, life_max=4)]
+    night_actions.prepare(state)
+    assert [a["type"] for a in legal_actions(state, 1)] == ["finish_night"]
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

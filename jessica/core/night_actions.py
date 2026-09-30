@@ -101,9 +101,7 @@ def build_queue(state):
 
 
 def luide_alive(state, pid):
-    p = get_player(state, pid)
-    return p.people == "vampiros" and any(isinstance(u, Hero) and u.is_alive()
-        and u.hero_id == "luide_vampa" for u in p.units)
+    return peoples.has_luide_bonus(get_player(state, pid))
 
 
 def schedule_arrival(state, unit):
@@ -165,8 +163,10 @@ def advance(state):
             entries = house_entries(state, entry["house"])
             has_combat = any(find_targets(state, combat._find_unit(state, e["unit_id"]))
                              for e in entries if "unit_id" in e)
+            has_luide_window = any(e.get("kind") == "luide" and luide_alive(state, e["player_id"])
+                                   for e in entries)
             state.web_night.setdefault("announcements", []).append({"house": entry["house"],
-                "order": list(dict.fromkeys(e["player_id"] for e in entries)) if has_combat else []})
+                "order": list(dict.fromkeys(e["player_id"] for e in entries)) if has_combat or has_luide_window else []})
             queue[:0] = entries + [{"kind": "end_house", "house": entry["house"],
                                    "occupied": bool(entries)}]
         elif kind == "end_house":
@@ -180,7 +180,7 @@ def advance(state):
             queue.pop(0)
         elif kind == "luide":
             if luide_alive(state, entry["player_id"]) and (entry.get("opened") or any(
-                    u.is_alive() and u.house == entry["house"] and find_targets(state, u)
+                    u.is_alive() and u.house == entry["house"]
                     for u in get_player(state, entry["player_id"]).units)):
                 entry["opened"] = True
                 break

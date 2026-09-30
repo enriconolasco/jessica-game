@@ -263,15 +263,17 @@ def test_occupied_house_without_targets_announces_no_combat():
 
 
 def test_luide_spell_move_and_attack_future_or_processed_house():
-    for reentry in (False, True):
+    for reentry, local_enemy in ((False, False), (False, True), (True, False), (True, True)):
         state = night()
         origin, destination = ("city_4", "center") if reentry else ("center", "city_4")
         state.players[0].people = "vampiros"
         state.players[0].city.magic = 20
         state.players[0].units = [Hero(id="luide", owner_id=1, house=origin, life=8,
                                      life_max=8, hero_id="luide_vampa")]
-        troop(state, 2, "center_enemy")
-        troop(state, 3, "city_enemy", "city_4")
+        if reentry or local_enemy:
+            troop(state, 2, "center_enemy")
+        if not reentry or local_enemy:
+            troop(state, 3, "city_enemy", "city_4")
         selected = ["Lancar feitico", "Mover unidade"]
 
         def picker(title, labels):
