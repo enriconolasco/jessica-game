@@ -7,8 +7,9 @@ Não há evidência suficiente para declarar paridade total ou estimar um percen
 Revisão de 2026-09-30: ver `AUDITORIA_PARIDADE_2026_09_30.md` para o mapeamento
 de todos os menus, novos pagamentos de Armadura, consultas, histórico e refazer/Mola.
 Não foi identificado outro fluxo mecânico selecionável sem adaptador; a validação
-cruzada completa permanece pendente. Importação de saves brutos do terminal não
-está implementada.
+cruzada completa permanece pendente. Importação diurna compatível do terminal e
+cinco autosaves anteriores implementados: `SAVES_E_RECUPERACAO.md`. Saves noturnos
+sem fila ou Dias ambíguos são rejeitados.
 
 ## 1. Fechar fluxos mecânicos ainda ausentes
 
@@ -47,7 +48,8 @@ possui ação diurna. Estes fluxos ainda precisam de playtest integrado.
   sem revelar mão, sorteios futuros ou informações proibidas.
 - Saves web: lista, cópias nomeadas, exportação/importação e restauração de
   autosave implementadas. Estado/RNG/eventos preservados; versões e arquivos
-  inválidos são rejeitados. Falta rotação de autosaves e playtest no navegador.
+  inválidos são rejeitados. Rotação com cinco recuperações anteriores implementada;
+  cópias manuais permanecem independentes.
 - Navegação por teclado/toque, passagem segura de jogador e mensagens de erro.
 
 ## 4. Provar a paridade

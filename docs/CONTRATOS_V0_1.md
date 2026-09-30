@@ -296,3 +296,17 @@ do recém-chegado sem renovar seu limite de ataques. Eventos usam
 
 Campos novos são aditivos no contrato experimental v0.1. Saves antigos sem reação
 ou histórico continuam aceitos. A API continua local, sem autenticação multiplayer.
+
+## Importação e recuperação — 30/09/2026
+
+`POST /matches/import` aceita também estado bruto compatível do terminal, sem
+`version`, após validar uma jogada diurna inequívoca. Não reaplica a manhã nem
+consome RNG. Noite sem fila e Dia ambíguo são rejeitados (422); versão explícita
+incompatível continua 409. Evento público adicional: `match_imported`.
+
+Metadados locais opcionais de save: `checkpoint_skip: {turn, player_id}`,
+`kind: recovery`, `source_match_id`, `recovery_generation`. Resposta de importação
+inclui `warnings`. Respostas de operações aceitas podem informar `save_warning`
+sem alterar sucesso/eventos mecânicos; falha ao salvar cópia responde 507.
+`GET /saves` lista recuperações sem transmitir estado, RNG ou eventos. Ações inválidas
+não criam recuperação. Formatos experimentais v0.1 permanecem; campos são aditivos.

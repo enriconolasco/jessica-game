@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import threading
-import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -143,7 +142,7 @@ def _snapshot(match_id: str) -> dict:
     match = MATCHES[match_id]
     return {"version": SAVE_VERSION, "state": state_to_dict(match["state"]),
             "events": match["events"], "name": match.get("name", "Partida local"),
-            "history": match.get("history", [])}
+            "history": match.get("history", []), "checkpoint_skip": match.get("checkpoint_skip", {})}
 
 
 def _save(match_id: str, name: str | None = None) -> str:
@@ -152,8 +151,11 @@ def _save(match_id: str, name: str | None = None) -> str:
     payload["kind"] = "manual" if name is not None else "autosave"
     if name is not None:
         payload["name"] = name
-    path = SAVES / f"{uuid.uuid4().hex[:12] if name is not None else match_id}.json"
-    saves.write(path, payload)
+    path = SAVES / f"{saves.new_id(SAVES, MATCHES) if name is not None else match_id}.json"
+    if name is None:
+        saves.write_autosave(path, payload)
+    else:
+        saves.write(path, payload)
     return path.name
 
 
@@ -161,6 +163,15 @@ def _visible_events(events, player_id):
     return [event for event in events
             if event.get("visibility", {}).get("kind") == "public"
             or player_id in event.get("visibility", {}).get("player_ids", [])]
+
+
+def _autosave(match_id):
+    try:
+        _save(match_id)
+    except OSError:
+        return "Não foi possível concluir o autosave. A partida permanece em memória; " \
+               "exporte uma cópia antes de fechar o servidor."
+    return None
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -251,12 +262,13 @@ class Handler(BaseHTTPRequestHandler):
                                        body.get("players"), body.get("config"))
                 except (TypeError, ValueError) as exc:
                     return self._json(422, {"error": str(exc)})
-                match_id = uuid.uuid4().hex[:12]
+                match_id = saves.new_id(SAVES, MATCHES)
                 MATCHES[match_id] = {"state": state, "events": session.public_events(state)}
                 session.checkpoint(MATCHES[match_id])
-                _save(match_id)
-                return self._json(201, {"match_id": match_id})
+                warning = _autosave(match_id)
+                return self._json(201, {"match_id": match_id, "save_warning": warning})
             if parts in (["matches", "load"], ["matches", "import"]):
+                warnings = []
                 try:
                     if parts[-1] == "load":
                         path = saves.save_path(SAVES, body.get("save_id"))
@@ -264,17 +276,18 @@ class Handler(BaseHTTPRequestHandler):
                             return self._json(404, {"error": "Save não encontrado."})
                         payload = saves.read(path)
                     else:
-                        payload = body
+                        payload, warnings = saves.import_payload(body)
                     state, events, name = saves.validate(payload)
                 except saves.VersionError as exc:
                     return self._json(409, {"error": str(exc)})
                 except (OSError, ValueError) as exc:
                     return self._json(422, {"error": str(exc)})
-                match_id = uuid.uuid4().hex[:12]
+                match_id = saves.new_id(SAVES, MATCHES)
                 MATCHES[match_id] = {"state": state, "events": events, "name": name,
-                                     "history": payload.get("history", [])}
-                _save(match_id)
-                return self._json(201, {"match_id": match_id})
+                                     "history": payload.get("history", []),
+                                     "checkpoint_skip": payload.get("checkpoint_skip", {})}
+                warning = _autosave(match_id)
+                return self._json(201, {"match_id": match_id, "warnings": warnings, "save_warning": warning})
             if len(parts) == 3 and parts[0] == "matches":
                 match_id, resource = parts[1], parts[2]
                 match = MATCHES.get(match_id)
@@ -297,7 +310,7 @@ class Handler(BaseHTTPRequestHandler):
                             result["events"] = session.changes(before, match["state"], body) + result["events"]
                         match["events"].extend(result["events"])
                         session.checkpoint(match)
-                        _save(match_id)
+                        result["save_warning"] = _autosave(match_id)
                     response = {**result, "pending": bool(match["state"].web_reaction),
                                 "events": _visible_events(result["events"], body.get("player_id"))}
                     return self._json(200 if result["success"] else 422, response)
@@ -306,14 +319,17 @@ class Handler(BaseHTTPRequestHandler):
                         session.restore(match, body.get("operation"))
                     except ValueError as exc:
                         return self._json(422, {"error": str(exc)})
-                    _save(match_id)
-                    return self._json(200, {"success": True})
+                    warning = _autosave(match_id)
+                    return self._json(200, {"success": True, "save_warning": warning})
                 if resource == "save":
                     name = body.get("name", "Partida local")
                     if not isinstance(name, str) or not name.strip() or len(name) > 60:
                         return self._json(422, {"error": "Nome do save deve ter de 1 a 60 caracteres."})
-                    return self._json(200, {"save_id": Path(_save(match_id, name.strip())).stem,
-                                            "version": SAVE_VERSION})
+                    try:
+                        saved_id = Path(_save(match_id, name.strip())).stem
+                    except OSError:
+                        return self._json(507, {"error": "Não foi possível salvar a cópia. Exporte a partida para preservá-la."})
+                    return self._json(200, {"save_id": saved_id, "version": SAVE_VERSION})
         self._json(404, {"error": "Rota não encontrada."})
 
     def _file(self, name: str, mime: str) -> None:

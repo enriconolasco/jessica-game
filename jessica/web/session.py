@@ -15,6 +15,8 @@ def checkpoint(match):
             or state.active_player_id is None):
         return
     player = next(p for p in state.players if p.id == state.active_player_id)
+    if match.get("checkpoint_skip") == {"turn": state.turn, "player_id": player.id}:
+        return
     if not player.morning_done_this_turn:
         return
     if any(h["player_id"] == player.id for h in history):

@@ -11,7 +11,9 @@ e clique em Carregar; também é possível importar um JSON exportado pela web.
 Autosave é atualizado após ações aceitas, usando escrita temporária e substituição
 do arquivo. A lista indica arquivos inválidos sem impedir acesso aos demais.
 Versões incompatíveis e arquivos malformados são rejeitados antes de criar partida.
-Saves brutos do terminal ainda não são importados automaticamente.
+Saves compatíveis do terminal durante o Dia agora podem ser importados sem reaplicar
+a manhã. A tela inicial também oferece os cinco autosaves anteriores por partida.
+Limites, recuperação e avisos: [SAVES_E_RECUPERACAO.md](SAVES_E_RECUPERACAO.md).
 
 Sonho Lúcido com Luna: ao adicionar uma carta, o servidor simula a sequência e
 atualiza as opções seguintes, incluindo heróis recém-invocados. A prévia não gasta

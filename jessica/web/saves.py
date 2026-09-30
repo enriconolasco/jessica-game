@@ -3,14 +3,25 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 import re
+import uuid
+from copy import deepcopy
 
 from ..core.constants import Phase
-from ..core.headless import SAVE_VERSION
+from ..core.headless import SAVE_VERSION, EVENT_VERSION
 from ..core.serialize import state_from_dict
+
+AUTOSAVE_HISTORY_LIMIT = 5
 
 
 class VersionError(ValueError):
     pass
+
+
+def new_id(directory, reserved=()):
+    while True:
+        candidate = uuid.uuid4().hex[:12]
+        if candidate not in reserved and not (directory / f"{candidate}.json").exists():
+            return candidate
 
 
 def save_path(directory, save_id):
@@ -79,6 +90,13 @@ def validate(payload):
                     raise ValueError("Dados de unidade inválidos.")
         events = payload.get("events", [])
         name = payload.get("name", "Partida local")
+        generation = payload.get("recovery_generation", 0)
+        if type(generation) is not int or generation < 0:
+            raise ValueError("Geração de recuperação inválida.")
+        if payload.get("kind") == "recovery" and (
+                not isinstance(payload.get("source_match_id"), str)
+                or not re.fullmatch(r"[a-f0-9]{12}", payload["source_match_id"])):
+            raise ValueError("Origem de recuperação inválida.")
         if (not isinstance(events, list) or not all(isinstance(e, dict) for e in events)
                 or any(not isinstance(e.get("visibility", {}), dict) for e in events)
                 or not isinstance(name, str) or not name.strip() or len(name) > 60):
@@ -88,6 +106,11 @@ def validate(payload):
                 or type(state.web_night.get("ready", True)) is not bool):
             raise ValueError("Estado da fila noturna inválido.")
         history = payload.get("history", [])
+        skip = payload.get("checkpoint_skip", {})
+        if (not isinstance(skip, dict) or skip and (set(skip) != {"turn", "player_id"}
+                or type(skip["turn"]) is not int or skip["turn"] < 1
+                or type(skip["player_id"]) is not int or skip["player_id"] not in ids)):
+            raise ValueError("Origem de restauração inválida.")
         if not isinstance(history, list) or len(history) > 4:
             raise ValueError("Histórico de restauração inválido.")
         seen = set()
@@ -123,6 +146,38 @@ def validate(payload):
     return state, events, name
 
 
+def import_payload(payload):
+    if not isinstance(payload, dict) or "version" in payload or "state" in payload:
+        validate(payload)
+        return deepcopy(payload), []
+    converted = {"version": SAVE_VERSION, "state": deepcopy(payload),
+                 "events": [], "history": [], "name": "Importação do terminal"}
+    state, _, _ = validate(converted)
+    if not state.game_over:
+        if state.phase == Phase.NIGHT:
+            if not state.web_night:
+                raise ValueError("Save do terminal durante a Noite não contém a fila de declarações. "
+                                 "Importe um save feito durante o Dia; o combate não será reiniciado.")
+        elif state.web_reaction:
+            raise ValueError("Use a exportação web para retomar uma reação pendente.")
+        else:
+            candidates = [p.id for p in state.players if p.city.is_alive()
+                          and p.morning_done_this_turn and not p.has_played_day_this_turn
+                          and p.skip_day_turn != state.turn]
+            if len(candidates) != 1 or state.active_player_id not in (None, candidates[0]):
+                raise ValueError("Save do terminal sem uma jogada diurna inequívoca. "
+                                 "Salve durante a vez de um jogador, após sua manhã.")
+            converted["state"]["active_player_id"] = candidates[0]
+            converted["checkpoint_skip"] = {"turn": state.turn, "player_id": candidates[0]}
+    converted["events"] = [{"version": EVENT_VERSION, "type": "match_imported",
+        "turn": state.turn, "phase": state.phase.value, "participants": [],
+        "data": {"source": "terminal"}, "visibility": {"kind": "public", "player_ids": []}}]
+    validate(converted)
+    return converted, ["Save do terminal importado sem reaplicar a manhã ou consumir RNG.",
+        "O log antigo fica preservado no save; o histórico web começa nesta importação.",
+        "Refazer Dia/Mola só estarão disponíveis para jogadas com início registrado na web."]
+
+
 def read(path):
     payload = json.loads(path.read_text(encoding="utf-8"))
     validate(payload)
@@ -130,9 +185,28 @@ def read(path):
 
 
 def write(path, payload):
+    validate(payload)
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
     temporary.replace(path)
+
+
+def write_autosave(path, payload):
+    if not re.fullmatch(r"[a-f0-9]{12}", path.stem):
+        raise ValueError("Identificador de autosave inválido.")
+    previous = read(path) if path.is_file() else None
+    generation = previous.get("recovery_generation", 0) if previous else 0
+    if previous is not None:
+        archive = {**previous, "kind": "recovery", "source_match_id": path.stem,
+                   "recovery_generation": generation,
+                   "name": ("Recuperação — " + previous.get("name", "Partida local"))[:60]}
+        write(path.parent / f"{new_id(path.parent)}.json", archive)
+    write(path, {**payload, "recovery_generation": generation + 1})
+    recoveries = [entry for entry in list_saved(path.parent)
+                  if entry.get("kind") == "recovery" and entry.get("source_match_id") == path.stem]
+    recoveries.sort(key=lambda entry: entry["recovery_generation"], reverse=True)
+    for entry in recoveries[AUTOSAVE_HISTORY_LIMIT:]:
+        save_path(path.parent, entry["save_id"]).unlink()
 
 
 def list_saved(directory):
@@ -146,6 +220,8 @@ def list_saved(directory):
             result.append({"save_id": path.stem, "name": payload.get("name", "Partida local"),
                            "turn": state["turn"], "phase": state["phase"],
                            "kind": payload.get("kind", "autosave"),
+                           "source_match_id": payload.get("source_match_id"),
+                           "recovery_generation": payload.get("recovery_generation", 0),
                            "updated_at": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()})
         except (OSError, ValueError):
             result.append({"save_id": path.stem, "name": "Save inválido", "invalid": True})

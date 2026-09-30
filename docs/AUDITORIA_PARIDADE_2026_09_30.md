@@ -91,6 +91,7 @@ JavaScript nativo da versão anterior na ferramenta; não foi declarado aprovado
 Ainda necessários para certificar paridade: partidas cruzando os 12 povos,
 comparação local a local da Noite com o terminal e teste desktop/mobile das escolhas
 complexas, especialmente Armadura + controle + pactos + mortes em sequência.
-Saves brutos do terminal, especialmente no meio de declaração noturna, continuam
+Saves diurnos compatíveis do terminal agora têm importação validada e preservam RNG:
+ver `SAVES_E_RECUPERACAO.md`. Declaração noturna sem fila serializada permanece
 fora do importador web. PWA/instalação e bots são entregas separadas, não conteúdo
 existente do terminal.

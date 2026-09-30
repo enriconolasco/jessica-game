@@ -381,6 +381,7 @@ function renderActions(actions) {
 }
 function eventText(event) {
   const d = event.data || {};
+  if (event.type === "match_imported") return "Partida importada do terminal. Estado e RNG preservados; o histórico web começa aqui.";
   if (event.type === "public_roll") return d.message || `J${d.player_id} · ${d.source}: ${d.results.join(", ")} (${d.results.map(n => ({1:"+1 Magia", 2:"+1 Ouro", 3:"cura 2 pendente", 4:"dano na Cidade"})[n] || n).join(" · ")}).`;
   if (event.type === "combat_house_opened") return `${HOUSE_NAMES[d.house] || d.house}: ${d.order.length ? `combate iniciado · declarações ${d.order.map(id => `J${id}`).join(" → ")}` : "não havia combates a declarar"}.`;
   if (event.type === "day_restored") return `J${d.player_id}: ${d.operation === "mola" ? "retomou a jogada anterior" : "refez sua jogada"}. Estado e RNG restaurados.`;
@@ -532,6 +533,7 @@ async function act(action) {
     controls.forEach(([button]) => button.disabled = true);
     const result = await api(`/matches/${matchId}/actions`, {method:"POST", body:JSON.stringify(action)});
     $("message").textContent = result.pending ? "Resolução pausada para escolher o pagamento da Armadura." : "Ação concluída.";
+    if (result.save_warning) $("message").textContent += ` ${result.save_warning}`;
     await refresh();
   } catch (error) {
     $("message").textContent = error.message;
@@ -703,8 +705,8 @@ function createGameplayControls() {
     operation === "undo" ? "Refazer meu Dia" : "Mola: jogador anterior", async () => {
       if (!await confirmAction("Restaurar estado, recursos e RNG? Ações posteriores a esse ponto serão desfeitas.")) return;
       try {
-        await api(`/matches/${matchId}/system`, {method:"POST", body:JSON.stringify({operation})});
-        $("message").textContent = "Jogada restaurada."; await refresh();
+        const result = await api(`/matches/${matchId}/system`, {method:"POST", body:JSON.stringify({operation})});
+        $("message").textContent = `Jogada restaurada.${result.save_warning ? ` ${result.save_warning}` : ""}`; await refresh();
       } catch (error) { $("message").textContent = error.message; }
     }, operation));
   button(toolbar, "Nova partida", async () => {
@@ -752,12 +754,16 @@ function createGameplayControls() {
 $("create").onclick = async () => {
   try {
     $("setupMessage").textContent = "";
-    await enter((await api("/matches", {method:"POST", body:JSON.stringify(setupPayload())})).match_id);
+    const created = await api("/matches", {method:"POST", body:JSON.stringify(setupPayload())});
+    await enter(created.match_id);
+    $("message").textContent = created.save_warning || "";
   } catch (error) { $("setupMessage").textContent = error.message; }
 };
 $("load").onclick = async () => {
   try {
-    await enter((await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})})).match_id);
+    const loaded = await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})});
+    await enter(loaded.match_id);
+    $("message").textContent = loaded.save_warning || "";
   } catch (error) { $("setupMessage").textContent = error.message; }
 };
 $("save").textContent = "Salvar cópia";
@@ -773,17 +779,26 @@ $("save").onclick = async () => {
 async function refreshSaves() {
   const entries = await api("/saves");
   const select = $("savedGames");
+  const selected = select.value;
+  const filter = $("saveFilter").value;
   select.replaceChildren(new Option("Escolha uma partida salva", ""));
-  entries.forEach(entry => {
+  entries.filter(entry => filter === "all" || (entry.kind === "recovery" ? filter === "recovery" : filter === "main")).forEach(entry => {
+    const kind = {manual:"cópia", autosave:"autosave", recovery:"recuperação anterior"}[entry.kind] || entry.kind;
     const label = entry.invalid ? `${entry.name} (${entry.save_id})` :
-      `${entry.name} · T${entry.turn} ${entry.phase} · ${entry.kind === "manual" ? "cópia" : "autosave"} · ${new Date(entry.updated_at).toLocaleString("pt-BR")}`;
+      `${entry.name} · T${entry.turn} ${entry.phase === "day" ? "Dia" : "Noite"} · ${kind} · ${new Date(entry.updated_at).toLocaleString("pt-BR")}`;
     const option = new Option(label, entry.save_id);
     option.disabled = Boolean(entry.invalid);
     select.appendChild(option);
   });
+  if ([...select.options].some(option => option.value === selected)) select.value = selected;
 }
 
 function createSaveControls() {
+  const filterLabel = document.createElement("label"); filterLabel.textContent = "Mostrar saves ";
+  const filter = document.createElement("select"); filter.id = "saveFilter";
+  filter.append(new Option("Partidas e cópias", "main"), new Option("Recuperações anteriores", "recovery"), new Option("Todos", "all"));
+  filter.onchange = () => refreshSaves().catch(error => { $("setupMessage").textContent = error.message; });
+  filterLabel.appendChild(filter);
   const label = document.createElement("label");
   label.textContent = "Partidas salvas ";
   const select = document.createElement("select");
@@ -795,7 +810,7 @@ function createSaveControls() {
   update.textContent = "Atualizar lista";
   update.onclick = () => refreshSaves().catch(error => { $("setupMessage").textContent = error.message; });
   const importLabel = document.createElement("label");
-  importLabel.textContent = "Importar partida (.json) ";
+  importLabel.textContent = "Importar save web ou terminal (.json) ";
   const file = document.createElement("input");
   file.type = "file";
   file.accept = ".json,application/json";
@@ -805,15 +820,21 @@ function createSaveControls() {
     try {
       if (selected.size > 10 * 1024 * 1024) throw new Error("Arquivo excede o limite de 10 MB.");
       const payload = JSON.parse(await selected.text());
-      await enter((await api("/matches/import", {method:"POST", body:JSON.stringify(payload)})).match_id);
+      const imported = await api("/matches/import", {method:"POST", body:JSON.stringify(payload)});
+      await enter(imported.match_id);
+      $("message").textContent = imported.warnings?.join(" ") || "Partida importada.";
+      if (imported.save_warning) $("message").textContent += ` ${imported.save_warning}`;
     } catch (error) { $("setupMessage").textContent = error.message; }
     finally { file.value = ""; }
   };
   importLabel.appendChild(file);
   const controls = document.createElement("div");
   controls.className = "save-controls";
-  controls.append(label, update, importLabel);
+  controls.append(filterLabel, label, update, importLabel);
   $("start").appendChild(controls);
+  const hint = document.createElement("p"); hint.className = "hint";
+  hint.textContent = "Recuperação: cinco autosaves anteriores por partida; cópias manuais não são substituídas. Saves do terminal precisam identificar uma jogada diurna já iniciada. Uma Noite sem fila de declarações não pode ser retomada com segurança.";
+  $("start").appendChild(hint);
   const exportButton = document.createElement("button");
   exportButton.id = "exportGame";
   exportButton.textContent = "Exportar partida";
