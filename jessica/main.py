@@ -2853,7 +2853,11 @@ def _declarar_casa(state, house: str, pids_declaram: list[int],
         for unit in get_player(state, pid).units
         if unit.house == house and unit.is_alive()
     )
-    if not has_combat:
+    has_luide_window = allow_luide and any(
+        peoples.has_luide_bonus(get_player(state, pid))
+        and any(u.house == house and u.is_alive() for u in get_player(state, pid).units)
+        for pid in pids_declaram)
+    if not has_combat and not has_luide_window:
         console.print(f"[dim]Não havia combates a declarar em {house_short(state, house)}.[/dim]")
         return
     for pid in pids_declaram:
@@ -2861,7 +2865,8 @@ def _declarar_casa(state, house: str, pids_declaram: list[int],
         units_here = [u for u in player.units if u.house == house and u.is_alive()]
         if not units_here:
             continue
-        if not any(find_targets(state, u) for u in units_here):
+        if (not any(find_targets(state, u) for u in units_here)
+                and not (allow_luide and peoples.has_luide_bonus(player))):
             continue
         _night_info_prompt(state)
         if allow_luide:
@@ -2899,14 +2904,7 @@ def _luide_janela_noturna(state, pid: int, house: str, processed_houses=None) ->
     if processed_houses is None:
         processed_houses = set()
     player = get_player(state, pid)
-    if player.people != "vampiros":
-        return
-    luide = next((u for u in player.units
-                  if isinstance(u, Hero) and u.is_alive()
-                  and u.hero_id == "luide_vampa"), None)
-    if luide is None:
-        return
-    while True:
+    while peoples.has_luide_bonus(player):
         disponiveis = [u for u in player.units
                        if u.is_alive() and u.house == house
                        and u.moves_this_turn < u.max_moves_this_turn]

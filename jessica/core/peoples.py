@@ -22,6 +22,11 @@ PEOPLE_GNOMOS = "gnomos_duendes"
 PEOPLE_DRAGOES = "dragoes"
 PEOPLE_DEMONIOS = "demonios"
 
+def has_luide_bonus(player: Player) -> bool:
+    return player.people == PEOPLE_VAMPIRES and any(
+        isinstance(u, Hero) and u.is_alive() and u.hero_id == "luide_vampa"
+        for u in player.units)
+
 DEMON_PACTS = {
     "sacrifique_futuro": "Sacrifique seu Futuro",
     "sacrifique_militar": "Sacrifique sua capacidade Militar",
