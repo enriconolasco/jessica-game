@@ -163,8 +163,10 @@ def advance(state):
         if kind == "house":
             queue.pop(0)
             entries = house_entries(state, entry["house"])
+            has_combat = any(find_targets(state, combat._find_unit(state, e["unit_id"]))
+                             for e in entries if "unit_id" in e)
             state.web_night.setdefault("announcements", []).append({"house": entry["house"],
-                "order": list(dict.fromkeys(e["player_id"] for e in entries))})
+                "order": list(dict.fromkeys(e["player_id"] for e in entries)) if has_combat else []})
             queue[:0] = entries + [{"kind": "end_house", "house": entry["house"]}]
         elif kind == "end_house":
             queue.pop(0)

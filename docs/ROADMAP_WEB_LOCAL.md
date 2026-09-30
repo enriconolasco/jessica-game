@@ -85,7 +85,8 @@ Devaneio usa o caminho existente do core.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
 4. **Validar a Noite:** implementados ordem por local/jogador, declarar ou passar,
    ataques, retaliações, janelas especiais e escolhas de Armadura. Nenhuma regra
-   foi movida para o frontend; falta comparação integrada com o terminal.
+   foi movida para o frontend. Primeiro lote diferencial terminal/web aprovado:
+   `VALIDACAO_NOTURNA.md`. Faltam cruzamentos de janelas/reação e fim da Noite.
 5. **Fechar o ciclo da partida:** manhã, mudança de fase, fim do turno, vitória,
    eliminação e início automático do turno seguinte.
 6. **Save local completo:** lista, cópias nomeadas, exportar/importar e recuperar

@@ -31,6 +31,11 @@ possui ação diurna. Estes fluxos ainda precisam de playtest integrado.
 
 ## 2. Auditar ordem e interrupções da partida
 
+Primeiro lote diferencial aprovado: `VALIDACAO_NOTURNA.md` — ordem, reentrada,
+Vovó, Bater Primeiro, morte durante ataques múltiplos, Noite pulada, Q♣ e RNG de
+Iúna. Executa a orquestração terminal e a web separadamente; não certifica ainda
+os cruzamentos com as janelas especiais abaixo.
+
 - Comparar filas web e terminal local a local, incluindo Bater Primeiro, Vovó,
   entrada/saída, morte, controle temporário e múltiplos ataques.
 - Validar Dia/Noite pulados, jogador eliminado, vitória durante reação,
