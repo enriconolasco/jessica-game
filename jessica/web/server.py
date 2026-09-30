@@ -6,14 +6,17 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
-from . import saves
+from . import saves, session
 
-from ..core import heroes, spells
+from ..core import heroes, spells, artifacts, reference, peoples
 from ..core.constants import (DEFAULT_CITY_LIFE_MAX, DEFAULT_CITY_LIFE_START,
                               DEFAULT_STARTING_GOLD, DEFAULT_STARTING_MAGIC)
 from ..core.headless import SAVE_VERSION, apply_action, legal_actions, view_for_player
 from ..core.serialize import state_from_dict, state_to_dict
 from ..core.setup import run_setup
+from ..core.setup import roll_d20_order, horario_from
+from ..core.state import make_rng
+from ..core import constants
 from ..core.turn import start_player_day, start_turn
 
 
@@ -41,15 +44,40 @@ def _catalog() -> dict:
         entries.append({
             "id": people,
             "label": PEOPLE_NAMES[people],
+            "passive": reference.PASSIVA_DESC.get(people, ""),
             "heroes": [{"id": hero.hero_id, "name": hero.name, "life": hero.life,
+                        "description": reference.HERO_ABILITY_DESC.get(hero.hero_id, ""),
                         "abilities": list(hero.abilities)}
                        for hero in heroes.heroes_for_people(people)],
             "spell": None if spell is None else {
                 "id": spell.spell_id, "name": spell.name,
-                "description": spell.description,
+                "description": reference.SPELL_NOTES.get(spell.spell_id, spell.description),
             },
         })
-    return {"peoples": entries, "defaults": {
+    return {"peoples": entries,
+        "heroes": [{"id": h.hero_id, "name": h.name, "life": h.life, "people": h.people,
+                    "description": reference.HERO_ABILITY_DESC.get(h.hero_id, "")}
+                   for h in heroes.HERO_CATALOG.values()],
+        "artifacts": [{"id": a.card_id, "name": artifacts.card_display(a.card_id),
+                       "description": ("Ao ativar, +1 de vida máxima da Base; cura 1 toda manhã."
+                                       if a.card_id == "K_H" else a.description)}
+                      for a in artifacts.ARTIFACT_CATALOG.values()],
+        "conditions": reference.STATUS_DESC,
+        "pacts": [{"id": pid, "name": name, "description": reference.PACT_NOTES[pid]}
+                  for pid, name in peoples.DEMON_PACTS.items()],
+        "rogue_items": reference.ROGUE_NOTES,
+        "rules": [
+            "Vence a última Base viva. Se nenhuma sobreviver, há empate.",
+            "O Curuna inicia o Dia; os jogadores seguem a ordem do mapa. Ao fim dos Dias começa a Noite; depois avança o turno e o Curuna. Apostas são alocadas antes do primeiro Dia.",
+            f"Coleta: {constants.RESOURCES_PER_DAY} recursos por Dia, distribuídos entre Ouro e Magia, uma vez. Juros: um Ouro por cada {constants.GOLD_INTEREST_DIVISOR} acumulados no início do turno.",
+            f"Invocação comum de tropa: {constants.TROOP_SUMMON_COST_MAGIC} Magia mais Ouro igual à vida escolhida. Limites usuais: pequena 4, média 6, grande 8; povos e efeitos podem alterar custos e disponibilidade.",
+            f"Muralha: {constants.CITY_LIFE_COST_GOLD} Ouro por ponto, até a vida máxima; indisponível de T13 em diante. Monumento: {constants.MONUMENT_COST_GOLD} Ouro com vida completa; concede artefato em turnos múltiplos de quatro. Heróis-Base possuem restrições próprias.",
+            f"Artefatos: compra {constants.ARTIFACT_GOLD_COST} Ouro ou transmutação {constants.ARTIFACT_MAGIC_COST} Magia; venda {constants.ARTIFACT_SELL_GOLD} Ouro, salvo modificadores. Cartas obtidas são privadas até serem reveladas por sua ativação.",
+            "Movimento: Cidade → Centro ou Centro → Cidade viva. Unidade recém-invocada já consumiu seu movimento; efeitos de dois movimentos podem liberar um movimento adicional. Escolher uma opção não a executa: confirme no botão da ação.",
+            "Combate: Centro primeiro, depois Cidades na ordem inversa do Dia. Prioridade é por jogador no local, atualizada por chegada/saída; ataques e retaliações usam o core. Heróis não atacam Bases sem autorização de um efeito. Consulte as exceções de cada herói.",
+            "Recarga padrão: o feitiço usado fica indisponível no próximo turno; Ressonância Mágica, Arken e outros efeitos têm exceções. A HUD informa disponibilidade; uma ação ausente não é atualmente legal.",
+        ],
+        "defaults": {
         "city_life": DEFAULT_CITY_LIFE_START, "city_life_max": DEFAULT_CITY_LIFE_MAX,
         "gold": DEFAULT_STARTING_GOLD, "magic": DEFAULT_STARTING_MAGIC,
     }}
@@ -95,8 +123,11 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
     if (values["city_life"] < 1 or values["city_life_max"] < values["city_life"]
             or values["gold_start"] < 0 or values["magic_start"] < 0):
         raise ValueError("Configuração inicial inválida.")
+    order_mode = config.get("order_mode", "fixed")
+    if order_mode not in ("fixed", "d20"):
+        raise ValueError("Modo de ordem inicial inválido.")
     state, _ = run_setup(list(PEOPLES), heroes_by_people, choices, seed,
-                         turn_order=[1, 2, 3, 4], **values)
+                         turn_order=None if order_mode == "d20" else [1, 2, 3, 4], **values)
     for player in state.players:
         player.name = names[player.id]
     start_turn(state)
@@ -111,7 +142,8 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
 def _snapshot(match_id: str) -> dict:
     match = MATCHES[match_id]
     return {"version": SAVE_VERSION, "state": state_to_dict(match["state"]),
-            "events": match["events"], "name": match.get("name", "Partida local")}
+            "events": match["events"], "name": match.get("name", "Partida local"),
+            "history": match.get("history", [])}
 
 
 def _save(match_id: str, name: str | None = None) -> str:
@@ -123,6 +155,12 @@ def _save(match_id: str, name: str | None = None) -> str:
     path = SAVES / f"{uuid.uuid4().hex[:12] if name is not None else match_id}.json"
     saves.write(path, payload)
     return path.name
+
+
+def _visible_events(events, player_id):
+    return [event for event in events
+            if event.get("visibility", {}).get("kind") == "public"
+            or player_id in event.get("visibility", {}).get("player_ids", [])]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -152,6 +190,17 @@ class Handler(BaseHTTPRequestHandler):
             return self._file("index.html", "text/html; charset=utf-8")
         if parts == ["catalog"]:
             return self._json(200, _catalog())
+        if parts == ["setup-order"]:
+            try:
+                seed = int(parse_qs(urlparse(self.path).query).get("seed", [20260923])[0])
+                order = roll_d20_order(make_rng(seed), 4)
+            except ValueError:
+                return self._json(422, {"error": "Seed inválida."})
+            fixed = [1, 2, 3, 4]
+            index = fixed.index(order[0])
+            return self._json(200, {"turn_order": fixed, "initial_curuna_id": order[0],
+                                    "day_order": fixed[index:] + fixed[:index],
+                                    "selection_order": horario_from(order)})
         if parts == ["saves"]:
             with LOCK:
                 return self._json(200, saves.list_saved(SAVES))
@@ -180,14 +229,13 @@ class Handler(BaseHTTPRequestHandler):
                 query = parse_qs(urlparse(self.path).query)
                 player_id = int(query.get("player_id", [state.active_player_id or 1])[0])
                 if resource == "view":
-                    return self._json(200, view_for_player(state, player_id))
+                    view = view_for_player(state, player_id)
+                    view["local_controls"] = session.controls(match)
+                    return self._json(200, view)
                 if resource == "actions":
                     return self._json(200, legal_actions(state, player_id))
                 if resource == "events":
-                    visible = [event for event in match["events"]
-                               if event.get("visibility", {}).get("kind") == "public"
-                               or player_id in event.get("visibility", {}).get("player_ids", [])]
-                    return self._json(200, visible)
+                    return self._json(200, _visible_events(match["events"], player_id))
         self._json(404, {"error": "Rota não encontrada."})
 
     def do_POST(self):
@@ -204,7 +252,8 @@ class Handler(BaseHTTPRequestHandler):
                 except (TypeError, ValueError) as exc:
                     return self._json(422, {"error": str(exc)})
                 match_id = uuid.uuid4().hex[:12]
-                MATCHES[match_id] = {"state": state, "events": []}
+                MATCHES[match_id] = {"state": state, "events": session.public_events(state)}
+                session.checkpoint(MATCHES[match_id])
                 _save(match_id)
                 return self._json(201, {"match_id": match_id})
             if parts in (["matches", "load"], ["matches", "import"]):
@@ -222,7 +271,8 @@ class Handler(BaseHTTPRequestHandler):
                 except (OSError, ValueError) as exc:
                     return self._json(422, {"error": str(exc)})
                 match_id = uuid.uuid4().hex[:12]
-                MATCHES[match_id] = {"state": state, "events": events, "name": name}
+                MATCHES[match_id] = {"state": state, "events": events, "name": name,
+                                     "history": payload.get("history", [])}
                 _save(match_id)
                 return self._json(201, {"match_id": match_id})
             if len(parts) == 3 and parts[0] == "matches":
@@ -240,11 +290,24 @@ class Handler(BaseHTTPRequestHandler):
                         return self._json(422, {"error": str(exc)})
                     return self._json(200, result)
                 if resource == "actions":
+                    before = session.public_snapshot(match["state"])
                     result = apply_action(match["state"], body)
                     if result["success"]:
+                        if not match["state"].web_reaction:
+                            result["events"] = session.changes(before, match["state"], body) + result["events"]
                         match["events"].extend(result["events"])
+                        session.checkpoint(match)
                         _save(match_id)
-                    return self._json(200 if result["success"] else 422, result)
+                    response = {**result, "pending": bool(match["state"].web_reaction),
+                                "events": _visible_events(result["events"], body.get("player_id"))}
+                    return self._json(200 if result["success"] else 422, response)
+                if resource == "system":
+                    try:
+                        session.restore(match, body.get("operation"))
+                    except ValueError as exc:
+                        return self._json(422, {"error": str(exc)})
+                    _save(match_id)
+                    return self._json(200, {"success": True})
                 if resource == "save":
                     name = body.get("name", "Partida local")
                     if not isinstance(name, str) or not name.strip() or len(name) > 60:

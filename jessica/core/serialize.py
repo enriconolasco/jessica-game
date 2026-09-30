@@ -239,6 +239,7 @@ def state_to_dict(s: GameState) -> dict:
         },
         "demon_pacts": [dict(e) for e in s.demon_pacts],
         "web_night": deepcopy(s.web_night),
+        "web_reaction": deepcopy(s.web_reaction),
     }
 
 
@@ -271,6 +272,7 @@ def state_from_dict(d: dict) -> GameState:
     }
     state.demon_pacts = [dict(e) for e in d.get("demon_pacts", [])]
     state.web_night = deepcopy(d.get("web_night", {}))
+    state.web_reaction = deepcopy(d.get("web_reaction", {}))
     # Compatibilidade com saves produzidos pelos patches v5v9 antigos.
     for pid_s, value in d.get("miyamoto_bonus", {}).items():
         player = next((p for p in state.players if str(p.id) == str(pid_s)), None)

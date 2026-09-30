@@ -9,6 +9,7 @@ const HOUSE_NAMES = {center:"Centro", city_1:"Cidade 1 (Sul)", city_2:"Cidade 2 
 const HOUSE_POSITIONS = {center:"center", city_1:"south", city_2:"east", city_3:"north", city_4:"west"};
 let selectedHouse = "center";
 let selectedUnitId = null;
+let currentView = null;
 
 async function api(path, options = {}) {
   const response = await fetch(path, {headers:{"Content-Type":"application/json"}, ...options});
@@ -18,13 +19,35 @@ async function api(path, options = {}) {
 }
 
 const peopleName = people => catalog?.peoples.find(item => item.id === people)?.label || people;
-const unitName = unit => catalog?.peoples.flatMap(item => item.heroes).find(hero => hero.id === unit.hero_id)?.name
-  || ({light:"Tropa pequena", medium:"Tropa média", heavy:"Tropa grande"})[unit.archetype]
+const troopNames = {light:"Tropa pequena", medium:"Tropa média", heavy:"Tropa grande", special:"Tropa Orc extra", extra:"Tropa extra", ghoul:"Ghoul", esqueleto:"Esqueleto", dragon_light:"Dragão pequeno", dragon_medium:"Dragão médio", dragon_heavy:"Dragão grande"};
+const heroName = id => catalog?.heroes?.find(hero => hero.id === id)?.name || catalog?.peoples.flatMap(item => item.heroes).find(hero => hero.id === id)?.name || id;
+const cardName = id => catalog?.artifacts?.find(card => card.id === id)?.name || id;
+const unitName = unit => (unit.hero_id ? heroName(unit.hero_id) : null)
+  || troopNames[unit.archetype]
   || unit.hero_id || unit.archetype || unit.id;
 function publicStates(unit) {
-  const states = Object.entries(unit.statuses || {}).map(([key, value]) => `${key}: ${value}`);
+  const labels = {amaldicoado_until_turn:"Amaldiçoado até o turno", cannot_attack_on_turn:"Não ataca no turno",
+    centauro_until_turn:"Centauro até o turno", espectro_until_turn:"Espectro até o turno",
+    invisivel_until_turn:"Invisível até o turno", invulneravel_until_turn:"Invulnerável até o turno",
+    lobisomem_until_turn:"Lobisomem até o turno", morcego_until_turn:"Morcego até o turno",
+    sono_until_turn:"Dormindo até o turno", summoned_turn:"Invocado no turno",
+    barba_hero_mode_turn:"Modo Herói no turno", mar_chamas_queued_turn:"Mar de Chamas preparado no turno",
+    mar_chamas_cooldown_until_turn:"Mar de Chamas disponível no turno", rogue_items:"Itens de Rogue",
+    rogue_resist_heroes:"Resistência contra heróis", demon_execute_weaker:"Executa inimigos menores",
+    cabaca_used_turn:"Cabaça já usada no turno", dragon_base:"Herói-Base", permanent_centaur:"Centauro permanente",
+    dragon_heart_resistance:"Resistência da Canastra", k_s_active:"Véu das Caçadoras",
+    can_attack_city_until_turn:"Pode atacar Base até o turno", lupa_resist_until_turn:"Resistência de Lupã até o turno"};
+  const states = Object.entries(unit.statuses || {}).filter(([key]) => labels[key]).map(([key, value]) =>
+    `${labels[key]}${typeof value === "boolean" ? "" : `: ${Array.isArray(value) ? value.join(", ") : value}`}`);
   if (unit.resistance_stacks) states.push(`resistência: ${unit.resistance_stacks}`);
   if (unit.double_damage) states.push("dano dobrado");
+  if (unit.infected) states.push("infectado");
+  if (unit.max_moves_this_turn > 1) states.push(`${unit.max_moves_this_turn} movimentos · usados ${unit.moves_this_turn}`);
+  if (unit.effective_max_attacks > 1) states.push(`${unit.effective_max_attacks} ataques · usados ${unit.attacks_made_this_night}`);
+  if (unit.hero_can_attack_city) states.push("pode atacar Base");
+  if (unit.owner_invulnerable) states.push("invulnerável por efeito do jogador");
+  if (unit.armor_active) states.push("Armadura de Ouro ativa");
+  if (unit.first_strike) states.push("Bater Primeiro ativo");
   return states;
 }
 function describeUnit(unit, player, people) {
@@ -164,10 +187,10 @@ function actionDetails(action) {
   const p = action.params;
   if (action.type === "collect_resources") return `${p.gold} Ouro + ${p.magic} Magia`;
   if (action.type === "raise_city_life") return `${p.times} aumento(s)`;
-  if (action.type === "summon_troop") return `${p.archetype} · vida ${p.life} · ${HOUSE_NAMES[p.house] || p.house}`;
-  if (action.type === "summon_hero") return p.hero_id || "herói escolhido";
-  if (action.type === "move_unit") return `${p.unit_id} → ${HOUSE_NAMES[p.destination] || p.destination}`;
-  if (action.type === "sell_artifact") return p.card_id;
+  if (action.type === "summon_troop") return `${troopNames[p.archetype] || p.archetype} · vida ${p.life} · ${HOUSE_NAMES[p.house] || p.house}`;
+  if (action.type === "summon_hero") return p.hero_id ? heroName(p.hero_id) : "herói escolhido";
+  if (action.type === "move_unit") return `${currentView?.board.units.find(u => u.id === p.unit_id) ? unitName(currentView.board.units.find(u => u.id === p.unit_id)) : p.unit_id} → ${HOUSE_NAMES[p.destination] || p.destination}`;
+  if (action.type === "sell_artifact") return cardName(p.card_id);
   return "";
 }
 function renderActions(actions) {
@@ -182,6 +205,24 @@ function renderActions(actions) {
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
+    if (type === "armor_payment") {
+      group.open = true;
+      const action = items[0], request = action.selection;
+      const info = document.createElement("p");
+      info.textContent = `${request.unit_name || "Unidade"}${request.house ? ` · ${HOUSE_NAMES[request.house]}` : ""}: dano recebido ${request.damage}. Ouro disponível: ${request.gold_available}. Escolha de 0 a ${request.max_gold} para absorver dano.`;
+      const label = document.createElement("label");
+      label.textContent = "Ouro a pagar ";
+      const input = document.createElement("input");
+      input.type = "number"; input.min = "0"; input.max = String(request.max_gold); input.step = "1";
+      input.value = String(request.max_gold);
+      label.appendChild(input);
+      const button = document.createElement("button");
+      button.textContent = "Confirmar defesa e continuar";
+      button.onclick = () => { if (input.reportValidity()) act({...action, params:{gold:Number(input.value)}}); };
+      group.append(info, label, button);
+      root.appendChild(group);
+      return;
+    }
     if (type === "dream_multi") {
       const action = items[0];
       const selected = [];
@@ -331,6 +372,27 @@ function renderActions(actions) {
 }
 function eventText(event) {
   const d = event.data || {};
+  if (event.type === "public_roll") return d.message || `J${d.player_id} · ${d.source}: ${d.results.join(", ")} (${d.results.map(n => ({1:"+1 Magia", 2:"+1 Ouro", 3:"cura 2 pendente", 4:"dano na Cidade"})[n] || n).join(" · ")}).`;
+  if (event.type === "combat_house_opened") return `${HOUSE_NAMES[d.house] || d.house}: ${d.order.length ? `combate iniciado · declarações ${d.order.map(id => `J${id}`).join(" → ")}` : "não havia combates a declarar"}.`;
+  if (event.type === "day_restored") return `J${d.player_id}: ${d.operation === "mola" ? "retomou a jogada anterior" : "refez sua jogada"}. Estado e RNG restaurados.`;
+  if (event.type === "public_state_changed") return (d.from_turn !== event.turn || d.from_phase !== event.phase ? `Alterações na transição T${d.from_turn} ${d.from_phase} → T${event.turn} ${event.phase}:\n` : "") + d.changes.map(change => {
+    if (change.kind === "unit") {
+      const a = change.before, b = change.after;
+      if (!a) return `J${b.owner_id}: ${unitName(b)} entrou em ${HOUSE_NAMES[b.house]} com ${b.life}/${b.life_max} de vida.`;
+      if (!b) return `J${a.owner_id}: ${unitName(a)} deixou o campo.`;
+      const parts = [];
+      if (a.life !== b.life || a.life_max !== b.life_max) parts.push(`vida ${a.life}/${a.life_max} → ${b.life}/${b.life_max}`);
+      if (a.house !== b.house) parts.push(`${HOUSE_NAMES[a.house]} → ${HOUSE_NAMES[b.house]}`);
+      if (a.owner_id !== b.owner_id) parts.push(`controle J${a.owner_id} → J${b.owner_id}`);
+      if (JSON.stringify(publicStates(a)) !== JSON.stringify(publicStates(b))) parts.push(`condições: ${publicStates(b).join(" · ") || "nenhuma"}`);
+      return parts.length ? `${unitName(b)}: ${parts.join("; ")}.` : "";
+    }
+    if (change.kind === "conditions") return "Registros de unidades empaladas/infectadas atualizados. Consulte Condições e relatórios.";
+    const labels = {gold:"Ouro", magic:"Magia", life:"Vida da Base", life_max:"Vida máxima da Base", has_monument:"Monumento", hand_count:"Artefatos na mão", canastra:"Canastra", field_artifacts:"Artefatos ativos"};
+    const format = value => Array.isArray(value) ? value.map(cardName).join(", ") || "vazio" : typeof value === "boolean" ? value ? "sim" : "não" : value;
+    return `${change.name}: ${labels[change.field] || change.field} ${format(change.before)} → ${format(change.after)}.`;
+  }).filter(Boolean).join("\n");
+  if (event.type === "armor_payment_requested") return `Armadura de Ouro: decidir quanto pagar contra ${d.damage} de dano.`;
   if (event.type === "night_action_resolved") {
     if (d.action_type === "night_ainai") return `Ainai teleportou para ${HOUSE_NAMES[d.destination] || d.destination}.`;
     if (d.action_type === "night_luide_move") return `${d.unit_id} moveu para ${HOUSE_NAMES[d.destination] || d.destination} na janela de Luide.`;
@@ -357,7 +419,7 @@ function eventText(event) {
   if (event.type === "city_life_raised") return `J${d.player_id} aumentou a Cidade de ${d.life_before} para ${d.life_after}.`;
   if (event.type === "monument_built") return `J${d.player_id} construiu um Monumento.`;
   if (event.type === "unit_summoned") return `J${d.player_id} invocou ${unitName(d.unit || {})}.`;
-  if (event.type === "unit_moved") return `${d.unit_id} foi para ${HOUSE_NAMES[d.destination] || d.destination}.`;
+  if (event.type === "unit_moved") return `${unitName(d.unit || {id:d.unit_id})} foi para ${HOUSE_NAMES[d.destination] || d.destination}.`;
   if (event.type === "player_turn_ended") return `J${d.player_id} encerrou sua janela do Dia.`;
   if (event.type === "artifact_obtained") return d.pending_choice ? "Escolha de artefato pendente." : `Artefato obtido: ${d.card_id}.`;
   if (event.type === "artifact_sold") return `J${d.player_id} vendeu ${d.card_id}.`;
@@ -387,6 +449,7 @@ function renderEvents(events) {
     }
     const node = document.createElement("div"); node.className = "event";
     const text = document.createElement("strong"); text.textContent = eventText(event);
+    if (!text.textContent) return;
     const meta = document.createElement("small"); meta.textContent = `Turno ${event.turn} · ${event.phase}`;
     node.append(text, document.createElement("br"), meta); root.appendChild(node);
   });
@@ -404,8 +467,10 @@ async function refresh(allowPlayerSwitch = false) {
     return;
   }
   playerId = view.active_player_id || playerId;
+  currentView = view;
   const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
   $("status").textContent = `Turno ${view.turn} · ${view.phase} · jogador ativo: ${view.active_player_id ?? "—"}`;
+  if (view.self.armor_reaction) $("status").textContent += " · Armadura: resolução aguardando pagamento";
   if (view.game_over) {
     const winner = view.players.find(p => p.id === view.winner_id);
     $("status").textContent = `Partida encerrada · Vencedor: ${winner?.name || "sem vencedor"}`;
@@ -421,28 +486,35 @@ async function refresh(allowPlayerSwitch = false) {
   view.players.forEach(p => {
     const node = document.createElement("div");
     node.className = `player ${p.id === view.active_player_id ? "active" : ""}`;
-    node.textContent = `J${p.id} ${p.name} — ${p.people} · Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic} · Em campo: ${(p.field_artifacts || []).join(", ") || "nenhum"} · Canastra: ${(p.canastra || []).join(", ") || "vazia"}`;
+    node.textContent = `J${p.id} ${p.name} — ${peopleName(p.people)} · Herói: ${heroName(p.chosen_hero_id) || "escolha em jogo"} · Vida ${p.city.life}/${p.city.life_max} · Ouro ${p.city.gold} · Magia ${p.city.magic} · Em campo: ${(p.field_artifacts || []).map(cardName).join(", ") || "nenhum"} · Canastra: ${(p.canastra || []).map(cardName).join(", ") || "vazia"}`;
     $("players").appendChild(node);
   });
-  const hand = view.self.hand.length ? view.self.hand.join(" · ") : "vazia";
+  const hand = view.self.hand.length ? view.self.hand.map(cardName).join(" · ") : "vazia";
   const bets = Object.entries(view.self.bets).filter(([, target]) => target).map(([suit,target]) => `${suit}→J${target}`).join(" · ") || "nenhuma";
   const pending = view.self.pending_choice ? " | Resolva a escolha pendente nas ações abaixo." : "";
   const offers = view.self.demon_pact_offers?.length ? " | Há uma oferta de pacto nas ações abaixo." : "";
   const copiedSpell = view.self.spell_copia_id ? ` | Feitiço copiado: ${view.self.spell_copia_id.replaceAll("_", " ")}` : "";
   $("self").textContent = `Mão: ${hand} | Apostas: ${bets} | Corretas: ${view.self.correct_bets} | Curas: ${view.self.pending_heals || 0}${copiedSpell}${pending}${offers}`;
+  $("self").appendChild(document.createElement("br"));
+  const extra = document.createElement("span");
+  extra.textContent = `Feitiço disponível a partir de T${view.self.spell_cooldown_until_turn} · ${view.self.has_cast_spell_this_turn ? "já usado neste turno" : "não usado"}${view.self.baoba_payments ? ` · Baobá: ${view.self.baoba_payments}/3 pagamentos` : ""}${view.self.rogue_items?.length ? ` · Rogue: ${view.self.rogue_items.join(", ")}` : ""}${view.self.inherited_peoples?.length ? ` · Passivas de São Tomé: ${view.self.inherited_peoples.map(peopleName).join(", ")}` : ""}`;
+  $("self").appendChild(extra);
+  ["undo", "mola"].forEach(id => { $(id).disabled = !view.local_controls?.[id]; });
+  renderReports(view);
   renderMap(view); renderActions(actions); renderEvents(events);
 }
 async function act(action) {
-  if (action.type === "end_turn" && !confirm("Encerrar a janela deste jogador?")) return;
-  if (action.type === "finish_night" && !confirm("Encerrar a Noite e avançar o turno?")) return;
+  if (action.type === "end_turn" && !await confirmAction("Encerrar a janela deste jogador?")) return;
+  if (action.type === "finish_night" && !await confirmAction("Encerrar a Noite e avançar o turno?")) return;
+  const controls = [...document.querySelectorAll("#actions button")].map(button => [button, button.disabled]);
   try {
-    document.querySelectorAll("#actions button").forEach(button => button.disabled = true);
-    await api(`/matches/${matchId}/actions`, {method:"POST", body:JSON.stringify(action)});
-    $("message").textContent = "Ação concluída.";
+    controls.forEach(([button]) => button.disabled = true);
+    const result = await api(`/matches/${matchId}/actions`, {method:"POST", body:JSON.stringify(action)});
+    $("message").textContent = result.pending ? "Resolução pausada para escolher o pagamento da Armadura." : "Ação concluída.";
     await refresh();
   } catch (error) {
     $("message").textContent = error.message;
-    document.querySelectorAll("#actions button").forEach(button => button.disabled = false);
+    controls.forEach(([button, disabled]) => button.disabled = disabled);
   }
 }
 async function enter(id) { matchId=id; $("start").hidden=true; $("game").hidden=false; await refresh(); }
@@ -477,6 +549,10 @@ function renderSetup() {
     peopleSelect.value = defaultPeople;
     peopleSelect.onchange = () => { updateHeroSelect(row, peopleSelect.value); updatePeopleAvailability(); };
     updateHeroSelect(row, defaultPeople);
+    const help = document.createElement("button");
+    help.type = "button"; help.textContent = "Consultar povo e heróis";
+    help.onclick = () => showHelp(peopleSelect.value);
+    row.appendChild(help);
     root.appendChild(row);
   });
   updatePeopleAvailability();
@@ -490,8 +566,132 @@ function setupPayload() {
       hero_id: row.querySelector(".setup-hero").value,
     })),
     config: {city_life:+$("cityLife").value, city_life_max:+$("cityLifeMax").value,
-             gold:+$("goldStart").value, magic:+$("magicStart").value},
+             gold:+$("goldStart").value, magic:+$("magicStart").value,
+             order_mode:$("orderMode").value},
   };
+}
+
+function showHelp(peopleId = null) {
+  const root = $("helpContent");
+  root.replaceChildren();
+  const line = (parent, text, tag = "p") => {
+    const node = document.createElement(tag); node.textContent = text; parent.appendChild(node);
+  };
+  const section = title => {
+    const node = document.createElement("details"), heading = document.createElement("summary");
+    heading.textContent = title; node.appendChild(heading); root.appendChild(node); return node;
+  };
+  line(root, "Consulta da implementação atual. Valores podem mudar com o balanceamento. O motor valida custos, alvos e restrições; somente ações legais são oferecidas.");
+  if (!peopleId) {
+    const rules = section("Regras gerais e custos"); rules.open = true;
+    (catalog.rules || []).forEach(text => line(rules, text));
+  }
+  catalog.peoples.filter(p => !peopleId || p.id === peopleId).forEach(p => {
+    const block = section(p.label); block.open = Boolean(peopleId);
+    line(block, p.passive);
+    if (p.spell) line(block, `${p.spell.name}: ${p.spell.description}`);
+    (catalog.heroes || p.heroes).filter(h => !h.people || h.people === p.id).forEach(h => {
+      line(block, `${h.name} · vida base ${h.life}`, "h3"); line(block, h.description);
+    });
+  });
+  if (!peopleId) {
+    const cards = section("Artefatos");
+    catalog.artifacts.forEach(a => { line(cards, a.name, "h3"); line(cards, a.description); });
+    const conditions = section("Condições");
+    Object.entries(catalog.conditions).forEach(([name, text]) => line(conditions, `${name}: ${text}`));
+    const pacts = section("Pactos e itens de Rogue");
+    catalog.pacts.forEach(p => line(pacts, `${p.name}: ${p.description}`));
+    Object.entries(catalog.rogue_items).forEach(([name, text]) => line(pacts, `${name}: ${text}`));
+  }
+  $("helpDialog").showModal();
+  $("closeHelp").focus();
+}
+
+function confirmAction(message) {
+  const dialog = $("confirmDialog");
+  if (dialog.open) return Promise.resolve(false);
+  $("confirmText").textContent = message;
+  return new Promise(resolve => {
+    const finish = accepted => { dialog.close(); resolve(accepted); };
+    $("confirmAccept").onclick = () => finish(true);
+    $("confirmCancel").onclick = () => finish(false);
+    dialog.oncancel = event => { event.preventDefault(); finish(false); };
+    dialog.showModal(); $("confirmCancel").focus();
+  });
+}
+
+function renderReports(view) {
+  const root = $("reports"); root.replaceChildren();
+  const line = text => { const p = document.createElement("p"); p.textContent = text; root.appendChild(p); };
+  view.board.units.filter(u => publicStates(u).length).forEach(u =>
+    line(`J${u.owner_id} · ${unitName(u)} · ${HOUSE_NAMES[u.house]} · ${publicStates(u).join(" · ")}`));
+  (view.conditions || []).forEach(c => {
+    const sig = c.signature || {};
+    line(`${c.condition} · ${sig.kind === "hero" ? heroName(sig.id) : troopNames[sig.id] || sig.id} · J${c.owner_id ?? "?"}${c.controller_id ? ` · infectado por J${c.controller_id}` : ""}${c.release_curuna_id ? ` · libera quando J${c.release_curuna_id} for Curuna` : ""}`);
+  });
+  const stats = {gold_collected:"Ouro coletado", magic_collected:"Magia coletada", troops_summoned:"Tropas invocadas", heroes_summoned:"Heróis invocados", spells_cast:"Feitiços", damage_dealt:"Dano causado", damage_taken:"Dano recebido", kills:"Abates", deaths:"Mortes", artifacts_bought:"Artefatos comprados", artifacts_played:"Artefatos jogados", artifacts_sold:"Artefatos vendidos"};
+  view.players.forEach(p => {
+    const title = document.createElement("h3"); title.textContent = `${p.name} · estatísticas`; root.appendChild(title);
+    line(Object.entries(stats).map(([key, text]) => `${text}: ${p.stats?.[key] || 0}`).join(" · "));
+    if (p.armor_active_until_turn >= view.turn) line("Armadura de Ouro ativa: cada golpe permite escolher o pagamento.");
+    if (p.spell_cooldown_until_turn > view.turn) line(`Feitiço disponível em T${p.spell_cooldown_until_turn}.`);
+    if (p.next_monument_turn != null) line(`Monumento: próximo artefato em T${p.next_monument_turn}.`);
+    if (p.skip_day_turn != null || p.skip_night_turn != null) line(`Dia pulado: ${p.skip_day_turn ?? "nenhum"} · Noite pulada: ${p.skip_night_turn ?? "nenhuma"}`);
+    (p.active_artifacts || []).forEach(a => {
+      const details = Object.entries(a.details).map(([key, value]) => key === "target_player_id" || key === "original_owner_id" ? `Jogador ${value}` : unitName(view.board.units.find(u => u.id === value) || {id:value}));
+      line(`${cardName(a.card_id)}${details.length ? ` · ${details.join(" · ")}` : ""}`);
+    });
+  });
+  line(`Loja: ${view.shop.size} artefatos · ${Object.entries(view.shop.counts || {}).sort().map(([id, count]) => `${cardName(id)}: ${count}`).join(" · ")}`);
+  (view.scheduled_effects || []).forEach(e => line(`J${e.player_id}: ${cardName(e.kind)} previsto para T${e.due_turn}.`));
+  (view.timeline || []).forEach(e => line(`Fim de T${e.turn}: ${Object.entries(e.resources).map(([id, r]) => `J${id} ${r.gold} Ouro / ${r.magic} Magia / ${r.life} vida`).join(" · ")}`));
+  line(view.turn < 13 ? "A partir de T13 não se pode aumentar Muralha." : "T13+: aumentar Muralha está bloqueado.");
+}
+
+function createGameplayControls() {
+  const button = (root, text, handler, id = null) => {
+    const node = document.createElement("button"); node.type = "button"; node.textContent = text;
+    if (id) node.id = id; node.onclick = handler; root.appendChild(node); return node;
+  };
+  button($("start"), "Consultar todos os povos e artefatos", () => showHelp());
+  const toolbar = $("save").parentElement;
+  button(toolbar, "Consultar regras", () => showHelp());
+  ["undo", "mola"].forEach(operation => button(toolbar,
+    operation === "undo" ? "Refazer meu Dia" : "Mola: jogador anterior", async () => {
+      if (!await confirmAction("Restaurar estado, recursos e RNG? Ações posteriores a esse ponto serão desfeitas.")) return;
+      try {
+        await api(`/matches/${matchId}/system`, {method:"POST", body:JSON.stringify({operation})});
+        $("message").textContent = "Jogada restaurada."; await refresh();
+      } catch (error) { $("message").textContent = error.message; }
+    }, operation));
+  button(toolbar, "Nova partida", async () => {
+    if (!await confirmAction("Voltar à configuração? A partida atual fica preservada no autosave.")) return;
+    $("game").hidden = true; $("start").hidden = false;
+    currentView = null; matchId = null;
+    refreshSaves().catch(error => { $("setupMessage").textContent = error.message; });
+  });
+  const reports = document.createElement("details"); reports.className = "card";
+  const title = document.createElement("summary"); title.textContent = "Condições e relatórios da partida";
+  const body = document.createElement("div"); body.id = "reports"; reports.append(title, body);
+  $("game").appendChild(reports);
+  const order = document.createElement("label"); order.textContent = "Ordem inicial ";
+  const select = document.createElement("select"); select.id = "orderMode";
+  select.append(new Option("D20 — como no terminal", "d20"), new Option("Fixa J1 → J2 → J3 → J4", "fixed"));
+  order.appendChild(select); $("seed").parentElement.after(order);
+  const preview = document.createElement("p"); preview.className = "hint"; order.after(preview);
+  const updateOrder = async () => {
+    try {
+      const data = await api(`/setup-order?seed=${encodeURIComponent($("seed").value)}`);
+      preview.textContent = select.value === "fixed" ? "Ordem de turno: J1 → J2 → J3 → J4" :
+        `Curuna inicial: J${data.initial_curuna_id} · Primeiro Dia: ${data.day_order.map(id => `J${id}`).join(" → ")} · Escolha de povos: ${data.selection_order.map(id => `J${id}`).join(" → ")}`;
+    } catch (error) { preview.textContent = error.message; }
+  };
+  $("seed").onchange = updateOrder; select.onchange = updateOrder; updateOrder();
+  $("closeHelp").onclick = () => $("helpDialog").close();
+  const saveLabel = document.createElement("label"); saveLabel.textContent = "Nome do save ";
+  const saveName = document.createElement("input"); saveName.id = "saveName";
+  saveName.maxLength = 60; saveName.value = "Partida local"; saveLabel.appendChild(saveName);
+  toolbar.appendChild(saveLabel);
 }
 $("create").onclick = async () => {
   try {
@@ -506,8 +706,7 @@ $("load").onclick = async () => {
 };
 $("save").textContent = "Salvar cópia";
 $("save").onclick = async () => {
-  const name = prompt("Nome deste ponto de restauração:", "Partida local");
-  if (name === null) return;
+  const name = $("saveName").value;
   try {
     const data = await api(`/matches/${matchId}/save`, {method:"POST", body:JSON.stringify({name})});
     $("message").textContent = `Cópia salva: ${name} (${data.save_id}). O autosave continua separado.`;
@@ -585,4 +784,5 @@ $("revealPlayer").onclick = async () => {
   await refresh(true);
 };
 createSaveControls();
+createGameplayControls();
 api("/catalog").then(async data => { catalog = data; renderSetup(); await refreshSaves(); }).catch(error => { $("setupMessage").textContent = error.message; });

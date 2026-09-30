@@ -177,6 +177,7 @@ class GameState:
     night_priority_by_house: dict[str, list[int]] = field(default_factory=dict)
     demon_pacts: list[dict] = field(default_factory=list)
     web_night: dict = field(default_factory=dict)
+    web_reaction: dict = field(default_factory=dict)
 
     def alive_players(self) -> list[Player]:
         return [p for p in self.players if p.city.is_alive()]

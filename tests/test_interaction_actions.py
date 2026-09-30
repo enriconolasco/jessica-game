@@ -171,6 +171,7 @@ def test_http_artefato_e_historico_sobrevivem_ao_load():
         try:
             _, created = _request(base, "/matches", "POST", {"seed": 5})
             mid = created["match_id"]
+            initial_history = list(server.MATCHES[mid]["events"])
             server.MATCHES[mid]["state"].players[0].hand = ["K_D"]
             _, offered = _request(base, f"/matches/{mid}/actions?player_id=1")
             action = next(a for a in offered if a["type"] == "play_artifact")
@@ -184,7 +185,7 @@ def test_http_artefato_e_historico_sobrevivem_ao_load():
             _, view = _request(base, f"/matches/{resumed}/view?player_id=1")
             _, history = _request(base, f"/matches/{resumed}/events?player_id=1")
             assert view["players"][0]["field_artifacts"] == ["K_D"]
-            assert history == result["events"]
+            assert history == initial_history + result["events"]
             assert state_to_dict(server.MATCHES[mid]["state"]) == state_to_dict(server.MATCHES[resumed]["state"])
         finally:
             httpd.shutdown()

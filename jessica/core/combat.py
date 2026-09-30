@@ -1,5 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from contextlib import contextmanager
+from contextvars import ContextVar
+from functools import wraps
 from .state import get_player, get_city, log, record_action, bump_stat
 from .models import GameState, Unit, Hero, Troop
 from . import peoples
@@ -235,6 +238,25 @@ def _apply_defense(state: GameState, defender: Unit, dmg: int,
 
 
 _armor_choice_fn = None
+_armor_policy = ContextVar("armor_policy", default=None)
+armor_hit_context = ContextVar("armor_hit_context", default={})
+
+
+@contextmanager
+def armor_policy(policy):
+    token = _armor_policy.set(policy)
+    try:
+        yield
+    finally:
+        _armor_policy.reset(token)
+
+
+def armor_simulation(fn):
+    @wraps(fn)
+    def simulated(*args, **kwargs):
+        with armor_policy(lambda player, damage: min(player.city.gold, damage)):
+            return fn(*args, **kwargs)
+    return simulated
 
 
 def set_armor_choice_fn(fn) -> None:
@@ -242,11 +264,23 @@ def set_armor_choice_fn(fn) -> None:
     _armor_choice_fn = fn
 
 
-def _apply_armor(state: GameState, defender_player_id: int, dmg: int) -> int:
+def _apply_armor(state: GameState, defender_player_id: int, dmg: int,
+                 defender: Unit | None = None, source: Unit | None = None) -> int:
     p = get_player(state, defender_player_id)
     if p.armor_active_until_turn < state.turn or dmg <= 0:
         return dmg
-    if _armor_choice_fn is not None:
+    if _armor_policy.get() is not None:
+        from .heroes import hero_name
+        context = {"unit_id": defender.id, "house": defender.house,
+                   "unit_name": hero_name(defender.hero_id) if isinstance(defender, Hero) else defender.id,
+                   "source_id": source.id if source is not None else None} if defender is not None else {}
+        context["_state"] = state
+        token = armor_hit_context.set(context)
+        try:
+            pay = _armor_policy.get()(p, dmg)
+        finally:
+            armor_hit_context.reset(token)
+    elif _armor_choice_fn is not None:
         try:
             pay = int(_armor_choice_fn(p, dmg))
         except Exception:
@@ -398,8 +432,8 @@ def _resolve_combat_round(state: GameState, attacker: Unit, target: Unit) -> Non
         dmg_to_target, notes_t = _apply_defense(state, target, raw_atk, attacker)
     dmg_to_attacker, notes_a = _apply_defense(state, attacker, raw_tgt, target)
 
-    dmg_to_target = _apply_armor(state, target.owner_id, dmg_to_target)
-    dmg_to_attacker = _apply_armor(state, attacker.owner_id, dmg_to_attacker)
+    dmg_to_target = _apply_armor(state, target.owner_id, dmg_to_target, target, attacker)
+    dmg_to_attacker = _apply_armor(state, attacker.owner_id, dmg_to_attacker, attacker, target)
 
     # Luarado: infecta por dano (antes de aplicar morte)
     _luarado_infecta(state, attacker, target, dmg_to_target)
@@ -590,7 +624,7 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
         ret, notes = _apply_defense(state, attacker, raw_ret, is_city_retaliation=True)
         if _hero_has(attacker, "takes_1_damage_when_attacked") and raw_ret > 0:
             ret, notes = _apply_defense(state, attacker, 1, is_city_retaliation=True)
-        ret = _apply_armor(state, attacker.owner_id, ret)
+        ret = _apply_armor(state, attacker.owner_id, ret, attacker)
         if ret == 0 and attacker_player.invulnerable_until_end_turn:
             log(state, f"  Retaliacao ignorada (invulneravel).")
         else:

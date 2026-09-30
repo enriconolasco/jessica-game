@@ -4,6 +4,12 @@ Referência: implementação terminal e testes do repositório, não conversas.
 Marco anterior desta revisão: web 25584df. Atualizado em 2026-09-29.
 Não há evidência suficiente para declarar paridade total ou estimar um percentual.
 
+Revisão de 2026-09-30: ver `AUDITORIA_PARIDADE_2026_09_30.md` para o mapeamento
+de todos os menus, novos pagamentos de Armadura, consultas, histórico e refazer/Mola.
+Não foi identificado outro fluxo mecânico selecionável sem adaptador; a validação
+cruzada completa permanece pendente. Importação de saves brutos do terminal não
+está implementada.
+
 ## 1. Fechar fluxos mecânicos ainda ausentes
 
 - Ainai: implementado teleporte e reabertura de local; validar em playtest.

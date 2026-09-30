@@ -1,5 +1,9 @@
 # Cliente web vertical
 
+Lote de conteúdo/usabilidade de 2026-09-30: consultas completas, relatórios e
+condições, pagamentos de Armadura por golpe, abertura de locais no histórico e
+Refazer/Mola. Consulte `AUDITORIA_PARIDADE_2026_09_30.md` para cobertura e limites.
+
 Saves locais: a tela inicial lista cópias nomeadas e autosaves. Escolha uma entrada
 e clique em Carregar; também é possível importar um JSON exportado pela web.
 “Salvar cópia” cria um ponto independente, que ações posteriores não sobrescrevem.

@@ -1,0 +1,23 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const source = fs.readFileSync("jessica/web/static/app.js", "utf8");
+const elements = Object.fromEntries(["confirmDialog", "confirmText", "confirmAccept", "confirmCancel"].map(id => [id, {focus(){}}]));
+elements.confirmDialog.showModal = function(){this.open = true;};
+elements.confirmDialog.close = function(){this.open = false;};
+const context = vm.createContext({$:id=>elements[id], Promise});
+vm.runInContext(source.slice(source.indexOf("function confirmAction("), source.indexOf("function renderReports(")), context);
+(async () => {
+  let result = context.confirmAction("Encerrar?");
+  assert.equal(elements.confirmText.textContent, "Encerrar?");
+  assert.equal(await context.confirmAction("Concorrente"), false);
+  elements.confirmCancel.onclick(); assert.equal(await result, false);
+  result = context.confirmAction("Restaurar?");
+  elements.confirmAccept.onclick(); assert.equal(await result, true);
+  result = context.confirmAction("Cancelar com Escape?");
+  let prevented = false;
+  elements.confirmDialog.oncancel({preventDefault(){prevented = true;}});
+  assert.equal(await result, false); assert.equal(prevented, true);
+  assert.equal(elements.confirmDialog.open, false);
+  console.log("UI: confirmar, cancelar, Escape e confirmação concorrente verificados.");
+})().catch(error => { console.error(error); process.exitCode = 1; });

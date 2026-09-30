@@ -262,6 +262,7 @@ def execute(state, action):
             peoples.make_demon_pact(state, params["demon_player_id"], pid, params["pact_id"])
 
 
+@combat.armor_simulation
 def legal_interactions(state, player_id):
     try:
         player = get_player(state, player_id)

@@ -78,12 +78,14 @@ Devaneio usa o caminho existente do core.
 
 1. **Sincronizar o motor atual:** concluído para o lote acima; sincronizar novos
    patches do terminal a cada marco.
-2. **Finalizar setup:** consulta detalhada de regras a partir de conteúdo estruturado.
+2. **Setup e consultas:** implementados catálogo completo e consulta estruturada,
+   configurações e Curuna inicial sorteado como no terminal. Validar em playtest.
 3. **Completar o Dia:** auditar demais decisões diurnas,
    demais janelas especiais. Miyamoto diurno, Aiquara diurna e Zebum já adaptados.
    Artefatos, escolhas pendentes, curas e habilidades listadas acima já estão adaptados.
-4. **Implementar a Noite:** ordem por local/jogador, declarar ou passar, ataques,
-   retaliações e janelas especiais/reacionais. Nenhuma regra ficará no frontend.
+4. **Validar a Noite:** implementados ordem por local/jogador, declarar ou passar,
+   ataques, retaliações, janelas especiais e escolhas de Armadura. Nenhuma regra
+   foi movida para o frontend; falta comparação integrada com o terminal.
 5. **Fechar o ciclo da partida:** manhã, mudança de fase, fim do turno, vitória,
    eliminação e início automático do turno seguinte.
 6. **Save local completo:** lista, cópias nomeadas, exportar/importar e recuperar

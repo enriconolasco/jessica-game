@@ -87,6 +87,7 @@ def test_http_dream_preview_privacy_and_no_state_or_save_mutation():
             p.hand = ["J_D", "K_S"]
             p.units = [Hero(id="luna", owner_id=1, house="center", life=2, life_max=2, hero_id="luna")]
             before = state_to_dict(state)
+            initial_events = list(server.MATCHES[match_id]["events"])
             save = (Path(tmp) / f"{match_id}.json").read_bytes()
             route = f"/matches/{match_id}/dream-preview"
             body = {"player_id": 1, "choice": {"flip_cards": ["J_D"],
@@ -99,7 +100,7 @@ def test_http_dream_preview_privacy_and_no_state_or_save_mutation():
             assert _error_request(base, route, body)[0] == 422
             assert state_to_dict(state) == before
             assert (Path(tmp) / f"{match_id}.json").read_bytes() == save
-            assert server.MATCHES[match_id]["events"] == []
+            assert server.MATCHES[match_id]["events"] == initial_events
         finally:
             httpd.shutdown()
             server.SAVES = old_saves

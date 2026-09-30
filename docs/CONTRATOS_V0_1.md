@@ -268,3 +268,31 @@ marcadores de locais, locais processados e janela aberta. A prioridade de cada
 local é calculada ao abri-lo; entrada em local processado antepõe a declaração
 do recém-chegado sem renovar seu limite de ataques. Eventos usam
 `night_action_resolved`, sem cálculos de regras no navegador.
+
+### Revisão aditiva — 2026-09-30
+
+- `armor_payment`: `{gold: int}`. A seleção informa dano, unidade/casa e limite de
+  pagamento. Apenas o defensor corrente recebe a oferta. A transação original é
+  reproduzida com os pagamentos escolhidos e o mesmo RNG; só então é confirmada.
+- `web_reaction` guarda ação, pagamentos e prévia da próxima defesa. PlayerView
+  compartilha apenas dados públicos da prévia e a área privada do próprio defensor.
+  Consultas usam política de simulação isolada; não acionam callbacks do terminal.
+- Novos eventos: `armor_payment_requested` (privado), `public_state_changed`,
+  `public_roll`, `combat_house_opened`, `day_restored` (públicos). Mudanças e
+  restauração podem ser projetadas; textos privados do log bruto não são enviados.
+- Eventos básicos incluem `data.public_after` para manter a projeção dos novos
+  campos públicos. Respostas de ações HTTP filtram eventos pelo jogador que enviou
+  a ação, inclusive quando a próxima reação pertence a outro jogador.
+- PlayerView acrescenta ordem, condições, infecção e limite efetivo de ataques,
+  estatísticas, previsão de Monumento, efeitos agendados, economia e alvos públicos
+  de artefatos. Loja mostra contagens, nunca ordem do baralho ou RNG.
+- `POST /matches/{id}/system`: `{operation: "undo" | "mola"}`. Apenas no Dia e sem
+  reação pendente. `local_controls` informa disponibilidade. Saves completos têm
+  `history` opcional, com até quatro checkpoints do turno atual; sem aninhamento.
+- `/catalog` inclui consulta de conteúdo completo; `/setup-order?seed=...` informa
+  Curuna inicial e ordem de seleção. O core fixa a ordem do mapa em J1–J4 e começa
+  pelo Curuna sorteado, exatamente como o terminal; não usa o ranking D20 inteiro
+  como sequência de jogo.
+
+Campos novos são aditivos no contrato experimental v0.1. Saves antigos sem reação
+ou histórico continuam aceitos. A API continua local, sem autenticação multiplayer.

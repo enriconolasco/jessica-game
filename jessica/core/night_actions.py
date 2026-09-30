@@ -20,6 +20,7 @@ SUPPORTED_HEROES = {
 }
 
 
+@combat.armor_simulation
 def public_window(state):
     if state.phase != Phase.NIGHT or blockers(state):
         return None
@@ -111,6 +112,7 @@ def schedule_arrival(state, unit):
             "player_id": unit.owner_id, "unit_id": unit.id})
 
 
+@combat.armor_simulation
 def attacks(state, entry):
     unit = combat._find_unit(state, entry["unit_id"])
     if unit is None or unit.house != entry["house"]:
@@ -160,7 +162,10 @@ def advance(state):
         kind = entry.get("kind")
         if kind == "house":
             queue.pop(0)
-            queue[:0] = house_entries(state, entry["house"]) + [{"kind": "end_house", "house": entry["house"]}]
+            entries = house_entries(state, entry["house"])
+            state.web_night.setdefault("announcements", []).append({"house": entry["house"],
+                "order": list(dict.fromkeys(e["player_id"] for e in entries))})
+            queue[:0] = entries + [{"kind": "end_house", "house": entry["house"]}]
         elif kind == "end_house":
             queue.pop(0)
             state.web_night.setdefault("processed", []).append(entry["house"])
@@ -200,6 +205,7 @@ def clock_owner(state):
                          and "relogio" in u.statuses.get("rogue_items", []) for u in p.units)), None)
 
 
+@combat.armor_simulation
 def legal(state, pid):
     from .headless import ACTION_VERSION
     if state.phase != Phase.NIGHT or (state.game_over and pending_owner(state) is None) or blockers(state):

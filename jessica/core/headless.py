@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from collections import Counter
 
 from .actions import (ActionError, build_monument, buy_artifact_with_gold,
                       collect_resources, move_unit, raise_city_life, sell_artifact,
                       summon_hero, summon_troop, transmute_artifact_with_magic)
 from .constants import (CENTER, CITY_HOUSES, CITY_LIFE_COST_GOLD, MONUMENT_COST_GOLD, Phase,
                         RESOURCES_PER_DAY, TROOP_MAX_LIFE, TroopArchetype)
+from .constants import MONUMENT_BONUS_INTERVAL
 from .models import GameState, Hero, Troop, Unit
 from .state import get_player
 from .turn import day_order, end_day, start_player_day
 from . import peoples
 from . import interaction_actions
 from . import night_actions
+from .combat import armor_simulation
 
 
 ACTION_VERSION = "action-v0.1"
@@ -45,7 +48,8 @@ PUBLIC_STATUS_KEYS = {
     "summoned_turn",
     "barba_hero_mode_turn", "mar_chamas_queued_turn", "mar_chamas_cooldown_until_turn",
     "rogue_items", "rogue_resist_heroes", "demon_execute_weaker",
-    "cabaca_used_turn",
+    "cabaca_used_turn", "dragon_base", "dragon_heart_resistance", "permanent_centaur",
+    "k_s_active", "can_attack_city_until_turn", "lupa_resist_until_turn",
 }
 
 
@@ -59,8 +63,12 @@ def _action(action_type: str, player_id: int, **params) -> dict:
     }
 
 
+@armor_simulation
 def legal_actions(state: GameState, player_id: int) -> list[dict]:
     """Enumera as ações já migradas para a porta v0.1."""
+    if state.web_reaction:
+        from .reactions import legal
+        return legal(state, player_id)
     if state.phase == Phase.NIGHT:
         return night_actions.legal(state, player_id)
     try:
@@ -170,6 +178,11 @@ def _error(code: str, message: str, **details) -> dict:
 
 
 def apply_action(state: GameState, action: dict) -> dict:
+    from .reactions import apply
+    return apply(state, action, _apply_action_now)
+
+
+def _apply_action_now(state: GameState, action: dict) -> dict:
     if not isinstance(action, dict):
         return _error("invalid_action", "Ação deve ser um objeto.")
     if action.get("version") != ACTION_VERSION:
@@ -276,11 +289,11 @@ def apply_action(state: GameState, action: dict) -> dict:
     else:
         data.update(gold_spent=before.gold - after.gold)
     if action_type in {"summon_troop", "summon_hero"}:
-        data.update(unit=_unit_view(summoned), city_gold_after=after.gold,
+        data.update(unit=_unit_view(summoned, state), city_gold_after=after.gold,
                     city_magic_after=after.magic)
     elif action_type == "move_unit":
         data.update(unit_id=moved.id, origin=origin, destination=moved.house,
-                    moves_this_turn=moved.moves_this_turn)
+                    moves_this_turn=moved.moves_this_turn, unit=_unit_view(moved, state))
     elif action_type == "end_turn":
         data.update(next_player_id=state.active_player_id, phase_after=state.phase.value)
     elif action_type in {"buy_artifact_gold", "transmute_artifact_magic"}:
@@ -290,6 +303,8 @@ def apply_action(state: GameState, action: dict) -> dict:
     elif action_type == "sell_artifact":
         data.update(card_id=artifact, gold_after=after.gold, magic_after=after.magic)
     private = action_type in {"buy_artifact_gold", "transmute_artifact_magic"}
+    public = view_for_player(state, player_id)
+    data["public_after"] = {key: public[key] for key in ("players", "board", "conditions")}
     event = {
         "version": EVENT_VERSION,
         "type": event_types[action_type],
@@ -311,7 +326,7 @@ def _public_statuses(unit: Unit) -> dict:
     }
 
 
-def _unit_view(unit: Unit) -> dict:
+def _unit_view(unit: Unit, state: GameState | None = None) -> dict:
     result = {
         "id": unit.id,
         "owner_id": unit.owner_id,
@@ -325,12 +340,21 @@ def _unit_view(unit: Unit) -> dict:
         "max_attacks_this_night": unit.max_attacks_this_night,
         "resistance_stacks": unit.resistance_stacks,
         "double_damage": unit.double_damage,
+        "hero_can_attack_city": unit.hero_can_attack_city,
         "statuses": _public_statuses(unit),
     }
     if isinstance(unit, Hero):
         result["hero_id"] = unit.hero_id
     elif isinstance(unit, Troop):
         result["archetype"] = unit.archetype.value
+    if state is not None:
+        from .combat import _effective_max_attacks
+        result["infected"] = peoples.is_unit_infected(state, unit)
+        result["effective_max_attacks"] = _effective_max_attacks(state, unit)
+        owner = get_player(state, unit.owner_id)
+        result["owner_invulnerable"] = owner.invulnerable_until_end_turn
+        result["armor_active"] = owner.armor_active_until_turn >= state.turn
+        result["first_strike"] = owner.bater_primeiro_turn == state.turn
     return result
 
 
@@ -344,6 +368,16 @@ def view_for_player(state: GameState, player_id: int) -> dict:
             "name": player.name,
             "people": player.people,
             "chosen_hero_id": player.chosen_hero_id,
+            "spell_cooldown_until_turn": player.spell_cooldown_until_turn,
+            "armor_active_until_turn": player.armor_active_until_turn,
+            "skip_day_turn": player.skip_day_turn,
+            "skip_night_turn": player.skip_night_turn,
+            "next_monument_turn": (state.turn // MONUMENT_BONUS_INTERVAL + 1) * MONUMENT_BONUS_INTERVAL
+                if player.city.has_monument and player.city.is_alive() else None,
+            "stats": {key: value for key, value in player.stats.items()
+                      if key in {"gold_collected", "magic_collected", "troops_summoned", "heroes_summoned",
+                                 "spells_cast", "damage_dealt", "damage_taken", "kills", "deaths",
+                                 "artifacts_bought", "artifacts_played", "artifacts_sold"}},
             "city": {
                 "life": player.city.life,
                 "life_max": player.city.life_max,
@@ -354,16 +388,21 @@ def view_for_player(state: GameState, player_id: int) -> dict:
             "hand_count": len(player.hand),
             "canastra": list(player.canastra),
             "field_artifacts": [artifact.card_id for artifact in player.field_artifacts],
+            "active_artifacts": [{"card_id": a.card_id, "details": {
+                key: deepcopy(value) for key, value in a.extra.items()
+                if key in {"hero_unit_id", "troop_unit_id", "target_unit_id", "target_player_id", "original_owner_id"}}}
+                for a in player.field_artifacts],
         })
-        board["units"].extend(_unit_view(unit) for unit in player.units
+        board["units"].extend(_unit_view(unit, state) for unit in player.units
                               if unit.is_alive())
 
-    return {
+    view = {
         "version": VIEW_VERSION,
         "viewer_id": player_id,
         "turn": state.turn,
         "phase": state.phase.value,
         "curuna_id": state.curuna_id,
+        "turn_order": list(state.turn_order),
         "active_player_id": state.active_player_id,
         "game_over": state.game_over,
         "winner_id": state.winner_id,
@@ -371,9 +410,18 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         "night_window": night_actions.public_window(state),
         "players": players,
         "board": board,
-        "shop": {"size": state.shop.size()},
+        "shop": {"size": state.shop.size(), "counts": dict(Counter(state.shop.deck))},
         "demon_pacts": deepcopy(state.demon_pacts),
+        "conditions": [entry for player in state.players
+                       for entry in _condition_records(player)],
+        "scheduled_effects": [{key: deepcopy(e.get(key)) for key in ("player_id", "kind", "due_turn")}
+                              for e in state.pending_effects],
+        "timeline": [{"turn": e.get("turn"), "resources": {
+            str(pid): {k: v for k, v in values.items() if k in ("gold", "magic", "life")}
+            for pid, values in e.get("resources", {}).items()}} for e in state.timeline],
         "self": {
+            "armor_reaction": deepcopy(state.web_reaction.get("request"))
+                if state.web_reaction.get("request", {}).get("player_id") == player_id else None,
             "spell_copia_id": viewer.spell_copia_id,
             "spell_cooldown_until_turn": viewer.spell_cooldown_until_turn,
             "has_cast_spell_this_turn": viewer.has_cast_spell_this_turn,
@@ -388,10 +436,37 @@ def view_for_player(state: GameState, player_id: int) -> dict:
             "correct_bets": viewer.correct_bets,
             "demon_pact_offers": deepcopy(viewer.demon_pact_offers),
             "pending_heals": viewer.pending_heals,
+            "baoba_payments": viewer.baoba_pagamentos,
+            "rogue_items": list(viewer.rogue_items),
+            "inherited_peoples": sorted(peoples.sao_tome_effective_peoples(state, viewer) - {peoples.PEOPLE_GNOMOS})
+                if viewer.people == "gnomos_duendes" else [],
         },
         # event_log atual mistura texto público e privado; não é exposto.
         "events": [],
     }
+    preview = state.web_reaction.get("preview")
+    if preview:
+        for key in ("players", "board", "conditions", "shop", "demon_pacts"):
+            view[key] = deepcopy(preview[key])
+        if state.web_reaction["request"]["player_id"] == player_id:
+            view["self"].update({key: deepcopy(value) for key, value in preview["self"].items()
+                                if key != "armor_reaction"})
+    return view
+
+
+def _condition_records(player):
+    records = []
+    for sig in player.empalados:
+        records.append({"owner_id": player.id, "condition": "Empalado", "signature": deepcopy(sig)})
+    for entry in player.dwarf_empalados:
+        records.append({"owner_id": player.id, "condition": "Empalado por Soneca",
+                        "signature": deepcopy(entry.get("sig", {})),
+                        "release_curuna_id": entry.get("dwarf_owner_id")})
+    for entry in player.infectados:
+        records.append({"owner_id": entry.get("owner_id"), "controller_id": player.id,
+                        "condition": "Infectado", "unit_id": entry.get("unit_id"),
+                        "signature": {"kind": entry.get("kind"), "id": entry.get("id")}})
+    return records
 
 
 def apply_event_to_view(view: dict, event: dict) -> dict:
@@ -417,7 +492,24 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
         projected = deepcopy(updated)
         projected["events"] = deepcopy(view.get("events", [])) + [deepcopy(event)]
         return projected
-    if event.get("type") in ("interaction_resolved", "night_action_resolved"):
+    if event.get("type") in ("interaction_resolved", "night_action_resolved", "armor_payment_requested"):
+        projected["events"].append(deepcopy(event))
+        return projected
+    if event.get("type") in ("public_roll", "combat_house_opened", "day_restored", "public_state_changed"):
+        data = event.get("data", {})
+        for change in data.get("changes", []):
+            if change["kind"] in ("city", "player"):
+                player = next(p for p in projected["players"] if p["id"] == change["player_id"])
+                target = player["city"] if change["kind"] == "city" else player
+                target[change["field"]] = deepcopy(change["after"])
+            elif change["kind"] == "unit":
+                unit = change["after"] or change["before"]
+                projected["board"]["units"] = [u for u in projected["board"]["units"] if u["id"] != unit["id"]]
+                if change["after"] is not None:
+                    projected["board"]["units"].append(deepcopy(change["after"]))
+            elif change["kind"] == "conditions":
+                projected["conditions"] = deepcopy(change["after"])
+        projected.update(deepcopy(data.get("public_after", {})))
         projected["events"].append(deepcopy(event))
         return projected
     if event.get("type") in {"resources_collected", "city_life_raised", "monument_built",
@@ -452,5 +544,6 @@ def apply_event_to_view(view: dict, event: dict) -> dict:
             projected["phase"] = data["phase_after"]
     else:
         raise ValueError("Tipo de evento ainda não projetável.")
+    projected.update(deepcopy(event.get("data", {}).get("public_after", {})))
     projected["events"].append(deepcopy(event))
     return projected
