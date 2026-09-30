@@ -82,6 +82,10 @@ Critério de conclusão: nenhuma ação mecânica faltante, nenhuma divergência
 sem decisão registrada, matriz aprovada e partidas completas verificadas.
 Contagem de testes isolada não certifica 100% de fidelidade.
 
+Escolhas complexas verificadas no navegador: Sacrifício, sequência de Luna e
+Armadura, incluindo passagem de aparelho e largura de celular. Correções apenas
+de apresentação e relatório em [VALIDACAO_ESCOLHAS_WEB.md](VALIDACAO_ESCOLHAS_WEB.md).
+
 ## 5. Empacotar e entregar
 
 - Comando/atalho único para iniciar, dependências fixadas e manual curto.

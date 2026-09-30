@@ -80,3 +80,11 @@ da casa, ausência de overflow da página, passagem de aparelho, navegação por
 atalhos, consulta e relatórios. Toque em aparelho físico permanece para playtest.
 
 Isso não certifica, por si só, a paridade integral de todas as regras terminal/web.
+
+## Atualização: escolhas complexas
+
+Sacrifício usa confirmação HTML; passagem de jogador foca a próxima decisão;
+barra móvel deixa de cobrir ações; encerramento da Noite aparece expandido;
+relatos e defesa usam nomes públicos. Validação atual: 402 testes Python e cinco
+scripts Node aprovados. Cenários reais, limites e servidor descartável em
+[VALIDACAO_ESCOLHAS_WEB.md](VALIDACAO_ESCOLHAS_WEB.md).

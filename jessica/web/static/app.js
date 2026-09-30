@@ -10,6 +10,7 @@ const HOUSE_POSITIONS = {center:"center", city_1:"south", city_2:"east", city_3:
 let selectedHouse = "center";
 let selectedUnitId = null;
 let currentView = null;
+const publicUnitNames = new Map();
 
 async function api(path, options = {}) {
   const response = await fetch(path, {headers:{"Content-Type":"application/json"}, ...options});
@@ -190,6 +191,20 @@ function renderMap(view) {
   const selected = units.find(unit => unit.id === selectedUnitId);
   if (selected) showUnit(selected, players.get(selected.owner_id), peopleName(players.get(selected.owner_id)?.people || "Povo desconhecido"));
 }
+function publicUnitName(id, fallback = `Unidade ${id}`) {
+  return publicUnitNames.get(id) || fallback;
+}
+function rememberPublicUnitNames(view, events) {
+  for (const event of events) {
+    if (event.type !== "public_state_changed") continue;
+    for (const change of event.data.changes) {
+      if (change.kind !== "unit") continue;
+      for (const unit of [change.before, change.after])
+        if (unit) publicUnitNames.set(unit.id, unitName(unit));
+    }
+  }
+  for (const unit of view?.board.units || []) publicUnitNames.set(unit.id, unitName(unit));
+}
 function actionDetails(action) {
   if (action.description) return action.description;
   const p = action.params;
@@ -209,7 +224,7 @@ function renderActions(actions) {
     const group = document.createElement("details");
     group.className = "action-group";
     group.setAttribute("data-action-type", type);
-    group.open = ["collect_resources", "end_turn", "resolve_artifact_choice", "night_resolve_choice",
+    group.open = ["collect_resources", "end_turn", "finish_night", "resolve_artifact_choice", "night_resolve_choice",
                   "demon_pact", "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup"].includes(type);
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
@@ -218,7 +233,7 @@ function renderActions(actions) {
       group.open = true;
       const action = items[0], request = action.selection;
       const info = document.createElement("p");
-      info.textContent = `${request.unit_name || "Unidade"}${request.house ? ` · ${HOUSE_NAMES[request.house]}` : ""}: dano recebido ${request.damage}. Ouro disponível: ${request.gold_available}. Escolha de 0 a ${request.max_gold} para absorver dano.`;
+      info.textContent = `${publicUnitName(request.unit_id, request.unit_name || "Unidade")}${request.house ? ` · ${HOUSE_NAMES[request.house]}` : ""}: dano recebido ${request.damage}. Ouro disponível: ${request.gold_available}. Escolha de 0 a ${request.max_gold} para absorver dano.`;
       const label = document.createElement("label");
       label.textContent = "Ouro a pagar ";
       const input = document.createElement("input");
@@ -336,16 +351,16 @@ function renderActions(actions) {
           const label = document.createElement("label");
           const input = document.createElement("input");
           input.type = "checkbox";
-          label.append(input, document.createTextNode(` ${item.card_id} · ${item.zone === "hand" ? "mão" : "campo"} `));
+          label.append(input, document.createTextNode(` ${cardName(item.card_id)} · ${item.zone === "hand" ? "mão" : "campo"} `));
           fieldset.appendChild(label);
           return input;
         });
         const button = document.createElement("button");
         button.textContent = "Sacrificar herói e trocar cartas selecionadas";
-        button.onclick = () => {
+        button.onclick = async () => {
           const artifacts = action.selection.options.filter((_, i) => inputs[i].checked);
           if (!artifacts.length) { $("message").textContent = "Selecione ao menos um artefato."; return; }
-          if (confirm(`${action.description}? O herói morrerá e as cartas selecionadas serão trocadas.`))
+          if (await confirmAction(`${action.description}? O herói morrerá e as cartas selecionadas serão trocadas.`))
             act({...action, params: {...action.params, artifacts}});
         };
         fieldset.appendChild(button);
@@ -405,11 +420,11 @@ function eventText(event) {
   if (event.type === "armor_payment_requested") return `Armadura de Ouro: decidir quanto pagar contra ${d.damage} de dano.`;
   if (event.type === "night_action_resolved") {
     if (d.action_type === "night_ainai") return `Ainai teleportou para ${HOUSE_NAMES[d.destination] || d.destination}.`;
-    if (d.action_type === "night_luide_move") return `${d.unit_id} moveu para ${HOUSE_NAMES[d.destination] || d.destination} na janela de Luide.`;
-    if (d.action_type === "night_luide_spell") return `Feitiço vampiro aplicado a ${d.unit_id}.`;
+    if (d.action_type === "night_luide_move") return `${publicUnitName(d.unit_id)} moveu para ${HOUSE_NAMES[d.destination] || d.destination} na janela de Luide.`;
+    if (d.action_type === "night_luide_spell") return `Feitiço vampiro aplicado a ${publicUnitName(d.unit_id)}.`;
     if (d.action_type === "night_window_done") return "Janela opcional concluída.";
-    if (d.action_type === "night_aiquara") return `Aiquara forçou ${d.enemy_unit_id} a atacar ${d.target_id}.`;
-    if (d.action_type === "night_mandinga") return `Besouro usou Mandinga: ${d.card_id}.`;
+    if (d.action_type === "night_aiquara") return `Aiquara forçou ${publicUnitName(d.enemy_unit_id)} a atacar ${publicUnitName(d.target_id)}.`;
+    if (d.action_type === "night_mandinga") return `Besouro usou Mandinga: ${cardName(d.card_id)}.`;
     if (d.action_type === "night_setup") {
       if (d.kind === "aiquara") return "Aiquara não usou controle no início da Noite.";
       if (d.kind === "besouro") return "Besouro não usou Mandinga.";
@@ -421,8 +436,8 @@ function eventText(event) {
     if (d.action_type === "night_clock") return `Rogue usou o Relógio de bolso: ${HOUSE_NAMES[d.destination] || d.destination}.`;
     if (d.action_type === "night_skip_clock") return "Rogue não usou o Relógio de bolso.";
     if (d.action_type === "night_resolve_choice") return "Escolha de artefato resolvida; combate liberado para continuar.";
-    if (d.action_type === "night_attack") return `${d.attacker_unit_id} atacou ${d.target_id}.`;
-    if (d.action_type === "night_pass") return `${d.unit_id} não declarou ataque.`;
+    if (d.action_type === "night_attack") return `${publicUnitName(d.attacker_unit_id)} atacou ${d.target_kind === "city" ? HOUSE_NAMES[`city_${d.target_id}`] || `Cidade ${d.target_id}` : publicUnitName(d.target_id)}.`;
+    if (d.action_type === "night_pass") return `${publicUnitName(d.unit_id)} não declarou ataque.`;
     return "Noite encerrada.";
   }
   if (event.type === "resources_collected") return `J${d.player_id} recebeu ${d.gold} Ouro e ${d.magic} Magia.`;
@@ -431,8 +446,8 @@ function eventText(event) {
   if (event.type === "unit_summoned") return `J${d.player_id} invocou ${unitName(d.unit || {})}.`;
   if (event.type === "unit_moved") return `${unitName(d.unit || {id:d.unit_id})} foi para ${HOUSE_NAMES[d.destination] || d.destination}.`;
   if (event.type === "player_turn_ended") return `J${d.player_id} encerrou sua janela do Dia.`;
-  if (event.type === "artifact_obtained") return d.pending_choice ? "Escolha de artefato pendente." : `Artefato obtido: ${d.card_id}.`;
-  if (event.type === "artifact_sold") return `J${d.player_id} vendeu ${d.card_id}.`;
+  if (event.type === "artifact_obtained") return d.pending_choice ? "Escolha de artefato pendente." : `Artefato obtido: ${cardName(d.card_id)}.`;
+  if (event.type === "artifact_sold") return `J${d.player_id} vendeu ${cardName(d.card_id)}.`;
   if (event.type === "interaction_resolved") {
     const labels = {play_artifact: "jogou", resolve_artifact_choice: "resolveu a escolha de artefato",
       use_pena: "usou uma Pena", use_heal: "aplicou uma cura", hero_ability: "usou uma habilidade",
@@ -447,6 +462,7 @@ function eventText(event) {
   return event.type;
 }
 function renderEvents(events) {
+  rememberPublicUnitNames(currentView, events);
   const root = $("events"); root.replaceChildren();
   const visible = events.filter(event => event.type !== "player_view_updated");
   let previousTurn = null;
@@ -479,6 +495,7 @@ async function refresh(allowPlayerSwitch = false) {
   playerId = view.active_player_id || playerId;
   currentView = view;
   const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
+  rememberPublicUnitNames(view, events);
   const active = view.players.find(p => p.id === view.active_player_id);
   $("status").textContent = `Turno ${view.turn} · ${view.phase === "day" ? "Dia" : "Noite"} · Jogando: ${active?.name || "—"} · ${curunaLabel(view, peopleName)}`;
   if (view.self.armor_reaction) $("status").textContent += " · Armadura: resolução aguardando pagamento";
@@ -540,7 +557,7 @@ async function act(action) {
     controls.forEach(([button, disabled]) => button.disabled = disabled);
   }
 }
-async function enter(id) { matchId=id; $("start").hidden=true; $("game").hidden=false; await refresh(); }
+async function enter(id) { publicUnitNames.clear(); matchId=id; $("start").hidden=true; $("game").hidden=false; await refresh(); }
 function updateHeroSelect(row, peopleId) {
   const people = catalog.peoples.find(item => item.id === peopleId);
   const select = row.querySelector(".setup-hero");
@@ -861,6 +878,8 @@ $("revealPlayer").onclick = async () => {
   $("handoff").hidden = true;
   $("game").inert = false;
   await refresh(true);
+  const next = $("actions").querySelector("input, select, button");
+  if (next) { next.focus(); next.scrollIntoView({block:"nearest"}); }
 };
 createSaveControls();
 createGameplayControls();
