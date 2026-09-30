@@ -17,7 +17,7 @@ jogador ativo desatualizado. Nenhuma regra de dano, custo ou passiva foi alterad
 
 ## Evidência
 
-Dez testes cobrem:
+Doze testes cobrem:
 
 - um, dois, três ou quatro Dias pulados na transição de turno;
 - apostas do gnomo pulado antes da primeira manhã elegível;
@@ -30,6 +30,9 @@ Dez testes cobrem:
 - Armadura → morte → escolha de Q♦ → pacto de Belial, aceito ou recusado,
   seguido da próxima manhã;
 - API HTTP: troca do jogador ativo, ação inválida, cópia manual e load.
+- Sonho Lúcido/Luna: invocar Ainai, aplicar buff nela, controlar uma tropa,
+  declarar combates e devolver o controle na manhã seguinte;
+- validar os metadados da janela final de Ainai e continuar saves antigos.
 
 Cada decisão aceita é repetida em estado restaurado. Eventos, estado e RNG devem
 coincidir; o resultado também atravessa o validador real de saves. Consultas dos
@@ -37,9 +40,10 @@ quatro jogadores não podem alterar o estado. Testes HTTP usam pasta temporária
 
 ## Ainda não certificado
 
-Partidas cruzadas completas dos 12 povos e todos os seus conteúdos; Ainai/Luna/
-Mandinga intercalados com estas reações; Sonho Lúcido múltiplo gerando interrupções;
-usabilidade manual das escolhas complexas no navegador e celular.
+Todos os conteúdos em partidas cruzadas; Ainai/Luna/Mandinga intercalados com
+Armadura/pactos; Sonho Lúcido múltiplo gerando interrupções; usabilidade manual
+das escolhas complexas no navegador e celular. Partidas completas de ações
+gerais já têm comparação: `VALIDACAO_PARTIDAS_COMPLETAS.md`.
 
 PWA, bots e multiplayer não são necessários para equivalência mecânica com o
 terminal passa-e-joga. Este lote não declara paridade total.

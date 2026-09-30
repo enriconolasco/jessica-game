@@ -42,6 +42,12 @@ reação. Luide também tem comparação com a janela real do terminal, incluind
 chegada a local futuro ou processado. Continuam pendentes partidas cruzadas
 completas e outras janelas intercaladas.
 
+Terceiro lote: janelas reais de Ainai/Luna/Mandinga comparadas; corrigidos os
+momentos das ofertas de Ainai. Sonho Lúcido múltiplo atravessa invocação, buff,
+controle, combate e próxima manhã. Doze partidas básicas chegaram à vitória
+com igualdade terminal/web: `VALIDACAO_PARTIDAS_COMPLETAS.md`. O recorte não
+certifica todos os conteúdos em combinação nem a interface manual.
+
 - Comparar filas web e terminal local a local, incluindo Bater Primeiro, Vovó,
   entrada/saída, morte, controle temporário e múltiplos ataques.
 - Validar Dia/Noite pulados, jogador eliminado, vitória durante reação,

@@ -167,11 +167,13 @@ def advance(state):
                              for e in entries if "unit_id" in e)
             state.web_night.setdefault("announcements", []).append({"house": entry["house"],
                 "order": list(dict.fromkeys(e["player_id"] for e in entries)) if has_combat else []})
-            queue[:0] = entries + [{"kind": "end_house", "house": entry["house"]}]
+            queue[:0] = entries + [{"kind": "end_house", "house": entry["house"],
+                                   "occupied": bool(entries)}]
         elif kind == "end_house":
             queue.pop(0)
             state.web_night.setdefault("processed", []).append(entry["house"])
-            queue[:0] = [{"kind": "ainai", "player_id": pid} for pid in day_order(state)]
+            if entry.get("occupied", True):
+                queue[:0] = [{"kind": "ainai", "player_id": pid} for pid in day_order(state)]
         elif kind == "ainai":
             if ainai_destinations(state, get_player(state, entry["player_id"])):
                 break
@@ -188,6 +190,10 @@ def advance(state):
         else:
             queue.pop(0)
     if not queue:
+        if not state.web_night.get("final_ainai_queued"):
+            state.web_night["final_ainai_queued"] = True
+            queue.extend({"kind": "ainai", "player_id": pid} for pid in day_order(state))
+            return advance(state)
         clock = clock_owner(state)
         if clock is not None:
             state.active_player_id = clock.id

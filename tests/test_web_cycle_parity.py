@@ -278,6 +278,84 @@ def test_http_skipped_curuna_handoff_save_and_load():
         assert choices and all(a["player_id"] == 3 for a in choices)
 
 
+def test_luna_dream_sequence_new_hero_control_night_and_next_morning():
+    from jessica.core.actions import cast_spell
+    from jessica.core.interaction_actions import dream_preview
+    from test_night_terminal_parity import compare
+    state = night()
+    state.phase = Phase.DAY
+    state.active_player_id = 1
+    player = state.players[0]
+    player.people = "fadas"
+    player.chosen_hero_id = "luna"
+    player.city.magic = 20
+    player.hand = ["J_D", "K_S", "Q_S"]
+    player.units = [Hero(id="luna", owner_id=1, house="city_1", life=2, life_max=2,
+                         hero_id="luna", resistance_stacks=2)]
+    state.players[1].units = [Troop(id="controlled", owner_id=2, house="center", life=4, life_max=4),
+                              Troop(id="old_ally", owner_id=2, house="center", life=2, life_max=4)]
+    state.players[2].units = [Troop(id="enemy", owner_id=3, house="city_1", life=2,
+                                  life_max=4, resistance_stacks=1)]
+    choice = {"flip_cards": ["J_D", "K_S", "Q_S"],
+              "artifact_choices": [{"hero_id": "ainai"}, {"unit_id": "p1_hero_extra_1"},
+                                   {"unit_id": "controlled"}]}
+    before = state_to_dict(state)
+    prefix = {key: value[:1] for key, value in choice.items()}
+    preview = dream_preview(state, 1, prefix)
+    assert any(o["choice"]["artifact_choices"] == [{"unit_id": "p1_hero_extra_1"}]
+               for o in preview["options"])
+    assert state_to_dict(state) == before
+    direct = deepcopy(state)
+    cast_spell(direct, 1, choice)
+    action = next(a for a in legal_actions(state, 1) if a["type"] == "dream_multi")
+    action["params"] = {"choice": choice}
+    state = step(state, action)
+    assert state_to_dict(state) == state_to_dict(direct)
+    end_day(state)
+    plan = {"luna": [("unit", "enemy")], "p1_hero_extra_1": [("unit", "enemy")],
+            "controlled": [("unit", "old_ally")]}
+    state, trace = compare(state, plan, lambda title, labels: 0,
+                           real_windows=("_try_luna_return", "_ainai_prompt_all"))
+    assert len(trace) == 3
+    direct = terminal_next_turn(state)
+    state = finish(state)
+    assert mechanics(state) == mechanics(direct)
+    assert state.players[1].units[0].id == "controlled"
+    assert state.players[1].units[0].owner_id == 2
+    assert not state.players[0].has_cast_spell_this_turn
+
+
+def test_ainai_queue_metadata_validation_and_legacy_save():
+    state = night()
+    for pid in (1, 2):
+        state.players[pid - 1].units = [Troop(id=f"u{pid}", owner_id=pid,
+            house="center", life=4, life_max=4)]
+    night_actions.prepare(state)
+    payload = {"version": "save-v0.1", "state": state_to_dict(state), "events": []}
+    for key in ("final_ainai_queued", "occupied"):
+        invalid = deepcopy(payload)
+        queue = invalid["state"]["web_night"]
+        if key == "final_ainai_queued":
+            queue[key] = "yes"
+        else:
+            next(e for e in queue["queue"] if e.get("kind") == "end_house")[key] = 1
+        try:
+            saves.validate(invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Metadado inválido aceito: {key}")
+    for entry in payload["state"]["web_night"]["queue"]:
+        entry.pop("occupied", None)
+    restored, _, _ = saves.validate(payload)
+    assert "final_ainai_queued" not in restored.web_night
+    for pid in (1, 2):
+        restored = step(restored, next(a for a in legal_actions(restored, pid)
+                                      if a["type"] == "night_pass"))
+    assert restored.web_night["final_ainai_queued"] is True
+    assert legal_actions(restored, 1)[0]["type"] == "finish_night"
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

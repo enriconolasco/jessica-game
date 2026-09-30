@@ -18,7 +18,7 @@ quatro jogadores não podem alterar o estado nem consumir RNG.
 
 ## Cobertura deste lote
 
-Dez testes, com 32 cenários:
+Quatorze testes, com 37 cenários:
 
 - ocupação inicial, chegada posterior, abandono completo e reentrada;
 - ordem das quatro cidades para cada um dos quatro Currunas;
@@ -31,17 +31,26 @@ Dez testes, com 32 cenários:
 - local ocupado sem alvos: sozinho, todos invisíveis ou todos espoliados.
 - Luide: feitiço e movimento na mesma janela, seguido de ataque em local futuro
   ou já processado; executa a janela real do terminal com escolhas programadas.
+- Luna retorna ou permanece depois de Mar de Chamas, antes dos ataques;
+- Mandinga invoca um herói que participa das declarações na mesma Noite;
+- Ainai reage à morte de uma fada e reabre o Centro já processado;
+- momentos das ofertas de Ainai, inclusive com casas vazias e a janela final.
 
 Corrigido um erro de apresentação: locais ocupados sem alvos anunciavam
 “combate iniciado”. Agora o evento tem ordem vazia e o histórico informa
 “não havia combates a declarar”. Fila, dano e regras não foram alterados.
 
+Corrigida também a orquestração de Ainai: não se oferece uma janela após local
+sem ocupantes; há uma última oferta antes do Relógio/fim da Noite, como no
+terminal. `occupied` e `final_ainai_queued` são metadados booleanos opcionais da
+fila persistida. Saves anteriores continuam aceitos; filas antigas em andamento
+mantêm suas entradas e recebem a etapa final quando terminam.
+
 ## Limites e próxima integração
 
-Não certifica toda combinação nem substitui playtest. Este comparador não
-aciona as janelas de Ainai, Luna ou Besouro; seus testes existentes
-continuam separados. Não inclui fim da Noite/próxima manhã, pagamentos de
-Armadura, pactos ou escolhas privadas no meio destes cenários.
+Não certifica toda combinação nem substitui playtest. O comparador aciona as
+janelas reais de Luide, Ainai, Luna e Mandinga com decisões programadas. Ainda
+não cruza todas elas com pagamentos de Armadura e pactos simultâneos.
 
 Próximo lote: cruzar essas interrupções com mortes/eliminação e conferir a
 transição para a manhã seguinte. Persistência de cada janela já tem testes;
@@ -50,6 +59,6 @@ a comparação integrada desses cruzamentos permanece pendente.
 O lote seguinte já cobre transição diurna e reações encadeadas:
 ver `VALIDACAO_CICLO.md`.
 
-Verificação deste marco: suíte completa com 384 aprovações e zero falhas;
-quatro testes de interface Node, sintaxe de `app.js` e `git diff --check`
-aprovados. Nenhum novo playtest manual de navegador foi feito neste lote.
+Verificação do marco anterior: 395 testes aprovados. Resultado ampliado e partidas
+completas estão em `VALIDACAO_PARTIDAS_COMPLETAS.md`. Sem novo playtest manual
+de navegador neste lote.

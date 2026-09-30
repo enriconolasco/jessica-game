@@ -310,3 +310,10 @@ inclui `warnings`. Respostas de operações aceitas podem informar `save_warning
 sem alterar sucesso/eventos mecânicos; falha ao salvar cópia responde 507.
 `GET /saves` lista recuperações sem transmitir estado, RNG ou eventos. Ações inválidas
 não criam recuperação. Formatos experimentais v0.1 permanecem; campos são aditivos.
+
+## Metadados noturnos opcionais
+
+Na fila interna de saves web, `end_house.occupied` indica se havia participantes
+ao abrir o local; `web_night.final_ainai_queued` impede repetir a última janela
+de Ainai. Ambos são booleanos opcionais, validados ao carregar. Não são ações,
+regras de dano nem informação privada. Formatos v0.1 permanecem inalterados.

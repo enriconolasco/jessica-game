@@ -103,7 +103,8 @@ def validate(payload):
             raise ValueError("Histórico ou nome do save inválido.")
         if state.web_night and (type(state.web_night.get("turn")) is not int
                 or "queue" not in state.web_night
-                or type(state.web_night.get("ready", True)) is not bool):
+                or type(state.web_night.get("ready", True)) is not bool
+                or type(state.web_night.get("final_ainai_queued", False)) is not bool):
             raise ValueError("Estado da fila noturna inválido.")
         history = payload.get("history", [])
         skip = payload.get("checkpoint_skip", {})
@@ -139,6 +140,7 @@ def validate(payload):
                         or (kind not in ("flames", "house", "end_house") and "player_id" not in entry)
                         or (kind in (None, "house", "end_house", "luide") and "house" not in entry)
                         or (kind is None and not isinstance(entry.get("unit_id"), str))
+                        or ("occupied" in entry and type(entry["occupied"]) is not bool)
                         or ("house" in entry and entry["house"] not in {"center", "city_1", "city_2", "city_3", "city_4"})):
                     raise ValueError("Janela noturna inválida.")
     except (KeyError, TypeError, AttributeError, ValueError) as exc:
