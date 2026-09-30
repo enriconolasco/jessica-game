@@ -1,5 +1,14 @@
 # Cliente web vertical
 
+Saves locais: a tela inicial lista cópias nomeadas e autosaves. Escolha uma entrada
+e clique em Carregar; também é possível importar um JSON exportado pela web.
+“Salvar cópia” cria um ponto independente, que ações posteriores não sobrescrevem.
+“Exportar partida” baixa estado completo (incluindo todas as mãos), RNG e eventos.
+Autosave é atualizado após ações aceitas, usando escrita temporária e substituição
+do arquivo. A lista indica arquivos inválidos sem impedir acesso aos demais.
+Versões incompatíveis e arquivos malformados são rejeitados antes de criar partida.
+Saves brutos do terminal ainda não são importados automaticamente.
+
 Sonho Lúcido com Luna: ao adicionar uma carta, o servidor simula a sequência e
 atualiza as opções seguintes, incluindo heróis recém-invocados. A prévia não gasta
 recursos nem altera a partida; “Lançar Sonho Lúcido” confirma toda a sequência.

@@ -6,6 +6,7 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+from . import saves
 
 from ..core import heroes, spells
 from ..core.constants import (DEFAULT_CITY_LIFE_MAX, DEFAULT_CITY_LIFE_START,
@@ -107,12 +108,20 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
     return state
 
 
-def _save(match_id: str) -> str:
+def _snapshot(match_id: str) -> dict:
+    match = MATCHES[match_id]
+    return {"version": SAVE_VERSION, "state": state_to_dict(match["state"]),
+            "events": match["events"], "name": match.get("name", "Partida local")}
+
+
+def _save(match_id: str, name: str | None = None) -> str:
     SAVES.mkdir(parents=True, exist_ok=True)
-    payload = {"version": SAVE_VERSION, "state": state_to_dict(MATCHES[match_id]["state"]),
-               "events": MATCHES[match_id]["events"]}
-    path = SAVES / f"{match_id}.json"
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    payload = _snapshot(match_id)
+    payload["kind"] = "manual" if name is not None else "autosave"
+    if name is not None:
+        payload["name"] = name
+    path = SAVES / f"{uuid.uuid4().hex[:12] if name is not None else match_id}.json"
+    saves.write(path, payload)
     return path.name
 
 
@@ -127,7 +136,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def _body(self) -> dict:
         length = int(self.headers.get("Content-Length", "0"))
-        return json.loads(self.rfile.read(length) or b"{}")
+        if not 0 <= length <= 10 * 1024 * 1024:
+            raise ValueError("Arquivo excede o limite de 10 MB.")
+        body = json.loads(self.rfile.read(length) or b"{}")
+        if not isinstance(body, dict):
+            raise ValueError("Conteúdo da requisição inválido.")
+        return body
 
     def _parts(self):
         return [p for p in urlparse(self.path).path.split("/") if p]
@@ -138,6 +152,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._file("index.html", "text/html; charset=utf-8")
         if parts == ["catalog"]:
             return self._json(200, _catalog())
+        if parts == ["saves"]:
+            with LOCK:
+                return self._json(200, saves.list_saved(SAVES))
         if parts[0] == "static" and len(parts) == 2:
             mime = "text/css" if parts[1].endswith(".css") else "text/javascript"
             return self._file(parts[1], mime)
@@ -158,6 +175,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not match:
                     return self._json(404, {"error": "Partida não encontrada."})
                 state = match["state"]
+                if resource == "export":
+                    return self._json(200, _snapshot(match_id))
                 query = parse_qs(urlparse(self.path).query)
                 player_id = int(query.get("player_id", [state.active_player_id or 1])[0])
                 if resource == "view":
@@ -173,7 +192,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parts = self._parts()
-        body = self._body()
+        try:
+            body = self._body()
+        except (UnicodeError, ValueError) as exc:
+            return self._json(422, {"error": str(exc)})
         with LOCK:
             if parts == ["matches"]:
                 try:
@@ -185,17 +207,23 @@ class Handler(BaseHTTPRequestHandler):
                 MATCHES[match_id] = {"state": state, "events": []}
                 _save(match_id)
                 return self._json(201, {"match_id": match_id})
-            if parts == ["matches", "load"]:
-                save_id = str(body.get("save_id", ""))
-                path = SAVES / f"{Path(save_id).stem}.json"
-                if not path.is_file():
-                    return self._json(404, {"error": "Save não encontrado."})
-                payload = json.loads(path.read_text(encoding="utf-8"))
-                if payload.get("version") != SAVE_VERSION:
-                    return self._json(409, {"error": "Versão de save incompatível."})
+            if parts in (["matches", "load"], ["matches", "import"]):
+                try:
+                    if parts[-1] == "load":
+                        path = saves.save_path(SAVES, body.get("save_id"))
+                        if not path.is_file():
+                            return self._json(404, {"error": "Save não encontrado."})
+                        payload = saves.read(path)
+                    else:
+                        payload = body
+                    state, events, name = saves.validate(payload)
+                except saves.VersionError as exc:
+                    return self._json(409, {"error": str(exc)})
+                except (OSError, ValueError) as exc:
+                    return self._json(422, {"error": str(exc)})
                 match_id = uuid.uuid4().hex[:12]
-                MATCHES[match_id] = {"state": state_from_dict(payload["state"]),
-                                     "events": payload.get("events", [])}
+                MATCHES[match_id] = {"state": state, "events": events, "name": name}
+                _save(match_id)
                 return self._json(201, {"match_id": match_id})
             if len(parts) == 3 and parts[0] == "matches":
                 match_id, resource = parts[1], parts[2]
@@ -218,7 +246,10 @@ class Handler(BaseHTTPRequestHandler):
                         _save(match_id)
                     return self._json(200 if result["success"] else 422, result)
                 if resource == "save":
-                    return self._json(200, {"save_id": Path(_save(match_id)).stem,
+                    name = body.get("name", "Partida local")
+                    if not isinstance(name, str) or not name.strip() or len(name) > 60:
+                        return self._json(422, {"error": "Nome do save deve ter de 1 a 60 caracteres."})
+                    return self._json(200, {"save_id": Path(_save(match_id, name.strip())).stem,
                                             "version": SAVE_VERSION})
         self._json(404, {"error": "Rota não encontrada."})
 

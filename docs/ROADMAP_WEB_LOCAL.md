@@ -86,8 +86,8 @@ Devaneio usa o caminho existente do core.
    retaliações e janelas especiais/reacionais. Nenhuma regra ficará no frontend.
 5. **Fechar o ciclo da partida:** manhã, mudança de fase, fim do turno, vitória,
    eliminação e início automático do turno seguinte.
-6. **Save local completo:** listar, nomear, exportar/importar, autosaves rotativos,
-   recuperação e migrações explícitas de formato.
+6. **Save local completo:** lista, cópias nomeadas, exportar/importar e recuperar
+   autosave implementados. Pendentes autosaves rotativos e migrações de formato.
 7. **PWA offline:** manifest, service worker, instalação no celular, cache versionado e
    funcionamento local sem internet depois da primeira carga.
 8. **UX e acessibilidade:** escolhas complexas, confirmações, histórico filtrável,

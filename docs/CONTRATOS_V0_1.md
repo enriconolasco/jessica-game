@@ -243,6 +243,19 @@ jogador não recebe outras ações. Evento e projeção dessa escolha são priva
 4. Nenhuma `PlayerView` revela mão adversária, RNG ou ordem da loja.
 5. O terminal atual continua funcionando enquanto a camada v0.1 é introduzida.
 
+### Transporte de saves locais
+
+- `GET /saves`: metadados (`save_id,name,turn,phase,kind,updated_at`), sem estado privado.
+- `POST /matches/{id}/save`: `{name}` cria cópia independente; devolve `{save_id,version}`.
+- `GET /matches/{id}/export`: envelope completo `{version,state,events,name}`.
+- `POST /matches/import`: envelope exportado; devolve novo `match_id` após validação.
+- `POST /matches/load`: `{save_id}` restaura cópia ou autosave em nova partida.
+
+Envelope continua `save-v0.1`. Estado, RNG, eventos e fila noturna são preservados;
+incompatibilidade retorna 409, arquivo inválido 422, inexistente 404. Importar não
+modifica partidas abertas. Exportação completa é ferramenta do dispositivo local;
+não pertence à PlayerView e inclui informações secretas de todos os jogadores.
+
 ### Janelas Ainai e Luide (ações v0.1)
 
 - `night_ainai`: `{destination}`; teleporte validado pelo helper compartilhado com o terminal.

@@ -499,8 +499,84 @@ $("create").onclick = async () => {
     await enter((await api("/matches", {method:"POST", body:JSON.stringify(setupPayload())})).match_id);
   } catch (error) { $("setupMessage").textContent = error.message; }
 };
-$("load").onclick = async () => enter((await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})})).match_id);
-$("save").onclick = async () => { const data=await api(`/matches/${matchId}/save`, {method:"POST", body:"{}"}); $("message").textContent=`Save: ${data.save_id}`; };
+$("load").onclick = async () => {
+  try {
+    await enter((await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})})).match_id);
+  } catch (error) { $("setupMessage").textContent = error.message; }
+};
+$("save").textContent = "Salvar cópia";
+$("save").onclick = async () => {
+  const name = prompt("Nome deste ponto de restauração:", "Partida local");
+  if (name === null) return;
+  try {
+    const data = await api(`/matches/${matchId}/save`, {method:"POST", body:JSON.stringify({name})});
+    $("message").textContent = `Cópia salva: ${name} (${data.save_id}). O autosave continua separado.`;
+    await refreshSaves();
+  } catch (error) { $("message").textContent = error.message; }
+};
+
+async function refreshSaves() {
+  const entries = await api("/saves");
+  const select = $("savedGames");
+  select.replaceChildren(new Option("Escolha uma partida salva", ""));
+  entries.forEach(entry => {
+    const label = entry.invalid ? `${entry.name} (${entry.save_id})` :
+      `${entry.name} · T${entry.turn} ${entry.phase} · ${entry.kind === "manual" ? "cópia" : "autosave"} · ${new Date(entry.updated_at).toLocaleString("pt-BR")}`;
+    const option = new Option(label, entry.save_id);
+    option.disabled = Boolean(entry.invalid);
+    select.appendChild(option);
+  });
+}
+
+function createSaveControls() {
+  const label = document.createElement("label");
+  label.textContent = "Partidas salvas ";
+  const select = document.createElement("select");
+  select.id = "savedGames";
+  select.onchange = () => { $("saveId").value = select.value; };
+  label.appendChild(select);
+  const update = document.createElement("button");
+  update.textContent = "Atualizar lista";
+  update.onclick = () => refreshSaves().catch(error => { $("setupMessage").textContent = error.message; });
+  const importLabel = document.createElement("label");
+  importLabel.textContent = "Importar partida (.json) ";
+  const file = document.createElement("input");
+  file.type = "file";
+  file.accept = ".json,application/json";
+  file.onchange = async () => {
+    const selected = file.files[0];
+    if (!selected) return;
+    try {
+      if (selected.size > 10 * 1024 * 1024) throw new Error("Arquivo excede o limite de 10 MB.");
+      const payload = JSON.parse(await selected.text());
+      await enter((await api("/matches/import", {method:"POST", body:JSON.stringify(payload)})).match_id);
+    } catch (error) { $("setupMessage").textContent = error.message; }
+    finally { file.value = ""; }
+  };
+  importLabel.appendChild(file);
+  const controls = document.createElement("div");
+  controls.className = "save-controls";
+  controls.append(label, update, importLabel);
+  $("start").appendChild(controls);
+  const exportButton = document.createElement("button");
+  exportButton.textContent = "Exportar partida";
+  exportButton.title = "Baixar estado completo, incluindo mãos dos jogadores";
+  exportButton.onclick = async () => {
+    try {
+      const payload = await api(`/matches/${matchId}/export`);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"}));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `jessica-${matchId}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      $("message").textContent = "Arquivo completo exportado, incluindo as mãos dos jogadores.";
+    } catch (error) { $("message").textContent = error.message; }
+  };
+  $("save").parentElement.appendChild(exportButton);
+}
 $("revealPlayer").onclick = async () => {
   playerId = pendingPlayerId;
   pendingPlayerId = null;
@@ -508,4 +584,5 @@ $("revealPlayer").onclick = async () => {
   $("game").inert = false;
   await refresh(true);
 };
-api("/catalog").then(data => { catalog = data; renderSetup(); }).catch(error => { $("setupMessage").textContent = error.message; });
+createSaveControls();
+api("/catalog").then(async data => { catalog = data; renderSetup(); await refreshSaves(); }).catch(error => { $("setupMessage").textContent = error.message; });

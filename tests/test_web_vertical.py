@@ -105,6 +105,59 @@ def test_http_dream_preview_privacy_and_no_state_or_save_mutation():
             server.SAVES = old_saves
 
 
+def test_http_saves_list_snapshot_export_import_rng_and_validation():
+    from copy import deepcopy
+    from jessica.core.serialize import state_to_dict
+    with tempfile.TemporaryDirectory() as tmp:
+        old_saves = server.SAVES
+        server.SAVES = Path(tmp)
+        httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        base = f"http://127.0.0.1:{httpd.server_port}"
+        try:
+            _, created = _request(base, "/matches", "POST", {"seed": 72})
+            mid = created["match_id"]
+            _, actions = _request(base, f"/matches/{mid}/actions?player_id=1")
+            action = next(a for a in actions if a["type"] == "collect_resources")
+            _request(base, f"/matches/{mid}/actions", "POST", action)
+            _, saved = _request(base, f"/matches/{mid}/save", "POST", {"name": "Antes da noite"})
+            sid = saved["save_id"]
+            assert sid != mid
+            snapshot_file = (Path(tmp) / f"{sid}.json").read_bytes()
+            _, entries = _request(base, "/saves")
+            manual = next(e for e in entries if e["save_id"] == sid)
+            assert manual["name"] == "Antes da noite" and manual["kind"] == "manual"
+            assert all("state" not in e and "events" not in e for e in entries)
+            _, exported = _request(base, f"/matches/{mid}/export")
+            _, imported = _request(base, "/matches/import", "POST", exported)
+            twin_id = imported["match_id"]
+            assert state_to_dict(server.MATCHES[mid]["state"]) == state_to_dict(server.MATCHES[twin_id]["state"])
+            _, options = _request(base, f"/matches/{mid}/actions?player_id=1")
+            end = next(a for a in options if a["type"] == "end_turn")
+            _, first = _request(base, f"/matches/{mid}/actions", "POST", end)
+            _, second = _request(base, f"/matches/{twin_id}/actions", "POST", end)
+            assert first == second
+            assert state_to_dict(server.MATCHES[mid]["state"]) == state_to_dict(server.MATCHES[twin_id]["state"])
+            assert (Path(tmp) / f"{sid}.json").read_bytes() == snapshot_file
+            _, loaded = _request(base, "/matches/load", "POST", {"save_id": sid})
+            assert state_to_dict(server.MATCHES[loaded["match_id"]]["state"]) == exported["state"]
+            before_ids = set(server.MATCHES)
+            before_files = set(Path(tmp).glob("*.json"))
+            wrong_version = dict(exported, version="save-future")
+            assert _error_request(base, "/matches/import", wrong_version)[0] == 409
+            corrupt = deepcopy(exported)
+            corrupt["state"]["rng"]["state"] = "invalid"
+            assert _error_request(base, "/matches/import", corrupt)[0] == 422
+            assert _error_request(base, "/matches/load", {"save_id": "../outside"})[0] == 422
+            assert set(server.MATCHES) == before_ids and set(Path(tmp).glob("*.json")) == before_files
+            (Path(tmp) / "abcdef123456.json").write_text("invalid json", encoding="utf-8")
+            _, entries = _request(base, "/saves")
+            assert next(e for e in entries if e["save_id"] == "abcdef123456")["invalid"]
+        finally:
+            httpd.shutdown()
+            server.SAVES = old_saves
+
+
 def test_all_people_icons_and_map_template_exist():
     root = Path(__file__).resolve().parents[1] / "assets"
     files = ("humanos", "anoes", "orcs", "fadas", "vampiros", "lobisomens",
@@ -164,6 +217,7 @@ def test_catalogo_e_setup_completo_da_partida_web():
 def run_all():
     tests = [test_http_vertical_action_view_events_and_autosave,
              test_http_dream_preview_privacy_and_no_state_or_save_mutation,
+             test_http_saves_list_snapshot_export_import_rng_and_validation,
              test_all_people_icons_and_map_template_exist,
              test_web_ui_expoe_area_privada_e_eventos_legiveis,
              test_catalogo_e_setup_completo_da_partida_web]

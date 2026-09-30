@@ -39,7 +39,9 @@ possui ação diurna. Estes fluxos ainda precisam de playtest integrado.
 - Consultas de povos, heróis, feitiços e artefatos; custos/limites claros.
 - Histórico completo compreensível e eventos suficientes para acompanhar efeitos,
   sem revelar mão, sorteios futuros ou informações proibidas.
-- Save: listar, nomear, exportar/importar, restaurar autosave e validar versões.
+- Saves web: lista, cópias nomeadas, exportação/importação e restauração de
+  autosave implementadas. Estado/RNG/eventos preservados; versões e arquivos
+  inválidos são rejeitados. Falta rotação de autosaves e playtest no navegador.
 - Navegação por teclado/toque, passagem segura de jogador e mensagens de erro.
 
 ## 4. Provar a paridade

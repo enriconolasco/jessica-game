@@ -506,6 +506,25 @@ def test_aiquara_opening_control_parity_save_and_limits():
     assert not apply_action(dead, action)["success"]
 
 
+def test_barba_base_nao_oferece_alvo_para_heroi_ate_ativar_modo():
+    from test_playtest_round4 import make_state
+    from jessica.core import peoples
+    state = make_state()
+    barba = peoples.dragon_base(state.players[0])
+    barba.house = "center"
+    state.players[1].units = [Hero(id="enemy", owner_id=2, house="center", life=4, life_max=4, hero_id="miyamoto")]
+    state.phase = Phase.NIGHT
+    assert not any(a["type"] == "night_attack" for a in legal_actions(state, 2))
+    state.phase = Phase.DAY
+    from jessica.core.actions import barba_combater_como_heroi
+    barba_combater_como_heroi(state, 1)
+    state.phase = Phase.NIGHT
+    skip = next(a for a in legal_actions(state, 1) if a["type"] == "night_pass")
+    assert apply_action(state, skip)["success"]
+    assert any(a["type"] == "night_attack" and a["params"]["target_id"] == barba.id
+               for a in legal_actions(state, 2))
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):
