@@ -2635,7 +2635,8 @@ def find_targets(state, unit):
         return []
     targets = []
     house = unit.house
-    can_attack_city = (not isinstance(unit, Hero)) or unit.hero_can_attack_city
+    can_attack_city = ((not isinstance(unit, Hero)) or unit.hero_can_attack_city
+                       or peoples.rogue_can_attack_base(unit))
     if isinstance(unit, Hero) and not can_attack_city:
         owner = get_player(state, unit.owner_id)
         for u in owner.units:

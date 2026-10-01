@@ -39,6 +39,11 @@ DEMON_SACRIFICE_PACTS = {"sacrifique_futuro", "sacrifique_militar", "sacrifique_
 ROGUE_ITEMS = ("capa", "adaga", "relogio", "bracelete")
 
 
+def rogue_can_attack_base(unit: Unit) -> bool:
+    return (isinstance(unit, Hero) and unit.hero_id == "rogue_devil"
+            and set(unit.statuses.get("rogue_items", [])) == set(ROGUE_ITEMS))
+
+
 ACTION_TO_BET = {
     "play_artifact": BET_CLUB,
     "base_life_gained": BET_HEART,

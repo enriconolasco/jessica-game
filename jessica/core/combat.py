@@ -530,9 +530,7 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
                 and dragon_effect and peoples.dragon_has_suit(attacker_player, "S")):
             can_hero_attack_city = True
         if isinstance(attacker, Hero) and not can_hero_attack_city:
-            if (attacker.hero_id == "rogue_devil"
-                    and set(attacker.statuses.get("rogue_items", []))
-                    == set(peoples.ROGUE_ITEMS)):
+            if peoples.rogue_can_attack_base(attacker):
                 can_hero_attack_city = True
             if _hero_has(attacker, "dwarves_can_attack_cities"):
                 can_hero_attack_city = True
