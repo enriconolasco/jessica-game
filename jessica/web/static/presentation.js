@@ -19,7 +19,8 @@ function pactLabel(pact, reference, name) {
   const status = pact.released ? "liberado" : pact.completed ? "concluído" : "em andamento";
   const progress = pact.required_peoples ? ` · povos registrados: ${(pact.killed_peoples || []).map(name).join(", ") || "nenhum"} · exigidos: ${pact.required_peoples.map(name).join(", ")}` :
     pact.blood_count != null ? ` · ${pact.blood_count} abates registrados${pact.blood_turn > 0 ? ` na noite T${pact.blood_turn}` : ""}` : "";
-  return `${label} · J${pact.owner_id} · ${status}${progress}`;
+  const reward = pact.reward_pending ? " · recompensa pendente" : pact.rewarded ? " · recompensa entregue" : "";
+  return `${label} · J${pact.owner_id} · ${status}${progress}${reward}`;
 }
 function reportData(view, kind, metric) {
   const fields = REPORT_FIELDS[kind], keys = Object.keys(fields);

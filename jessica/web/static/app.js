@@ -216,6 +216,12 @@ function actionDetails(action) {
   if (action.type === "sell_artifact") return cardName(p.card_id);
   return "";
 }
+function pactChoiceText(action, reference) {
+  const pact = reference?.pacts?.find(p => p.id === action.params.pact_id);
+  const item = action.params.item;
+  const itemNames = {capa:"Capa", adaga:"Adaga", relogio:"Relógio de bolso", bracelete:"Bracelete"};
+  return [pact?.description, item ? `${itemNames[item] || item}: ${reference?.rogue_items?.[item] || "efeito não disponível no catálogo"}` : ""].filter(Boolean).join(" ");
+}
 function renderActions(actions) {
   const root = $("actions");
   root.replaceChildren();
@@ -229,6 +235,25 @@ function renderActions(actions) {
     const summary = document.createElement("summary");
     summary.textContent = `${items[0].label} (${items.length})`;
     group.appendChild(summary);
+    if (type === "demon_pact" || type === "night_pact") {
+      const select = document.createElement("select");
+      select.className = "action-select";
+      select.setAttribute("aria-label", "Pacto e item, quando disponível");
+      items.forEach((action, index) => select.appendChild(new Option(actionDetails(action) || action.label, index)));
+      select.value = "0";
+      const preview = document.createElement("p");
+      preview.className = "hint";
+      preview.setAttribute("aria-live", "polite");
+      select.onchange = () => { preview.textContent = pactChoiceText(items[Number(select.value)], catalog); };
+      select.onchange();
+      const button = document.createElement("button");
+      button.className = "action action-submit";
+      button.textContent = "Firmar pacto";
+      button.onclick = () => act(items[Number(select.value)]);
+      group.append(select, preview, button);
+      root.appendChild(group);
+      return;
+    }
     if (type === "armor_payment") {
       group.open = true;
       const action = items[0], request = action.selection;
@@ -554,6 +579,8 @@ async function refresh(allowPlayerSwitch = false) {
 async function act(action) {
   if (action.type === "end_turn" && !await confirmAction("Encerrar a janela deste jogador?")) return;
   if (action.type === "finish_night" && !await confirmAction("Encerrar a Noite e avançar o turno?")) return;
+  if (["demon_pact", "night_pact"].includes(action.type) &&
+      !await confirmAction(`Firmar pacto: ${actionDetails(action) || action.label}. ${pactChoiceText(action, catalog)}`)) return;
   const controls = [...document.querySelectorAll("#actions button")].map(button => [button, button.disabled]);
   try {
     controls.forEach(([button]) => button.disabled = true);

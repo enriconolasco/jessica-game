@@ -39,6 +39,8 @@ de mecânica deve atualizar sua linha e possuir ao menos um teste comportamental
 - Cenários efetivamente validados: `VALIDACAO_*.md` e os testes ali identificados.
 - Divergências conhecidas/decisões pendentes: `PENDENCIAS_PARIDADE.md`.
 - Comparação automatizada com outra instalação: `tests/compare_terminal_reference.py`.
+- Bases Dragões/pactos em partidas completas: `VALIDACAO_BASES_E_PACTOS.md`
+  e `tests/test_special_matches_parity.py`.
 
 "Implementado", "validado neste cenário" e "aguardando confirmação" são estados
 distintos. Não registrar uma mecânica como totalmente validada apenas porque seu

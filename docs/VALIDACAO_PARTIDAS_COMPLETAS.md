@@ -83,3 +83,7 @@ Node e sintaxe JavaScript aprovados; replay independente de 125 ações diurnas
 e nove cenários noturnos equivalente. Ofertas noturnas persistem até o Dia do
 beneficiário, inclusive após save/load; uma oferta em save antigo não bloqueia
 o próximo declarante. A instalação terminal continua sem alterações.
+
+Ampliação posterior: três partidas completas adicionais com Barba Negra,
+Valtherion e Rogue em `VALIDACAO_BASES_E_PACTOS.md`. O roteiro da quest distingue
+a recompensa de pacto da recompensa geral por destruir uma Cidade.

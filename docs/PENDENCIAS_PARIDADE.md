@@ -27,6 +27,10 @@ usam Tuza, não Belial; não certificam todos os cruzamentos de pactos.
 
 ## Cobertura ainda a ampliar
 
-Partidas completas com heróis-base Dragões, pactos/quests de Rogue e várias
-janelas especiais encadeadas, além de playtest real desktop/celular. São lacunas
+Partidas completas com Barba Negra, Valtherion e Rogue agora aprovadas em
+`VALIDACAO_BASES_E_PACTOS.md`, incluindo Canastra, Chamado, Mar de Chamas,
+reinvocação e quest Vida de um Líder sem recompensa adicional ao concluir.
+
+Ainda ampliar: conclusão das outras quests, quatro itens de Rogue em combinação,
+várias janelas especiais encadeadas e playtest real desktop/celular. São lacunas
 de validação; não há, por isso só, evidência de mecânica ausente ou quebrada.

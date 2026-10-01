@@ -12,6 +12,11 @@ do beneficiário no próximo Dia, como no terminal. Testes incluem ataque,
 retaliação e retomada de save antigo; ver `PENDENCIAS_PARIDADE.md`.
 Portanto, "todos os fluxos têm adaptador" não significa "paridade total".
 
+Lote seguinte de 01/10: três partidas completas adicionais com Bases Dragões e
+Rogue; Canastra, habilidades das Bases, pactos, reinvocação persistente e quest
+Vida de um Líder verificadas. Prévia e confirmação de pactos implementadas na
+web. Ver `VALIDACAO_BASES_E_PACTOS.md` para recorte e limites restantes.
+
 Revisão de 2026-09-30: ver `AUDITORIA_PARIDADE_2026_09_30.md` para o mapeamento
 de todos os menus, novos pagamentos de Armadura, consultas, histórico e refazer/Mola.
 Não foi identificado outro fluxo mecânico selecionável sem adaptador; a validação

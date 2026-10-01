@@ -39,6 +39,8 @@ for(let mask=0;mask<8;mask++) {
   assert.equal(JSON.stringify(vm.runInContext('hudPresence(sample)',context)),JSON.stringify({bets:Boolean(mask&1),canastra:Boolean(mask&2),pacts:Boolean(mask&4)}));
 }
 assert.match(context.curunaLabel(view,p=>p),/Beto.*gnomos_duendes/);
+assert.match(context.pactLabel({pact_id:"vida_lider",owner_id:1,completed:false,rewarded:true},{},p=>p), /em andamento.*recompensa entregue/);
+assert.match(context.pactLabel({pact_id:"vida_lider",owner_id:1,completed:true,reward_pending:true},{},p=>p), /concluído.*recompensa pendente/);
 const data=context.reportData(view,'combat','kills');
 assert.equal(data.bars[0].value,3); assert.equal(data.bars[1].value,0);
 assert.equal(data.rows[2][1],8); assert.ok(!JSON.stringify(data).includes('PRIVATE_CARD'));

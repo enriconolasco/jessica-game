@@ -37,6 +37,29 @@ assert.deepEqual(sent, actions);
 context.renderActions([]);
 assert.equal(root.children.length, 0);
 console.log("UI: três distribuições exibidas e enviadas corretamente.");
+context.catalog = {pacts:[{id:"vida_lider", description:"Elimine um jogador."},
+                         {id:"sacrifique_futuro", description:"Base atual e máxima em 4."}],
+                   rogue_items:{bracelete:"Resistência contra heróis e +1 de vida."}};
+const pactActions = [
+  {type:"demon_pact",label:"Firmar pacto",description:"Vida de um líder · bracelete",player_id:1,
+   params:{offer_index:0,pact_id:"vida_lider",item:"bracelete"}},
+  {type:"demon_pact",label:"Firmar pacto",description:"Sacrifique seu futuro",player_id:1,
+   params:{offer_index:0,pact_id:"sacrifique_futuro",item:null}},
+];
+context.renderActions(pactActions);
+const pactGroup = root.children[0];
+const pactSelect = pactGroup.children.find(el => el.tag === "select");
+const pactPreview = pactGroup.children.find(el => el.tag === "p");
+assert.match(pactPreview.textContent, /Elimine um jogador.*Bracelete.*Resistência/);
+pactSelect.value = "1"; pactSelect.onchange();
+assert.equal(pactPreview.textContent, "Base atual e máxima em 4.");
+pactGroup.children.find(el => el.tag === "button").onclick();
+assert.equal(sent.at(-1), pactActions[1]);
+context.renderActions([{...pactActions[0], type:"night_pact"}]);
+assert.match(root.children[0].children.find(el => el.tag === "p").textContent, /Bracelete/);
+assert.equal(context.pactChoiceText({params:{pact_id:"unknown",item:"unknown"}}, {}),
+             "unknown: efeito não disponível no catálogo");
+console.log("UI: prévia de pacto/item atualiza e envia a escolha exata, sem calcular regras.");
 (async () => {
 const dream = {type:"dream_multi", label:"Luna", player_id:1, params:{}, selection:{options:[
   {label:"Primeira", choice:{flip_cards:["K_H"], artifact_choices:[{}]}},

@@ -111,7 +111,7 @@ def choose_night(state, choices):
                 attacks[0] if attacks else next(a for a in choices if a["type"] == "night_pass"))
 
 
-def finish_night(state, counts):
+def finish_night(state, counts, on_step=None):
     trial, plan = deepcopy(state), defaultdict(list)
     for _ in range(120):
         if trial.game_over:
@@ -127,10 +127,14 @@ def finish_night(state, counts):
         if action["type"] == "night_attack":
             params = action["params"]
             plan[params["attacker_unit_id"]].append((params["target_type"], params["target_id"]))
+        before = deepcopy(trial) if on_step else None
         trial = step(trial, action)
+        if on_step:
+            on_step(before, action, trial)
     else:
         raise AssertionError("Noite excedeu limite de decisões")
     state, _ = compare(state, dict(plan))
+    assert mechanics(state) == mechanics(trial), "Roteiro noturno divergente do replay"
     if state.game_over:
         return state
     direct = deepcopy(state)
@@ -148,7 +152,7 @@ def finish_night(state, counts):
     return state
 
 
-def match(group, seed):
+def match(group, seed, day_policy=None, on_step=None):
     players = [{"name": f"J{pid}", "people": people, "hero_id": hero}
                for pid, (people, hero) in enumerate(group, 1)]
     state = _new_state(seed, players, {"city_life": 2, "gold": 25, "magic": 25, "order_mode": "fixed"})
@@ -157,13 +161,16 @@ def match(group, seed):
         if state.game_over:
             break
         if state.phase == Phase.NIGHT:
-            state = finish_night(state, counts)
+            state = finish_night(state, counts, on_step)
             continue
-        action = choose_day(state, legal_actions(state, state.active_player_id), used)
+        action = (day_policy or choose_day)(state, legal_actions(state, state.active_player_id), used)
+        before = deepcopy(state) if on_step else None
         direct = deepcopy(state)
         direct_action(direct, action)
         state = step(state, action)
         assert mechanics(state) == mechanics(direct), (state.turn, action)
+        if on_step:
+            on_step(before, action, state)
         counts[action["type"]] += 1
     else:
         raise AssertionError(f"Partida não terminou: T{state.turn}, {dict(counts)}")
