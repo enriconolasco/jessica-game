@@ -41,10 +41,32 @@ ABILITIES = {
 }
 
 
-def blocked_by_choice(player):
+def pact_choices(state, player):
+    for index, offer in enumerate(player.demon_pact_offers):
+        rogue = offer.get("source") == "rogue_devil"
+        items = [i for i in peoples.ROGUE_ITEMS if i not in player.rogue_items] if rogue else [None]
+        for pact in peoples.available_demon_pacts(state):
+            for item in items or [None]:
+                candidate = _offer("demon_pact", player.id,
+                                   {"offer_index": index, "pact_id": pact, "item": item},
+                                   peoples.DEMON_PACTS[pact] + (f" · item: {item}" if item else ""))
+                try:
+                    execute(deepcopy(state), candidate)
+                except (core.ActionError, combat.CombatError, ValueError):
+                    continue
+                yield candidate
+        if not rogue:
+            yield _offer("decline_pact", player.id, {"offer_index": index}, "Recusar oferta de pacto")
+
+
+def required_pact(state, player):
+    return any(player.demon_pact_offers[a["params"]["offer_index"]].get("source") == "rogue_devil"
+               for a in pact_choices(state, player) if a["type"] == "demon_pact")
+
+
+def blocked_by_choice(state, player):
     return bool((player.people == peoples.PEOPLE_GNOMOS and player.bets_need_realocacao)
-                or player.pending_artifact_choice or any(
-        offer.get("source") == "rogue_devil" for offer in player.demon_pact_offers))
+                or player.pending_artifact_choice or required_pact(state, player))
 
 
 def _offer(kind, pid, params, description):
@@ -105,19 +127,13 @@ def _candidates(state, player):
                 yield _offer("resolve_artifact_choice", pid, {"resource": resource},
                              f"Receber {pending['dead_unit_max_life']} {label}")
         return
-    rogue_pending = any(o.get("source") == "rogue_devil" for o in player.demon_pact_offers)
-    for index, offer in enumerate(player.demon_pact_offers):
-        rogue = offer.get("source") == "rogue_devil"
-        if rogue_pending and not rogue:
-            continue
-        items = [i for i in peoples.ROGUE_ITEMS if i not in player.rogue_items] if rogue else [None]
-        for pact in peoples.available_demon_pacts(state):
-            for item in items or [None]:
-                yield _offer("demon_pact", pid, {"offer_index": index, "pact_id": pact,
-                                               "item": item},
-                             peoples.DEMON_PACTS[pact] + (f" · item: {item}" if item else ""))
-        if not rogue:
-            yield _offer("decline_pact", pid, {"offer_index": index}, "Recusar oferta de pacto")
+    pacts = list(pact_choices(state, player))
+    rogue_pending = any(player.demon_pact_offers[a["params"]["offer_index"]].get("source") == "rogue_devil"
+                        for a in pacts if a["type"] == "demon_pact")
+    for candidate in pacts:
+        if not rogue_pending or player.demon_pact_offers[
+                candidate["params"]["offer_index"]].get("source") == "rogue_devil":
+            yield candidate
     if rogue_pending:
         return
     spell = spell_choices.effective_spell(player)

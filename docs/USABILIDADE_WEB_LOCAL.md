@@ -88,3 +88,10 @@ barra móvel deixa de cobrir ações; encerramento da Noite aparece expandido;
 relatos e defesa usam nomes públicos. Validação atual: 402 testes Python e cinco
 scripts Node aprovados. Cenários reais, limites e servidor descartável em
 [VALIDACAO_ESCOLHAS_WEB.md](VALIDACAO_ESCOLHAS_WEB.md).
+
+## Atualização: disponibilidade e janelas noturnas
+
+A HUD diferencia preparação, Luide, declarações, escolhas pendentes, Relógio e
+encerramento. Ofertas de pacto impossíveis ou pertencentes a eliminados não
+interrompem a partida. Cobertura e limites em
+[VALIDACAO_COMBINACOES_WEB.md](VALIDACAO_COMBINACOES_WEB.md).

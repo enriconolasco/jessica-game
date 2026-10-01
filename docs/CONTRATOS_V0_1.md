@@ -317,3 +317,13 @@ Na fila interna de saves web, `end_house.occupied` indica se havia participantes
 ao abrir o local; `web_night.final_ainai_queued` impede repetir a última janela
 de Ainai. Ambos são booleanos opcionais, validados ao carregar. Não são ações,
 regras de dano nem informação privada. Formatos v0.1 permanecem inalterados.
+
+## Identificação da janela noturna — 30/09/2026
+
+`PlayerView.night_window` conserva `house`, `unit_id` e `declaration_order` e
+acrescenta `kind` e `player_id`, ambos públicos. `kind` distingue `declaration`,
+`luide`, `vovo`, `aiquara`, `luna`, `ainai`, `besouro`, `pending_choice`, `clock`
+e `finish`. Durante preparação/escolhas/finalização, `house` e `unit_id` podem
+ser nulos; a interface não deve usar um ataque futuro para preencher esses campos.
+`player_id` identifica quem decide nesta janela, não expõe a decisão privada.
+Campos aditivos; não muda versões de ações, eventos ou saves.

@@ -78,7 +78,7 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
     if (state.game_over or state.phase != Phase.DAY or not player.city.is_alive()
             or state.active_player_id not in (None, player_id)):
         return []
-    if interaction_actions.blocked_by_choice(player):
+    if interaction_actions.blocked_by_choice(state, player):
         return interaction_actions.legal_interactions(state, player_id)
     if player.skip_day_turn == state.turn:
         return []

@@ -27,13 +27,17 @@ def public_window(state):
     trial = deepcopy(state)
     prepare(trial)
     advance(trial)
-    queue = [e for e in trial.web_night["queue"] if "unit_id" in e]
-    if not queue:
-        return {"house": None, "declaration_order": [], "unit_id": None}
-    house = queue[0]["house"]
-    return {"house": house, "unit_id": queue[0]["unit_id"],
+    setup, queue = trial.web_night.get("setup", []), trial.web_night["queue"]
+    pending = pending_owner(trial)
+    current = ({} if pending else setup[0] if setup else queue[0] if queue else {})
+    house = current.get("house")
+    kind = ("pending_choice" if pending else current.get("kind", "declaration") if current
+            else "clock" if clock_owner(trial) is not None else "finish")
+    return {"house": house, "unit_id": current.get("unit_id"), "kind": kind,
+            "player_id": trial.active_player_id,
             "declaration_order": list(dict.fromkeys(
-                entry["player_id"] for entry in queue if entry["house"] == house))}
+                entry["player_id"] for entry in queue if house is not None
+                and entry.get("house") == house and "player_id" in entry))}
 
 
 def blockers(state):
@@ -51,8 +55,10 @@ def blockers(state):
 
 
 def pending_owner(state):
+    from .interaction_actions import pact_choices
     return (next((p for p in state.players if p.pending_artifact_choice), None)
-            or next((p for p in state.players if p.demon_pact_offers), None))
+            or next((p for p in state.players if p.city.is_alive()
+                     and next(pact_choices(state, p), None) is not None), None))
 
 
 def prepare(state):

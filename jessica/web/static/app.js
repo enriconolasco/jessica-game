@@ -508,7 +508,13 @@ async function refresh(allowPlayerSwitch = false) {
   if (view.night_window?.house) {
     const names = view.night_window.declaration_order.map(id =>
       view.players.find(p => p.id === id)?.name || `J${id}`).join(" → ");
-    $("status").textContent += ` · Combate: ${HOUSE_NAMES[view.night_window.house] || view.night_window.house} · Ordem restante: ${names}`;
+    const windowLabel = view.night_window.kind === "luide" ? "Janela de Luide" : "Declarações";
+    $("status").textContent += ` · ${windowLabel}: ${HOUSE_NAMES[view.night_window.house] || view.night_window.house} · Ordem restante: ${names || "nenhuma"}`;
+  } else if (view.phase === "night" && !view.game_over && view.night_window?.kind) {
+    const labels = {pending_choice:"Escolha pendente", vovo:"Vovó: ordem de combate",
+      aiquara:"Aiquara: controle", luna:"Luna: retorno", ainai:"Ainai: teleporte",
+      besouro:"Besouro: Mandinga", clock:"Rogue: Relógio de bolso", finish:"Encerramento da noite"};
+    if (labels[view.night_window.kind]) $("status").textContent += ` · ${labels[view.night_window.kind]}`;
   }
   $("players").replaceChildren();
   const presence = hudPresence(view);

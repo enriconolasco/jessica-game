@@ -11,6 +11,15 @@ cruzada completa permanece pendente. Importação diurna compatível do terminal
 cinco autosaves anteriores implementados: `SAVES_E_RECUPERACAO.md`. Saves noturnos
 sem fila ou Dias ambíguos são rejeitados.
 
+Novo lote: ofertas de pacto inviáveis deixam de bloquear Dia/Noite; a HUD identifica
+a janela atual, inclusive Luide sem unidades restantes. Onze habilidades diurnas e
+seis noites mistas dos 12 povos comparadas em `VALIDACAO_COMBINACOES_WEB.md`.
+Nenhuma regra de balanceamento foi alterada. Partidas mistas completas continuam
+pendentes; não confundir cobertura de ações com certificação de todas as combinações.
+Replay adicional em processo separado contra o terminal `51586c9`: 125 ações
+diurnas e seis noites mistas com estado/logs/RNG equivalentes. O script é reutilizável
+para conferir novas versões sem rastrear manualmente cada regra nos arquivos.
+
 ## 1. Fechar fluxos mecânicos ainda ausentes
 
 - Ainai: implementado teleporte e reabertura de local; validar em playtest.
