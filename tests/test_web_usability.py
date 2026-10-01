@@ -232,6 +232,18 @@ def test_http_armor_response_privacy_preview_history_and_save():
         assert any(c.get("player_id") == 2 and c.get("field") == "gold" and c["before"] == 8 and c["after"] == 6 for c in changes)
 
 
+def test_browser_qa_scenarios_restore_their_required_decisions():
+    from jessica.core.headless import SAVE_VERSION
+    from serve_ui_scenarios import scenarios
+    states = dict(scenarios())
+    assert len(states) == 6
+    for name, state in states.items():
+        restored, _, _ = saves.validate({"version": SAVE_VERSION, "state": state_to_dict(state),
+                                         "events": [], "history": [], "name": name})
+        assert state_to_dict(restored) == state_to_dict(state)
+        assert legal_actions(restored, restored.active_player_id)
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

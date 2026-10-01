@@ -20,10 +20,14 @@ const context = vm.createContext({
   act: action => sent.push(action),
   cardName: id => ({K_H:"Rei de Copas", K_D:"Rei de Ouros"}[id] || id),
   publicUnitName: (id, fallback) => fallback,
+  HOUSE_NAMES:{center:"Centro"},
 });
 const source = fs.readFileSync(path.join(__dirname, "../jessica/web/static/app.js"), "utf8");
 vm.runInContext(source.slice(source.indexOf("function actionDetails("),
                             source.indexOf("function eventText(")), context);
+context.publicUnitName = (id, fallback) => id === 'luide' ? 'Luide Vampa' : fallback;
+assert.equal(context.actionDetails({type:'night_luide_move',params:{unit_id:'luide',destination:'center'}}), 'Luide Vampa → Centro');
+assert.equal(context.actionDetails({type:'night_luide_spell',params:{unit_id:'luide'}}), 'Feitiço vampiro: Luide Vampa');
 const actions = [0, 1, 2].map(gold => ({
   type: "collect_resources", label: "Coletar recursos", player_id: 1,
   params: {gold, magic: 2 - gold},

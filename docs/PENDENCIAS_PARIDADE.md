@@ -38,6 +38,9 @@ Luna/Luide/Armadura/Q♦/Ainai passaram em cenários dirigidos; ver
 Corrigida nas duas instalações a omissão de Bases no seletor de alvos de Rogue
 com quatro itens, apesar de o combate já permitir esse ataque.
 
+QA real de Rogue, Luide sem inimigos e oferta de Belial no próximo Dia, por
+mouse/teclado em larguras desktop/móvel: `VALIDACAO_NAVEGADOR.md`.
+
 Ainda ampliar: partidas completas que concluam as outras quests/adquiram os
-quatro itens, outros cruzamentos de janelas e playtest real desktop/celular.
+quatro itens, outros cruzamentos de janelas e playtest físico por toque/PWA.
 São lacunas de validação; não há, por isso só, evidência de mecânica ausente.

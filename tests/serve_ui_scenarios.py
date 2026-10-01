@@ -51,8 +51,38 @@ def scenarios():
     attack = next(a for a in legal_actions(armor, armor.active_player_id) if a["type"] == "night_attack")
     assert apply_action(armor, attack)["success"] and armor.web_reaction
     assert armor.phase == Phase.NIGHT
+    rogue = server._new_state(72)
+    player = rogue.players[0]
+    player.people, player.chosen_hero_id = "demonios", "rogue_devil"
+    player.city.magic = 20
+    player.hand = []
+    player.units = []
+    summon = next(a for a in legal_actions(rogue, 1) if a["type"] == "summon_hero")
+    assert apply_action(rogue, summon)["success"]
+    assert all(a["type"] == "demon_pact" for a in legal_actions(rogue, 1))
+
+    luide = server._new_state(72)
+    for p in luide.players:
+        p.units = []
+    player = luide.players[0]
+    player.people, player.chosen_hero_id = "vampiros", "luide_vampa"
+    player.city.magic = 20
+    player.units = [Hero(id="luide", owner_id=1, house="city_1", life=8,
+                         life_max=8, hero_id="luide_vampa")]
+    end_day(luide)
+    night_actions.prepare(luide)
+    assert any(a["type"] == "night_luide_spell" for a in legal_actions(luide, 1))
+
+    from test_night_terminal_parity import belial_night, compare
+    belial, plan = belial_night()
+    belial, _ = compare(belial, plan)
+    assert belial.players[0].demon_pact_offers
+    assert [a["type"] for a in legal_actions(belial, 1)] == ["finish_night"]
     return (("Sacrifício: mão e campo", sacrifice), ("Luna: escolhas encadeadas", dream),
-            ("Armadura: reação e passagem de jogador", armor))
+            ("Armadura: reação e passagem de jogador", armor),
+            ("Rogue: quest e item ao firmar pacto", rogue),
+            ("Luide: janela sem inimigos", luide),
+            ("Belial: oferta guardada para o próximo Dia", belial))
 
 
 def main():

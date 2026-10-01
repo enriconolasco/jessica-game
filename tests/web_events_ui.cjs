@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('jessica/web/static/app.js', 'utf8');
 const context = vm.createContext({
+  catalog:{pacts:[{id:'vida_lider',name:'Ofereça a vida de um líder'}]},
   publicUnitNames:new Map(), unitName:u=>u.name || 'Tropa pequena',
   cardName:id=>id === 'K_H' ? 'Rei de Copas' : id,
   HOUSE_NAMES:{city_2:'Cidade 2 (Leste)', center:'Centro'},
@@ -21,6 +22,10 @@ assert.equal(context.eventText(event({action_type:'night_attack',attacker_unit_i
 assert.equal(context.eventText(event({action_type:'night_pass',unit_id:'attacker'})), 'Arken não declarou ataque.');
 assert.equal(context.eventText(event({action_type:'night_luide_move',unit_id:'defender',destination:'center'})), 'Tuza moveu para Centro na janela de Luide.');
 assert.equal(context.eventText({type:'artifact_sold',data:{player_id:1,card_id:'K_H'}}), 'J1 vendeu Rei de Copas.');
+assert.equal(context.eventText({type:'interaction_resolved',data:{player_id:1,action_type:'demon_pact',pact_id:'vida_lider'}}), 'J1 firmou um pacto: Ofereça a vida de um líder.');
+assert.equal(context.eventText({type:'interaction_resolved',data:{player_id:1,action_type:'play_artifact',card_id:'K_H'}}), 'J1 jogou Rei de Copas.');
+assert.match(context.eventText({type:'public_state_changed',turn:2,phase:'day',data:{from_turn:1,from_phase:'night',changes:[]}}), /T1 Noite → T2 Dia/);
+assert.equal(context.phaseName('unknown'), 'unknown');
 assert.equal(context.publicUnitName('hidden'), 'Unidade hidden');
 assert.ok(!JSON.stringify([...context.publicUnitNames]).includes('SEGREDO'));
 context.publicUnitNames.clear();

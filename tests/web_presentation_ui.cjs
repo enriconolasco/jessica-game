@@ -59,6 +59,7 @@ view.board.units=Array.from({length:25},(_,i)=>({id:`u${i}`,owner_id:i%3+1,kind:
 view.board.units.push({id:'dead',owner_id:1,kind:'troop',house:'center',life:0,life_max:4});
 const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
 vm.runInContext(app.slice(0,app.indexOf('function actionDetails(')),context);
+assert.match(context.publicStates({statuses:{rogue_items:['relogio','bracelete','unknown']}}).join(' · '), /Relógio de bolso, Bracelete, unknown/);
 vm.runInContext('currentView=view; renderMap(view)',context);
 assert.equal(map.querySelectorAll('.unit-marker').length,25);
 assert.equal(map.querySelectorAll('.unit-life').length,25);

@@ -26,6 +26,9 @@ const cardName = id => catalog?.artifacts?.find(card => card.id === id)?.name ||
 const unitName = unit => (unit.hero_id ? heroName(unit.hero_id) : null)
   || troopNames[unit.archetype]
   || unit.hero_id || unit.archetype || unit.id;
+function rogueItemName(id) {
+  return {capa:"Capa", adaga:"Adaga", relogio:"Relógio de bolso", bracelete:"Bracelete"}[id] || id;
+}
 function publicStates(unit) {
   const labels = {amaldicoado_until_turn:"Amaldiçoado até o turno", cannot_attack_on_turn:"Não ataca no turno",
     centauro_until_turn:"Centauro até o turno", espectro_until_turn:"Espectro até o turno",
@@ -39,7 +42,7 @@ function publicStates(unit) {
     dragon_heart_resistance:"Resistência da Canastra", k_s_active:"Véu das Caçadoras",
     can_attack_city_until_turn:"Pode atacar Base até o turno", lupa_resist_until_turn:"Resistência de Lupã até o turno"};
   const states = Object.entries(unit.statuses || {}).filter(([key]) => labels[key]).map(([key, value]) =>
-    `${labels[key]}${typeof value === "boolean" ? "" : `: ${Array.isArray(value) ? value.join(", ") : value}`}`);
+    `${labels[key]}${typeof value === "boolean" ? "" : `: ${Array.isArray(value) ? value.map(item => key === "rogue_items" ? rogueItemName(item) : item).join(", ") : value}`}`);
   if (unit.resistance_stacks) states.push(`resistência: ${unit.resistance_stacks}`);
   if (unit.double_damage) states.push("dano dobrado");
   if (unit.infected) states.push("infectado");
@@ -194,6 +197,9 @@ function renderMap(view) {
 function publicUnitName(id, fallback = `Unidade ${id}`) {
   return publicUnitNames.get(id) || fallback;
 }
+function phaseName(phase) {
+  return {day:"Dia", night:"Noite"}[phase] || phase || "—";
+}
 function rememberPublicUnitNames(view, events) {
   for (const event of events) {
     if (event.type !== "public_state_changed") continue;
@@ -206,6 +212,8 @@ function rememberPublicUnitNames(view, events) {
   for (const unit of view?.board.units || []) publicUnitNames.set(unit.id, unitName(unit));
 }
 function actionDetails(action) {
+  if (action.type === "night_luide_move") return `${publicUnitName(action.params.unit_id)} → ${HOUSE_NAMES[action.params.destination] || action.params.destination}`;
+  if (action.type === "night_luide_spell") return `Feitiço vampiro: ${publicUnitName(action.params.unit_id)}`;
   if (action.description) return action.description;
   const p = action.params;
   if (action.type === "collect_resources") return `${p.gold} Ouro + ${p.magic} Magia`;
@@ -233,7 +241,8 @@ function renderActions(actions) {
     group.open = ["collect_resources", "end_turn", "finish_night", "resolve_artifact_choice", "night_resolve_choice",
                   "demon_pact", "night_pact", "night_decline_pact", "night_clock", "night_skip_clock", "night_setup"].includes(type);
     const summary = document.createElement("summary");
-    summary.textContent = `${items[0].label} (${items.length})`;
+    const label = {night_luide_move:"Mover na janela de Luide", night_luide_spell:"Feitiço na janela de Luide"}[type] || items[0].label;
+    summary.textContent = `${label} (${items.length})`;
     group.appendChild(summary);
     if (type === "demon_pact" || type === "night_pact") {
       const select = document.createElement("select");
@@ -397,7 +406,7 @@ function renderActions(actions) {
     if (items.length > 1) {
       const select = document.createElement("select");
       select.className = "action-select";
-      select.setAttribute("aria-label", items[0].label);
+      select.setAttribute("aria-label", label);
       items.forEach((action, index) => {
         const option = document.createElement("option");
         option.value = index;
@@ -425,7 +434,7 @@ function eventText(event) {
   if (event.type === "public_roll") return d.message || `J${d.player_id} · ${d.source}: ${d.results.join(", ")} (${d.results.map(n => ({1:"+1 Magia", 2:"+1 Ouro", 3:"cura 2 pendente", 4:"dano na Cidade"})[n] || n).join(" · ")}).`;
   if (event.type === "combat_house_opened") return `${HOUSE_NAMES[d.house] || d.house}: ${d.order.length ? `combate iniciado · declarações ${d.order.map(id => `J${id}`).join(" → ")}` : "não havia combates a declarar"}.`;
   if (event.type === "day_restored") return `J${d.player_id}: ${d.operation === "mola" ? "retomou a jogada anterior" : "refez sua jogada"}. Estado e RNG restaurados.`;
-  if (event.type === "public_state_changed") return (d.from_turn !== event.turn || d.from_phase !== event.phase ? `Alterações na transição T${d.from_turn} ${d.from_phase} → T${event.turn} ${event.phase}:\n` : "") + d.changes.map(change => {
+  if (event.type === "public_state_changed") return (d.from_turn !== event.turn || d.from_phase !== event.phase ? `Alterações na transição T${d.from_turn} ${phaseName(d.from_phase)} → T${event.turn} ${phaseName(event.phase)}:\n` : "") + d.changes.map(change => {
     if (change.kind === "unit") {
       const a = change.before, b = change.after;
       if (!a) return `J${b.owner_id}: ${unitName(b)} entrou em ${HOUSE_NAMES[b.house]} com ${b.life}/${b.life_max} de vida.`;
@@ -482,7 +491,8 @@ function eventText(event) {
       day_attack: "atacou durante o Dia com Miyamoto",
       dream_multi: "usou Sonho Lúcido com Luna",
       reroll_spell: "rerrolou o feitiço copiado"};
-    return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${d.card_id}` : ""}${d.pact_id ? `: ${d.pact_id.replaceAll("_", " ")}` : ""}.`;
+    const pact = d.pact_id && (catalog?.pacts?.find(p => p.id === d.pact_id)?.name || d.pact_id);
+    return `J${d.player_id} ${labels[d.action_type] || "concluiu uma ação"}${d.card_id ? ` ${cardName(d.card_id)}` : ""}${pact ? `: ${pact}` : ""}.`;
   }
   return event.type;
 }
@@ -501,7 +511,7 @@ function renderEvents(events) {
     const node = document.createElement("div"); node.className = "event";
     const text = document.createElement("strong"); text.textContent = eventText(event);
     if (!text.textContent) return;
-    const meta = document.createElement("small"); meta.textContent = `Turno ${event.turn} · ${event.phase}`;
+    const meta = document.createElement("small"); meta.textContent = `Turno ${event.turn} · ${phaseName(event.phase)}`;
     node.append(text, document.createElement("br"), meta); root.appendChild(node);
   });
   if (!visible.length) root.textContent = "Nenhum acontecimento.";
@@ -569,7 +579,7 @@ async function refresh(allowPlayerSwitch = false) {
   }
   $("self").appendChild(document.createElement("br"));
   const extra = document.createElement("span");
-  extra.textContent = `Feitiço disponível a partir de T${view.self.spell_cooldown_until_turn} · ${view.self.has_cast_spell_this_turn ? "já usado neste turno" : "não usado"}${view.self.baoba_payments ? ` · Baobá: ${view.self.baoba_payments}/3 pagamentos` : ""}${view.self.rogue_items?.length ? ` · Rogue: ${view.self.rogue_items.join(", ")}` : ""}${view.self.inherited_peoples?.length ? ` · Passivas de São Tomé: ${view.self.inherited_peoples.map(peopleName).join(", ")}` : ""}`;
+  extra.textContent = `Feitiço disponível a partir de T${view.self.spell_cooldown_until_turn} · ${view.self.has_cast_spell_this_turn ? "já usado neste turno" : "não usado"}${view.self.baoba_payments ? ` · Baobá: ${view.self.baoba_payments}/3 pagamentos` : ""}${view.self.rogue_items?.length ? ` · Rogue: ${view.self.rogue_items.map(rogueItemName).join(", ")}` : ""}${view.self.inherited_peoples?.length ? ` · Passivas de São Tomé: ${view.self.inherited_peoples.map(peopleName).join(", ")}` : ""}`;
   $("self").appendChild(extra);
   ["undo", "mola"].forEach(id => { $(id).disabled = !view.local_controls?.[id]; });
   renderReports(view);
@@ -678,7 +688,7 @@ function showHelp(peopleId = null) {
     Object.entries(catalog.conditions).forEach(([name, text]) => line(conditions, `${name}: ${text}`));
     const pacts = section("Pactos e itens de Rogue");
     catalog.pacts.forEach(p => line(pacts, `${p.name}: ${p.description}`));
-    Object.entries(catalog.rogue_items).forEach(([name, text]) => line(pacts, `${name}: ${text}`));
+    Object.entries(catalog.rogue_items).forEach(([name, text]) => line(pacts, `${rogueItemName(name)}: ${text}`));
   }
   $("helpDialog").showModal();
   $("closeHelp").focus();
