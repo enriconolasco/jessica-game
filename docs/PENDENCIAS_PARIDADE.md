@@ -31,6 +31,13 @@ Partidas completas com Barba Negra, Valtherion e Rogue agora aprovadas em
 `VALIDACAO_BASES_E_PACTOS.md`, incluindo Canastra, Chamado, Mar de Chamas,
 reinvocação e quest Vida de um Líder sem recompensa adicional ao concluir.
 
-Ainda ampliar: conclusão das outras quests, quatro itens de Rogue em combinação,
-várias janelas especiais encadeadas e playtest real desktop/celular. São lacunas
-de validação; não há, por isso só, evidência de mecânica ausente ou quebrada.
+As outras duas quests, combinação de quatro itens com Relógio e cadeia
+Luna/Luide/Armadura/Q♦/Ainai passaram em cenários dirigidos; ver
+`VALIDACAO_QUESTS_E_JANELAS.md`.
+
+Corrigida nas duas instalações a omissão de Bases no seletor de alvos de Rogue
+com quatro itens, apesar de o combate já permitir esse ataque.
+
+Ainda ampliar: partidas completas que concluam as outras quests/adquiram os
+quatro itens, outros cruzamentos de janelas e playtest real desktop/celular.
+São lacunas de validação; não há, por isso só, evidência de mecânica ausente.

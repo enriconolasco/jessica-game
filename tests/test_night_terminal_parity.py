@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from jessica import main as terminal
 from jessica.core import combat, night_actions
 from jessica.core.headless import apply_action, legal_actions, view_for_player
-from jessica.core.models import Hero, Troop
+from jessica.core.models import Hero, Troop, ArtifactOnField
 from jessica.core.serialize import state_from_dict, state_to_dict
 from jessica.core.state import snapshot_turn_start_priority, sync_house_priority
 from jessica.web import session
@@ -24,7 +24,7 @@ def mechanics(state):
 
 
 def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=(), artifact_choices=None,
-            window_trace=None, decision_trace=None):
+            window_trace=None, decision_trace=None, clock_destination=None):
     direct = state_from_dict(state_to_dict(state))
     terminal_trace = []
     remaining = deepcopy(plan)
@@ -44,6 +44,9 @@ def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=()
     with ExitStack() as patches:
         patches.enter_context(patch.object(combat, "_armor_choice_fn", lambda player, damage: 0))
         patches.enter_context(patch.object(terminal, "console", Mock()))
+        patches.enter_context(patch.object(terminal.Prompt, "ask",
+            lambda prompt, **kwargs: "s" if clock_destination and "Relógio de bolso?" in prompt
+            else kwargs.get("default", "")))
         for name in ("show_hud", "show_map", "_ask_vovo_position", "_try_luna_return",
                      "_ainai_prompt_all", "_try_besouro_mandinga", "_night_info_prompt",
                      "_mostrar_resumo_local"):
@@ -92,6 +95,8 @@ def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=()
                           or a["params"]["kind"] in ("besouro", "aiquara"))
         elif any(a["type"] == "night_window_done" for a in choices):
             action = next(a for a in choices if a["type"] == "night_window_done")
+        elif any(a["type"] == "night_skip_clock" for a in choices):
+            action = next(a for a in choices if a["type"] == "night_skip_clock")
         else:
             action = None
             for candidate in choices:
@@ -440,6 +445,71 @@ def test_ainai_window_timing_matches_terminal_including_empty_houses():
         compare(state, {}, lambda title, labels: 0, real_windows=("_ainai_prompt_all",),
                 window_trace=actual)
     assert actual == expected, (actual, expected)
+
+
+def test_luna_luide_armor_qd_ainai_chain_matches_real_windows():
+    state = night()
+    state.players[0].people = "vampiros"
+    state.players[0].city.magic = 20
+    state.players[0].units = [Hero(id="luide", owner_id=1, house="center", life=8,
+                                 life_max=8, hero_id="luide_vampa", resistance_stacks=1)]
+    fae = state.players[1]
+    fae.people = "fadas"
+    fae.units = [Hero(id="ainai", owner_id=2, house="city_2", life=4, life_max=4,
+                     hero_id="ainai", resistance_stacks=2),
+                 Hero(id="luna", owner_id=2, house="center", life=2, life_max=2,
+                      hero_id="luna", statuses={"luna_origin_house": "city_2"})]
+    troop(state, 2, "fallen", life=1).life_max = 4
+    fae.armor_active_until_turn = state.turn
+    fae.city.gold = 8
+    fae.field_artifacts = [ArtifactOnField(card_id="Q_D", owner_id=2, extra={"target_unit_id": "fallen"})]
+    decisions, windows = [], [
+        {"type": "night_setup", "params": {"kind": "luna", "return": True}},
+        {"type": "night_luide_spell", "params": {"unit_id": "luide"}},
+        {"type": "night_resolve_choice", "params": {"resource": "gold"}},
+        {"type": "night_ainai", "params": {"destination": "center"}},
+    ]
+
+    def picker(title, labels):
+        if title == "Teleporte de Ainai?":
+            return 1
+        if "(Luide Vampa)" in title:
+            return labels.index("Lancar feitico") if "Lancar feitico" in labels else len(labels) - 1
+        return 0
+
+    final, trace = compare(state, {"luide": [("unit", "fallen")], "ainai": [("unit", "luide")]},
+        picker, windows, ("_try_luna_return", "_ainai_prompt_all"), decision_trace=decisions)
+    assert not windows
+    assert [a["attacker_unit_id"] for a in trace] == ["luide", "ainai"]
+    ordered = ["night_setup", "night_luide_spell", "night_attack", "armor_payment",
+               "night_resolve_choice", "night_ainai"]
+    positions = [decisions.index(kind) for kind in ordered]
+    assert positions == sorted(positions), decisions
+    assert final.players[1].city.gold == 12
+    assert not final.players[1].pending_artifact_choice
+
+
+def test_rogue_four_items_base_attack_and_real_clock_window():
+    from jessica.core import peoples
+    state = night()
+    state.players[0].people = "demonios"
+    rogue = Hero(id="rogue", owner_id=1, house="city_2", life=5, life_max=5,
+                 hero_id="rogue_devil", statuses={"rogue_items": list(peoples.ROGUE_ITEMS),
+                 "rogue_resist_heroes": True, "demon_execute_weaker": True})
+    state.players[0].units = [rogue]
+    troop(state, 1, "crew", life=4)
+    troop(state, 2, "enemy", life=1)
+    assert any(t[:2] == ("city", "2") for t in terminal.find_targets(state, rogue))
+    assert next(u for u in view_for_player(state, 1)["board"]["units"]
+                if u["id"] == "rogue")["hero_can_attack_city"]
+    windows = [{"type": "night_clock", "params": {"destination": "center"}}]
+    decisions = []
+    final, trace = compare(state, {"crew": [("unit", "enemy")], "rogue": [("city", "2")]},
+        lambda title, labels: 0, windows, decision_trace=decisions, clock_destination="center")
+    assert not windows and len(trace) == 2
+    assert decisions[-1] == "night_clock"
+    assert final.players[1].city.life == state.players[1].city.life - 1
+    assert next(u for u in final.players[0].units if u.id == "rogue").house == "center"
 
 
 if __name__ == "__main__":

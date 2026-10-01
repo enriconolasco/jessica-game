@@ -17,6 +17,12 @@ Rogue; Canastra, habilidades das Bases, pactos, reinvocação persistente e ques
 Vida de um Líder verificadas. Prévia e confirmação de pactos implementadas na
 web. Ver `VALIDACAO_BASES_E_PACTOS.md` para recorte e limites restantes.
 
+Lote seguinte: quests Banho de Sangue/Cabeças de Heróis e janelas intercaladas
+Luna/Luide/Armadura/Q♦/Ainai aprovadas em cenários dirigidos. Rogue com quatro
+itens agora encontra Bases no seletor de alvos nas duas instalações; combinação
+com Relógio testada. Ver `VALIDACAO_QUESTS_E_JANELAS.md`, sem confundir esses
+cenários com partidas completas ou certificação de todos os cruzamentos.
+
 Revisão de 2026-09-30: ver `AUDITORIA_PARIDADE_2026_09_30.md` para o mapeamento
 de todos os menus, novos pagamentos de Armadura, consultas, histórico e refazer/Mola.
 Não foi identificado outro fluxo mecânico selecionável sem adaptador; a validação

@@ -342,7 +342,7 @@ def _unit_view(unit: Unit, state: GameState | None = None) -> dict:
         "max_attacks_this_night": unit.max_attacks_this_night,
         "resistance_stacks": unit.resistance_stacks,
         "double_damage": unit.double_damage,
-        "hero_can_attack_city": unit.hero_can_attack_city,
+        "hero_can_attack_city": unit.hero_can_attack_city or peoples.rogue_can_attack_base(unit),
         "statuses": _public_statuses(unit),
     }
     if isinstance(unit, Hero):

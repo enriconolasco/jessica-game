@@ -6,8 +6,14 @@ from copy import deepcopy
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from test_mixed_matches_parity import match, choose_day
-from jessica.core.headless import apply_action
+from test_night_terminal_parity import compare
+from test_web_cycle_parity import step
+from jessica.web.server import _new_state
+from jessica.core.headless import apply_action, legal_actions
 from jessica.core.serialize import state_to_dict
+from jessica.core.models import Hero, Troop
+from jessica.core.constants import Phase, TroopArchetype
+from jessica.core.heroes import HERO_CATALOG
 
 
 def dragon_policy(state, choices, used):
@@ -106,6 +112,51 @@ def test_rogue_quest_rewards_only_at_signing_in_complete_match():
     return result
 
 
+def quest_case(pact_id, seed):
+    setup = [("demonios", "rogue_devil"), ("humanos", "miyamoto"),
+             ("orcs", "arken"), ("fadas", "luna")]
+    state = _new_state(seed, [{"name": f"J{pid}", "people": people, "hero_id": hero}
+        for pid, (people, hero) in enumerate(setup, 1)], {"magic": 25, "order_mode": "fixed"})
+    plan = {}
+    for pid, archetype, life in ((2, TroopArchetype.LIGHT, 4), (3, TroopArchetype.MEDIUM, 6),
+                                 (4, TroopArchetype.HEAVY, 8)):
+        hid = setup[pid - 1][1]
+        state.players[pid - 1].units = [Hero(id=f"enemy{pid}", owner_id=pid, house="center",
+            life=1, life_max=HERO_CATALOG[hid].life, hero_id=hid)]
+        uid = f"troop{pid}"
+        state.players[0].units.append(Troop(id=uid, owner_id=1, house="center", life=life,
+                                           life_max=life, archetype=archetype))
+        plan[uid] = [("unit", f"enemy{pid}")]
+    state = step(state, next(a for a in legal_actions(state, 1) if a["type"] == "summon_hero"))
+    before = state_to_dict(state)
+    state = step(state, next(a for a in legal_actions(state, 1) if a["type"] == "demon_pact"
+        and a["params"]["pact_id"] == pact_id and a["params"]["item"] == "bracelete"))
+    pact = state.demon_pacts[0]
+    assert pact["rogue_pact"] and pact["rewarded"] and not pact["completed"]
+    assert state.players[0].rogue_life_bonus == 1 and state.players[0].rogue_items == ["bracelete"]
+    assert len(state.players[0].hand) == len(before["players"][0]["hand"]) + 1
+    while state.phase == Phase.DAY:
+        state = step(state, next(a for a in legal_actions(state, state.active_player_id)
+                                if a["type"] == "end_turn"))
+    before = deepcopy(state)
+    state, trace = compare(state, plan)
+    assert len(trace) == 3 and state.demon_pacts[0]["completed"]
+    assert state.players[0].hand == before.players[0].hand
+    assert state.players[0].rogue_life_bonus == before.players[0].rogue_life_bonus
+    assert state.players[0].rogue_items == before.players[0].rogue_items
+    assert state.shop.deck == before.shop.deck
+    assert state_to_dict(state)["rng"] == state_to_dict(before)["rng"]
+    return {"night_attack": len(trace)}, state.turn
+
+
+def test_rogue_blood_quest_has_no_completion_reward():
+    return quest_case("banho_sangue", 907)
+
+
+def test_rogue_hero_peoples_quest_has_no_completion_reward():
+    return quest_case("cabecas_herois", 908)
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):
@@ -113,7 +164,7 @@ if __name__ == "__main__":
             try:
                 counts, turn = test()
                 passed += 1
-                print(f"PARTIDA - {name}: vitória T{turn}; decisões {sum(counts.values())}")
+                print(f"CENÁRIO - {name}: T{turn}; decisões {sum(counts.values())}")
             except Exception as exc:
                 failed += 1
                 print(f"FALHOU - {name}: {type(exc).__name__}: {exc}")

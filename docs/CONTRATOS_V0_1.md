@@ -338,3 +338,10 @@ Durante a Noite, `active_player_id` da visão acompanha o decisor calculado pela
 fila, inclusive para saves antigos pausados em Belial; reações de Armadura
 preservam seu próprio decisor. A consulta não modifica o estado nem o RNG.
 Não muda formato nem versões de ações, eventos, visão ou saves.
+
+## Permissão pública de Rogue — 01/10/2026
+
+`board.units[].hero_can_attack_city` inclui a permissão efetiva de Rogue com
+os quatro itens, calculada pelo motor compartilhado, mesmo sem alterar a flag
+armazenada na unidade. O navegador apenas apresenta o campo; não conta itens
+para autorizar ataques. Não há mudança de formato nem versão.

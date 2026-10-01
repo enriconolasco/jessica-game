@@ -33,6 +33,8 @@ def worker(reference):
                     patches.enter_context(patch.object(combat, "_armor_choice_fn",
                                                        lambda player, damage: args["armor_gold"]))
                 patches.enter_context(patch.object(terminal, "console", Mock()))
+                patches.enter_context(patch.object(terminal.Prompt, "ask",
+                    lambda prompt, **kwargs: kwargs.get("default", "")))
                 for name in ("show_hud", "show_map", "_ask_vovo_position", "_try_luna_return",
                              "_ainai_prompt_all", "_try_besouro_mandinga", "_night_info_prompt",
                              "_mostrar_resumo_local", "_luide_janela_noturna"):
@@ -58,7 +60,7 @@ def normalize(state):
 def run(reference):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from copy import deepcopy
-    from jessica.core import interaction_actions
+    from jessica.core import interaction_actions, peoples
     from jessica.core.headless import apply_action, legal_actions
     from jessica.core.models import Hero
     from jessica.core.serialize import state_to_dict
@@ -139,6 +141,14 @@ def run(reference):
                         "label": f"Belial: oferta diferida, vidas {attacker_life}/{defender_life}"})
         web, _ = compare(state, plan)
         expected.append(state_to_dict(web))
+
+    from test_rogue_four_items import fixture
+    state, _ = fixture(peoples.ROGUE_ITEMS)
+    plan = {"rogue": [("city", "2")]}
+    records.append({"state": state_to_dict(state), "module": "terminal", "args": {"plan": plan},
+                    "label": "Rogue: quatro itens liberam ataque à Base"})
+    web, _ = compare(state, plan)
+    expected.append(state_to_dict(web))
 
     completed = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve()),
                                 "--reference", str(reference), "--worker"],

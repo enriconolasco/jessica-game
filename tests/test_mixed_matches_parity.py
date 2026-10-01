@@ -95,7 +95,7 @@ def direct_action(state, action):
 
 
 def choose_night(state, choices):
-    for kind in ("armor_payment", "night_window_done", "night_setup", "night_resolve_choice"):
+    for kind in ("armor_payment", "night_window_done", "night_setup", "night_resolve_choice", "night_skip_clock"):
         candidates = [a for a in choices if a["type"] == kind]
         if candidates:
             if kind == "armor_payment":

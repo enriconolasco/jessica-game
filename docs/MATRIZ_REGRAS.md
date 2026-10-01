@@ -41,6 +41,9 @@ de mecânica deve atualizar sua linha e possuir ao menos um teste comportamental
 - Comparação automatizada com outra instalação: `tests/compare_terminal_reference.py`.
 - Bases Dragões/pactos em partidas completas: `VALIDACAO_BASES_E_PACTOS.md`
   e `tests/test_special_matches_parity.py`.
+- Rogue com quatro itens: `peoples.py::rogue_can_attack_base`, `combat.py`,
+  `night_rules.py` (web)/`main.py::find_targets` (terminal), teste compartilhado
+  `test_rogue_four_items.py`; cruzamentos em `VALIDACAO_QUESTS_E_JANELAS.md`.
 
 "Implementado", "validado neste cenário" e "aguardando confirmação" são estados
 distintos. Não registrar uma mecânica como totalmente validada apenas porque seu
