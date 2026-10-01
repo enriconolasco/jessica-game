@@ -435,6 +435,7 @@ function eventText(event) {
   if (event.type === "combat_house_opened") return `${HOUSE_NAMES[d.house] || d.house}: ${d.order.length ? `combate iniciado · declarações ${d.order.map(id => `J${id}`).join(" → ")}` : "não havia combates a declarar"}.`;
   if (event.type === "day_restored") return `J${d.player_id}: ${d.operation === "mola" ? "retomou a jogada anterior" : "refez sua jogada"}. Estado e RNG restaurados.`;
   if (event.type === "public_state_changed") return (d.from_turn !== event.turn || d.from_phase !== event.phase ? `Alterações na transição T${d.from_turn} ${phaseName(d.from_phase)} → T${event.turn} ${phaseName(event.phase)}:\n` : "") + d.changes.map(change => {
+    if (change.kind === "pact") return `Pacto ${!change.after ? "removido" : !change.before ? "firmado" : "atualizado"}: ${pactLabel(change.after || change.before, catalog, peopleName)}.`;
     if (change.kind === "unit") {
       const a = change.before, b = change.after;
       if (!a) return `J${b.owner_id}: ${unitName(b)} entrou em ${HOUSE_NAMES[b.house]} com ${b.life}/${b.life_max} de vida.`;

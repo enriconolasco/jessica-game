@@ -4,10 +4,13 @@ const vm = require('node:vm');
 const source = fs.readFileSync('jessica/web/static/app.js', 'utf8');
 const context = vm.createContext({
   catalog:{pacts:[{id:'vida_lider',name:'Ofereça a vida de um líder'}]},
+  peopleName:id=>({humanos:'Humanos',orcs:'Orcs'}[id] || id),
   publicUnitNames:new Map(), unitName:u=>u.name || 'Tropa pequena',
   cardName:id=>id === 'K_H' ? 'Rei de Copas' : id,
   HOUSE_NAMES:{city_2:'Cidade 2 (Leste)', center:'Centro'},
 });
+const presentation = fs.readFileSync('jessica/web/static/presentation.js', 'utf8');
+vm.runInContext(presentation.slice(presentation.indexOf('function pactLabel('),presentation.indexOf('function reportData(')), context);
 vm.runInContext(source.slice(source.indexOf('function publicUnitName('), source.indexOf('function actionDetails(')),context);
 vm.runInContext(source.slice(source.indexOf('function eventText('),source.indexOf('function renderEvents(')),context);
 const view = {board:{units:[{id:'defender',name:'Tuza'}]},self:{hand:['SEGREDO']}};
@@ -26,6 +29,10 @@ assert.equal(context.eventText({type:'interaction_resolved',data:{player_id:1,ac
 assert.equal(context.eventText({type:'interaction_resolved',data:{player_id:1,action_type:'play_artifact',card_id:'K_H'}}), 'J1 jogou Rei de Copas.');
 assert.match(context.eventText({type:'public_state_changed',turn:2,phase:'day',data:{from_turn:1,from_phase:'night',changes:[]}}), /T1 Noite → T2 Dia/);
 assert.equal(context.phaseName('unknown'), 'unknown');
+const pact = {pact_id:'vida_lider',owner_id:1,completed:true,rewarded:true};
+assert.match(context.eventText({type:'public_state_changed',data:{changes:[{kind:'pact',before:{...pact,completed:false},after:pact}]}}), /Pacto atualizado: Ofereça a vida de um líder.*concluído.*recompensa entregue/);
+assert.match(context.eventText({type:'public_state_changed',data:{changes:[{kind:'pact',before:null,after:{...pact,completed:false}}]}}), /Pacto firmado:.*em andamento/);
+assert.match(context.eventText({type:'public_state_changed',data:{changes:[{kind:'pact',before:pact,after:{...pact,released:true}}]}}), /Pacto atualizado:.*liberado/);
 assert.equal(context.publicUnitName('hidden'), 'Unidade hidden');
 assert.ok(!JSON.stringify([...context.publicUnitNames]).includes('SEGREDO'));
 context.publicUnitNames.clear();

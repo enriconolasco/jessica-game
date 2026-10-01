@@ -345,3 +345,12 @@ Não muda formato nem versões de ações, eventos, visão ou saves.
 os quatro itens, calculada pelo motor compartilhado, mesmo sem alterar a flag
 armazenada na unidade. O navegador apenas apresenta o campo; não conta itens
 para autorizar ataques. Não há mudança de formato nem versão.
+
+## Histórico público de pactos — 01/10/2026
+
+`public_state_changed.data.changes` admite `kind: pact`, com `before` e `after`
+contendo somente registros já públicos em `PlayerView.demon_pacts`. Inclusão e
+remoção usam `null`; atualizações registram progresso, conclusão, recompensa ou
+liberação. O frontend reutiliza o catálogo e o formatador da HUD; não calcula
+progresso/recompensas. Eventos anteriores continuam legíveis e saves mantêm suas
+versões. Mãos e ofertas privadas não são copiadas para este registro.

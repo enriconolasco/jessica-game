@@ -48,6 +48,7 @@ em Downloads, não apenas à web.
 
 ## Limites restantes
 
-Partidas completas que concluam Banho de Sangue/Cabeças de Heróis e adquiram os
-quatro itens continuam pendentes. Faltam outros cruzamentos de janelas e playtest
-real desktop/celular. Nenhuma inspeção manual do navegador neste lote.
+Os limites deste lote foram parcialmente cobertos depois: as partidas completas
+de Banho de Sangue/Cabeças de Heróis e aquisição dos quatro itens estão em
+`VALIDACAO_PROGRESSAO_ROGUE.md`; QA real em `VALIDACAO_NAVEGADOR.md`.
+Permanecem outros cruzamentos, adversários atuantes e teste físico por toque/PWA.

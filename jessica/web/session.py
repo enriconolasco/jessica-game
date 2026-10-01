@@ -61,6 +61,7 @@ def public_snapshot(state):
         state.web_reaction = {}
     view = view_for_player(state, state.players[0].id)
     return {"players": view["players"], "board": view["board"], "conditions": view["conditions"],
+            "demon_pacts": view["demon_pacts"],
             "turn": state.turn, "phase": state.phase.value,
             "log_index": len(state.event_log), "action_index": len(state.action_log),
             "announcement_index": len(state.web_night.get("announcements", []))}
@@ -107,6 +108,12 @@ def changes(before, state, action):
             changes.append({"kind": "unit", "before": old, "after": new})
     if before["conditions"] != after["conditions"]:
         changes.append({"kind": "conditions", "after": after["conditions"]})
+    old_pacts = {p["pact_id"]: p for p in before.get("demon_pacts", [])}
+    new_pacts = {p["pact_id"]: p for p in after["demon_pacts"]}
+    for pact_id in sorted(old_pacts.keys() | new_pacts.keys()):
+        old, new = old_pacts.get(pact_id), new_pacts.get(pact_id)
+        if old != new:
+            changes.append({"kind": "pact", "before": old, "after": new})
     index = before["announcement_index"] if before["turn"] == state.turn else 0
     events = public_events(state, before["log_index"], before["action_index"], index)
     if changes:

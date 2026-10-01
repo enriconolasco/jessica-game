@@ -111,7 +111,7 @@ def choose_night(state, choices):
                 attacks[0] if attacks else next(a for a in choices if a["type"] == "night_pass"))
 
 
-def finish_night(state, counts, on_step=None):
+def finish_night(state, counts, on_step=None, night_policy=None):
     trial, plan = deepcopy(state), defaultdict(list)
     for _ in range(120):
         if trial.game_over:
@@ -122,7 +122,7 @@ def finish_night(state, counts, on_step=None):
         assert choices, f"Noite bloqueada T{trial.turn}"
         if choices[0]["type"] == "finish_night":
             break
-        action = choose_night(trial, choices)
+        action = (night_policy or choose_night)(trial, choices)
         counts[action["type"]] += 1
         if action["type"] == "night_attack":
             params = action["params"]
@@ -152,7 +152,7 @@ def finish_night(state, counts, on_step=None):
     return state
 
 
-def match(group, seed, day_policy=None, on_step=None):
+def match(group, seed, day_policy=None, on_step=None, night_policy=None):
     players = [{"name": f"J{pid}", "people": people, "hero_id": hero}
                for pid, (people, hero) in enumerate(group, 1)]
     state = _new_state(seed, players, {"city_life": 2, "gold": 25, "magic": 25, "order_mode": "fixed"})
@@ -161,7 +161,7 @@ def match(group, seed, day_policy=None, on_step=None):
         if state.game_over:
             break
         if state.phase == Phase.NIGHT:
-            state = finish_night(state, counts, on_step)
+            state = finish_night(state, counts, on_step, night_policy)
             continue
         action = (day_policy or choose_day)(state, legal_actions(state, state.active_player_id), used)
         before = deepcopy(state) if on_step else None

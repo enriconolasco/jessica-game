@@ -232,6 +232,45 @@ def test_http_armor_response_privacy_preview_history_and_save():
         assert any(c.get("player_id") == 2 and c.get("field") == "gold" and c["before"] == 8 and c["after"] == 6 for c in changes)
 
 
+def test_public_pact_history_http_privacy_save_and_invalid_action():
+    with http() as base:
+        _, created = _request(base, "/matches", "POST", {"seed":912, "players":[
+            {"name":"J1", "people":"demonios", "hero_id":"rogue_devil"},
+            {"name":"J2", "people":"humanos", "hero_id":"miyamoto"},
+            {"name":"J3", "people":"orcs", "hero_id":"arken"},
+            {"name":"J4", "people":"fadas", "hero_id":"luna"}],
+            "config":{"magic":25, "order_mode":"fixed"}})
+        mid = created["match_id"]
+        match = server.MATCHES[mid]
+        match["state"].players[1].hand = ["PENA"]
+        route = f"/matches/{mid}/actions"
+        _request(base, route, "POST", next(a for a in legal_actions(match["state"], 1)
+                                          if a["type"] == "summon_hero"))
+        action = next(a for a in legal_actions(match["state"], 1) if a["type"] == "demon_pact"
+                      and a["params"]["pact_id"] == "cabecas_herois"
+                      and a["params"]["item"] == "bracelete")
+        _, result = _request(base, route, "POST", action)
+        changes = [c for e in result["events"] if e["type"] == "public_state_changed"
+                   for c in e["data"]["changes"] if c["kind"] == "pact"]
+        assert len(changes) == 1 and changes[0]["before"] is None
+        assert changes[0]["after"]["rewarded"] and not changes[0]["after"]["completed"]
+        histories = []
+        for pid in (1, 2):
+            _, events = _request(base, f"/matches/{mid}/events?player_id={pid}")
+            public = [e for e in events if e["visibility"]["kind"] == "public"]
+            assert "PENA" not in json.dumps(public)
+            histories.append(public)
+        assert histories[0] == histories[1]
+        before = state_to_dict(match["state"])
+        event_count = len(match["events"])
+        assert _error_request(base, route, action)[0] == 422
+        assert state_to_dict(match["state"]) == before and len(match["events"]) == event_count
+        _, export = _request(base, f"/matches/{mid}/export")
+        _, loaded = _request(base, "/matches/import", "POST", export)
+        _, events = _request(base, f"/matches/{loaded['match_id']}/events?player_id=2")
+        assert [e for e in events if e["visibility"]["kind"] == "public"] == histories[1]
+
+
 def test_browser_qa_scenarios_restore_their_required_decisions():
     from jessica.core.headless import SAVE_VERSION
     from serve_ui_scenarios import scenarios

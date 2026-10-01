@@ -41,6 +41,10 @@ com quatro itens, apesar de o combate já permitir esse ataque.
 QA real de Rogue, Luide sem inimigos e oferta de Belial no próximo Dia, por
 mouse/teclado em larguras desktop/móvel: `VALIDACAO_NAVEGADOR.md`.
 
-Ainda ampliar: partidas completas que concluam as outras quests/adquiram os
-quatro itens, outros cruzamentos de janelas e playtest físico por toque/PWA.
+Banho de Sangue, Cabeças de Heróis e aquisição dos quatro itens agora possuem
+partidas completas até vitória, sem preparação artificial de unidades/itens:
+`VALIDACAO_PROGRESSAO_ROGUE.md`. Histórico público de pactos também validado por HTTP.
+
+Ainda ampliar: adversários que declarem ataques nesses roteiros, outros
+cruzamentos de janelas e playtest físico por toque/PWA.
 São lacunas de validação; não há, por isso só, evidência de mecânica ausente.
