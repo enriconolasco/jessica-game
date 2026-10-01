@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360"><rect width="640" height="360" fill="#111a26"/>
+<g transform="translate(42 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#786543"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c38d67"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#9d7547"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 16H14M18 16H21" stroke="#313037" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M16 17L15 20H17" fill="#c38d67" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#dfad42"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M10 8H22" stroke="#f0cb68" stroke-width="1.3"/><circle cx="16" cy="8" r="1.5" fill="#f0cb68"/>
+
+</g>
+<text x="80" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Barbadourada</text>
+<g transform="translate(202 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q8 25 12 24H20Q24 25 27 29Z" fill="#69747a"/>
+<path d="M8 14Q8 6 16 6Q24 6 24 14V20H8Z" fill="#c18c67"/>
+<path d="M7 8L11 5H21L25 8V12H7Z" fill="#737f85"/>
+<path d="M9 9H23V11H9Z" fill="#b5c0bd"/>
+<path d="M11 8H13V11H11ZM19 8H21V11H19Z" fill="#d7ac5c"/>
+<path d="M10 15L14 14M18 14L22 15" stroke="#ecdfc8" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="13" cy="16" r="0.8" fill="#343638"/><circle cx="19" cy="16" r="0.8" fill="#343638"/>
+<path d="M8 19Q10 18 12 19L14 18L16 20L18 18L20 19Q22 18 24 19L23 25L19 29H13L9 25Z" fill="#e1d9c9"/>
+<path d="M13 20L16 22L19 20M16 22V28" fill="none" stroke="#acb3ae" stroke-width="1.2"/>
+<path d="M15 17L14 20H18L17 17" fill="#c18c67"/>
+
+</g>
+<text x="240" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Ori</text>
+<g transform="translate(362 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+<path d="M4 22Q3 13 9 12Q12 7 16 9Q20 7 23 12Q29 13 28 22V29H4Z" fill="#5c6071"/>
+<circle cx="9" cy="19" r="5" fill="#d09a72"/><circle cx="23" cy="19" r="5" fill="#bd8764"/><circle cx="16" cy="17" r="6" fill="#c79971"/>
+<path d="M4 18Q5 11 10 12M19 12Q24 10 28 18M10 13Q12 8 16 8Q20 8 22 13" fill="none" stroke="#d2b876" stroke-width="3"/>
+<path d="M13 18H15M17 18H19M7 19H9M23 19H25" stroke="#323039" stroke-width="1.2"/>
+<path d="M8 23Q9 25 11 23M20 23Q23 25 25 23M13 23Q16 26 19 23" fill="none" stroke="#674536" stroke-width="1"/>
+</g>
+<text x="400" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Os 7 Anoes</text>
+<g transform="translate(522 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#756a62"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c18c69"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#7d5d52"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<circle cx="13" cy="17" r="1.2" fill="#313037"/><circle cx="19" cy="17" r="1.2" fill="#313037"/>
+<path d="M16 17L15 20H17" fill="#c18c69" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#b8aea4"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M14 10Q16 12 18 10" fill="none" stroke="#d8b7a0"/><circle cx="16" cy="19" r="1.6" fill="#d59076"/>
+
+</g>
+<text x="560" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Atim</text>
+<g transform="translate(42 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#6b806e"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#d1a17b"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#819483"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 17H14M18 17H21" stroke="#313037" stroke-width="1"/>
+<path d="M16 17L15 20H17" fill="#d1a17b" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#a78461"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><circle cx="10" cy="19" r="1" fill="#b86c67"/><circle cx="22" cy="19" r="1" fill="#b86c67"/>
+
+</g>
+<text x="80" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Dengoso</text>
+<g transform="translate(202 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#67748a"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#caa07d"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#7185a0"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 17Q13 18 14 17M18 17Q20 18 21 17" fill="none" stroke="#313037" stroke-width="1.2"/>
+<path d="M16 17L15 20H17" fill="#caa07d" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#c6ad8e"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M21 9Q24 7 25 10" fill="none" stroke="#f0e8d3"/>
+
+</g>
+<text x="240" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Soneca</text>
+<g transform="translate(362 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#82915b"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#d3a27a"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#d6a259"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 16Q13 14 14 16M18 16Q20 14 21 16" fill="none" stroke="#313037" stroke-width="1.3"/>
+<path d="M16 17L15 20H17" fill="#d3a27a" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#a55b38"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M13 20Q16 22 19 20" fill="none" stroke="#784735" stroke-width="1.2"/>
+
+</g>
+<text x="400" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Feliz</text>
+<g transform="translate(522 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#6a729c"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c39a7a"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#8c8fba"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<circle cx="13" cy="17" r="1.2" fill="#313037"/><circle cx="19" cy="17" r="1.2" fill="#313037"/>
+<path d="M16 17L15 20H17" fill="#c39a7a" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M12 22Q16 24 20 22" fill="none" stroke="#775b4e"/><path d="M10 5L12 2H19L22 5" fill="#8c8fba"/>
+
+</g>
+<text x="560" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Dunga</text>
+<g transform="translate(42 250) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#744849"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#ba805c"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#a4544d"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 15L14 17M18 17L21 15" stroke="#313037" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M16 17L15 20H17" fill="#ba805c" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#613f36"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M11 14L14 15M18 15L21 14" stroke="#573632" stroke-width="2"/>
+
+</g>
+<text x="80" y="335" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Zangado</text>
+<g transform="translate(202 250) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#51616a"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c29572"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#718184"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 16H14M18 16H21" stroke="#313037" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M16 17L15 20H17" fill="#c29572" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#d2d0c4"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><circle cx="13" cy="17" r="2.2" fill="none" stroke="#d9c89e" stroke-width="0.8"/><circle cx="19" cy="17" r="2.2" fill="none" stroke="#d9c89e" stroke-width="0.8"/><path d="M15 17H17" stroke="#d9c89e"/>
+
+</g>
+<text x="240" y="335" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Mestre</text></svg>

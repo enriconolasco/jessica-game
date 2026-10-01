@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Vovo Gamba, Protetora dos Espiritos">
+<title>Vovo Gamba, Protetora dos Espiritos</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#87694c"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#e0d8bb"/>
+<path d="M9 14L3 10L4 20L10 21M23 14L29 10L28 20L22 21" fill="#7c9356"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#7c9356"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#e0d8bb"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#3a3834" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M9 11Q10 4 16 5Q22 4 23 11" fill="none" stroke="#ded8c4" stroke-width="2"/><path d="M12 22Q16 25 20 22" fill="none" stroke="#5f5d47"/><path d="M8 14L6 23M24 14L26 23" stroke="#e0d8bb" stroke-width="2"/>
+
+</svg>

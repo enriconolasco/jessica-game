@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Belial, Senhor das Chamas">
+<title>Belial, Senhor das Chamas</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c67065" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#914342"/>
+<path d="M5 28Q2 23 6 18Q3 13 8 10L7 4L13 8Q16 1 19 8L25 4L24 11Q29 15 26 19Q30 24 26 28Z" fill="#d7653f"/><path d="M8 14Q5 10 9 6M23 14Q27 10 23 6" fill="none" stroke="#f2aa51" stroke-width="2"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#80353e"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#ad5848"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#80353e"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#f6ca81" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M8 11L6 5L12 9M24 11L26 5L20 9" fill="#e28a53"/><path d="M10 8Q13 3 15 8Q17 1 20 7L22 10" fill="none" stroke="#f8bc61" stroke-width="2.2"/><path d="M9 25Q8 28 11 30M23 25Q24 28 21 30" fill="none" stroke="#ed974e" stroke-width="1.5"/>
+
+</svg>

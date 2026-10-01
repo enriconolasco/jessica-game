@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Rogue Devil do Inferno">
+<title>Rogue Devil do Inferno</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c67065" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#762e45"/>
+<path d="M4 29L6 11Q8 3 16 3Q24 3 26 11L28 29Z" fill="#2d2939"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#332a3f"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#b0444c"/>
+
+<path d="M11 15Q13 14 14 15M18 15Q20 14 21 15" fill="none" stroke="#342b2b" stroke-width="1.2"/>
+<path d="M12 18H14M18 18H20" stroke="#f2c177" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M12 22Q16 27 20 22" fill="none" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M6 26L7 12Q8 6 13 5L10 14L9 25Z M26 26L25 12Q24 6 19 5L22 14L23 25Z" fill="#2d2939"/><path d="M8 11Q11 4 16 4Q21 4 24 11L21 9L16 6L11 9Z" fill="#46374c"/><path d="M13 23L14 25L16 23M17 23L18 25L19 23" fill="#f1ddbb"/><path d="M21 13L22 20" stroke="#7c293c"/>
+
+</svg>

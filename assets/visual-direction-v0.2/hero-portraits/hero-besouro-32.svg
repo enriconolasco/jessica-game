@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Besouro Mangangá">
+<title>Besouro Mangangá</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#56645a"/>
+<path d="M13 22H19V27H13Z" fill="#70442f"/>
+<path d="M8 14Q8 5 16 5Q24 5 24 14V20Q23 26 16 27Q9 26 8 20Z" fill="#75442f"/>
+<path d="M11 8Q16 5 21 8" fill="none" stroke="#a46a45" stroke-width="1"/>
+<path d="M8 16L6 14V20L9 21 M24 16L26 14V20L23 21" fill="#75442f"/>
+<path d="M11 16Q13 15 15 16M17 16Q19 15 21 16" fill="none" stroke="#241f21" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="13" cy="17" r="0.7" fill="#efe1be"/><circle cx="19" cy="17" r="0.7" fill="#efe1be"/>
+<path d="M15 18L14 21Q16 22 18 21L17 18M13 23Q16 24 19 23" fill="none" stroke="#3a2523" stroke-width="1" stroke-linecap="round"/>
+<path d="M9 27L13 24L16 27L19 24L23 27L20 30H12Z" fill="#ded1b3"/>
+
+</svg>

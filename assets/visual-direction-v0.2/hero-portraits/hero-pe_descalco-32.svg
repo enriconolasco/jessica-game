@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Pe Descalco, Aquela que Treme a Terra">
+<title>Pe Descalco, Aquela que Treme a Terra</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6a087" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#8c684f"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#241e26"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a47253"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#241e26"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#29262c" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M9 11Q6 17 8 26M12 10Q10 18 11 27M23 11Q26 17 24 26M20 10Q22 18 21 27" fill="none" stroke="#241e26" stroke-width="2.4" stroke-linecap="round"/><path d="M8 19L10 21M22 21L24 19M11 25L13 27M19 27L21 25" stroke="#bf9e6b" stroke-width="0.9"/><path d="M12 7L16 5L20 7" fill="none" stroke="#c8a05e"/>
+
+</svg>

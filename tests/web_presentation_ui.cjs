@@ -7,6 +7,7 @@ class Element {
   appendChild(child) { child.parentElement=this; this.children.push(child); return child; }
   append(...children) { children.forEach(c => this.appendChild(c)); }
   replaceChildren(...children) { this.children.forEach(c => c.parentElement=null); this.children=[]; this.append(...children); }
+  replaceWith(child) { const p=this.parentElement; child.parentElement=p; p.children.splice(p.children.indexOf(this),1,child); this.parentElement=null; }
   after(child) { const p=this.parentElement; child.parentElement=p; p.children.splice(p.children.indexOf(this)+1,0,child); }
   setAttribute(k,v) { this.attrs[k]=v; if(k.startsWith('data-')) this.dataset[k.slice(5).replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]=v; }
   getAttribute(k) { return this.attrs[k] ?? null; }
@@ -59,6 +60,19 @@ view.board.units=Array.from({length:25},(_,i)=>({id:`u${i}`,owner_id:i%3+1,kind:
 view.board.units.push({id:'dead',owner_id:1,kind:'troop',house:'center',life:0,life_max:4});
 const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
 vm.runInContext(app.slice(0,app.indexOf('function actionDetails(')),context);
+const portraits=JSON.parse(fs.readFileSync(path.join(__dirname,'../assets/visual-direction-v0.2/hero-portraits/index.json'),'utf8'));
+context.portraits=portraits;
+vm.runInContext('heroPortraits=portraits',context);
+assert.equal(Object.keys(portraits).length,43);
+for (const [heroId, entry] of Object.entries(portraits)) {
+  const hero={kind:'hero',hero_id:heroId};
+  const expected=`/assets/visual-direction-v0.2/hero-portraits/${entry.file}`;
+  assert.equal(context.unitIconPath(hero,{people:entry.people}),expected);
+  assert.equal(context.unitIconPath(hero,{people:'povo_desconhecido'}),expected);
+}
+assert.equal(context.unitIconPath({kind:'hero',hero_id:'heroi_desconhecido'},{people:'humanos'}),null);
+assert.equal(context.unitIconPath({kind:'hero',hero_id:'__proto__'},{people:'humanos'}),null);
+assert.equal(context.unitIconPath({kind:'troop'},{people:'humanos'}),'/assets/visual-direction-v0.2/icons/people-humanos-32.svg');
 assert.match(context.publicStates({statuses:{rogue_items:['relogio','bracelete','unknown']}}).join(' · '), /Relógio de bolso, Bracelete, unknown/);
 vm.runInContext('currentView=view; renderMap(view)',context);
 assert.equal(map.querySelectorAll('.unit-marker').length,25);
@@ -67,6 +81,17 @@ assert.equal(map.querySelectorAll('img').length,25);
 assert.ok(map.children.find(h=>h.dataset.house==='city_2').className.includes('curuna-house'));
 assert.match(map.children.find(h=>h.dataset.house==='city_1').querySelector('.house-caption').textContent,/Ana.*dragoes.*3\/3/);
 const marker=map.querySelector('.unit-marker'); marker.click();
+const portrait=marker.querySelector('img');
+assert.ok(portrait.src.endsWith('/hero-barba_negra-32.svg'));
+assert.equal(portrait.width,64); assert.equal(portrait.height,64);
+assert.equal(map.querySelectorAll('.troop')[0].querySelector('img').width,32);
+portrait.onerror();
+assert.equal(marker.querySelector('.unknown-icon').textContent,'barba_negra');
+assert.equal(marker.querySelector('.unit-life').textContent,'2/4');
+const fallbackRoot=new Element('div');
+context.renderUnitGroups(fallbackRoot,[{...view.board.units[0],hero_id:'heroi_desconhecido'}],new Map(view.players.map(p=>[p.id,p])));
+assert.equal(fallbackRoot.querySelectorAll('img').length,0);
+assert.equal(fallbackRoot.querySelector('.unknown-icon').textContent,'heroi_desconhecido');
 assert.equal(document.getElementById('unitDetails').children[3].textContent,'Vida 2/4');
 const group=el('details','group','action-group'); group.dataset.actionType='collect_resources'; group.open=true;
 const summary=new Element('summary'), send=new Element('button'), input=new Element('input'); group.append(summary, input, send);
@@ -94,4 +119,21 @@ context.annotateShortcuts(); assert.match(send.title,/Alt\+1.*dentro desta açã
 const css=fs.readFileSync(path.join(root,'map.css'),'utf8');
 assert.ok(!/house-units\s*\{[^}]*display\s*:\s*none/.test(css));
 assert.match(css,/hero img\{width:64px;height:64px/); assert.match(css,/unit-marker img\{[^}]*width:32px;height:32px/);
-console.log('UI: presença de povos (8 combinações), Curruna, 25 unidades vivas, inspeção, relatórios públicos, SVGs e atalhos/contextos verificados.');
+async function checkPortraitLoading() {
+  let calls=0;
+  context.api=async () => { calls++; return portraits; };
+  const pending=context.loadHeroPortraits();
+  assert.equal(context.loadHeroPortraits(),pending);
+  await pending; assert.equal(calls,1);
+  vm.runInContext('heroPortraitsReady=null',context);
+  context.api=async () => { throw new Error('index unavailable'); };
+  await context.loadHeroPortraits();
+  assert.equal(context.unitIconPath({kind:'hero',hero_id:'miyamoto'},{people:'humanos'}),null);
+  assert.ok(context.unitIconPath({kind:'troop'},{people:'humanos'}));
+  vm.runInContext('heroPortraitsReady=null',context);
+  context.api=async () => null;
+  await context.loadHeroPortraits();
+  assert.equal(context.unitIconPath({kind:'hero',hero_id:'miyamoto'},{people:'humanos'}),null);
+  console.log('UI: 43 retratos por hero_id, 64/32px, controlador independente, fallback/índice indisponível, Curruna, inspeção, relatórios e atalhos verificados.');
+}
+checkPortraitLoading().catch(error => { console.error(error); process.exitCode=1; });

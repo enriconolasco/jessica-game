@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 120" width="640" height="120"><rect width="640" height="120" fill="#111a26"/>
+<g transform="translate(42 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 25 12 24H20Q24 25 27 29Z" fill="#766349"/>
+<path d="M8 12L3 10L4 17L9 19M24 12L29 10L28 17L23 19" fill="#668742"/>
+<path d="M8 12Q8 6 16 6Q24 6 24 12V22Q21 28 16 28Q11 28 8 22Z" fill="#648642"/>
+<path d="M8 9L12 7L16 8L20 7L24 9V12H8Z" fill="#b88447"/>
+<path d="M14 8L16 5L18 8" fill="#e1bd78"/>
+<path d="M10 15L14 16M18 16L22 15" stroke="#304a2d" stroke-width="1.7" stroke-linecap="round"/>
+<circle cx="12.5" cy="17" r="0.8" fill="#e4d39b"/><circle cx="19.5" cy="17" r="0.8" fill="#e4d39b"/>
+<path d="M15 18L14 21L18 21L17 18" fill="#83a15a"/>
+<path d="M10 22L12 20L14 25ZM18 25L20 20L22 22Z" fill="#eadfc0"/>
+<path d="M13 24H19" stroke="#34482d" stroke-width="1.4" stroke-linecap="round"/>
+
+</g>
+<text x="80" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Ga&#x27;Roche</text>
+<g transform="translate(202 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#58685a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#344338"/>
+<path d="M9 14L3 10L4 20L10 21M23 14L29 10L28 20L22 21" fill="#6a8a4b"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#6a8a4b"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#344338"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#d9c87e" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M6 11L11 5H21L26 11L22 10L19 13L13 12L10 14Z" fill="#485542"/><path d="M24 7L27 10L24 13" fill="#c8aa6d"/>
+
+</g>
+<text x="240" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Arken</text>
+<g transform="translate(362 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#87694c"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#e0d8bb"/>
+<path d="M9 14L3 10L4 20L10 21M23 14L29 10L28 20L22 21" fill="#7c9356"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#7c9356"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#e0d8bb"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#3a3834" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M9 11Q10 4 16 5Q22 4 23 11" fill="none" stroke="#ded8c4" stroke-width="2"/><path d="M12 22Q16 25 20 22" fill="none" stroke="#5f5d47"/><path d="M8 14L6 23M24 14L26 23" stroke="#e0d8bb" stroke-width="2"/>
+
+</g>
+<text x="400" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Vovo Gamba</text></svg>

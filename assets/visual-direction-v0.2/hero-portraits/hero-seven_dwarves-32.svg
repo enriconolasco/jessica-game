@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Os 7 Anoes">
+<title>Os 7 Anoes</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+<path d="M4 22Q3 13 9 12Q12 7 16 9Q20 7 23 12Q29 13 28 22V29H4Z" fill="#5c6071"/>
+<circle cx="9" cy="19" r="5" fill="#d09a72"/><circle cx="23" cy="19" r="5" fill="#bd8764"/><circle cx="16" cy="17" r="6" fill="#c79971"/>
+<path d="M4 18Q5 11 10 12M19 12Q24 10 28 18M10 13Q12 8 16 8Q20 8 22 13" fill="none" stroke="#d2b876" stroke-width="3"/>
+<path d="M13 18H15M17 18H19M7 19H9M23 19H25" stroke="#323039" stroke-width="1.2"/>
+<path d="M8 23Q9 25 11 23M20 23Q23 25 25 23M13 23Q16 26 19 23" fill="none" stroke="#674536" stroke-width="1"/>
+</svg>

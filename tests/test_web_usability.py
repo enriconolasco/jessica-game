@@ -37,6 +37,21 @@ def test_catalog_covers_every_hero_artifact_people_and_pact():
     assert set(heroes.HERO_CATALOG) - {"ent", "seven_dwarves"} <= night_actions.SUPPORTED_HEROES
 
 
+def test_approved_hero_portraits_cover_catalog_and_are_served():
+    from urllib.request import urlopen
+    prefix = "/assets/visual-direction-v0.2/hero-portraits/"
+    with http() as base:
+        _, index = _request(base, prefix + "index.json")
+        assert set(index) == set(heroes.HERO_CATALOG) and len(index) == 43
+        for hero_id, entry in index.items():
+            assert entry["file"] == f"hero-{hero_id}-32.svg"
+            with urlopen(base + prefix + entry["file"]) as response:
+                assert response.status == 200
+                assert response.headers.get_content_type() == "image/svg+xml"
+                svg = response.read().decode("utf-8")
+                assert 'viewBox="0 0 32 32"' in svg
+
+
 def test_d20_order_uses_terminal_setup_rng_and_preview():
     with http() as base:
         _, order = _request(base, "/setup-order?seed=49")

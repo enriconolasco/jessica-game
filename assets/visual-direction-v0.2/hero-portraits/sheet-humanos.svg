@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 120" width="640" height="120"><rect width="640" height="120" fill="#111a26"/>
+<g transform="translate(42 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 14 24H19Q25 24 27 29Z" fill="#3d526b"/>
+<path d="M13 23H19V27L16 29L13 27Z" fill="#b47752"/>
+<path d="M13 5Q11 3 14 2H19Q21 3 19 5L20 8H12Z" fill="#26232a"/>
+<path d="M8 12Q8 5 16 5Q24 5 24 12V19Q23 25 16 26Q9 25 8 19Z" fill="#bf855e"/>
+<path d="M8 16V11Q9 5 15 6L13 10L10 12V18Z M24 16V11Q23 5 18 6L19 10L22 12V18Z" fill="#25252c"/>
+<path d="M9 11Q16 9 23 11L23 13Q16 12 9 13Z" fill="#903f3d"/>
+<path d="M11 16L14 16M18 16L21 16" stroke="#28242a" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 17L15 21H17M14 23Q16 24 18 23" fill="none" stroke="#714b3c" stroke-width="1" stroke-linecap="round"/>
+<path d="M11 26L16 29L21 26" fill="none" stroke="#c9aa76" stroke-width="1"/>
+
+</g>
+<text x="80" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Miyamoto Musashi</text>
+<g transform="translate(202 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#56645a"/>
+<path d="M13 22H19V27H13Z" fill="#70442f"/>
+<path d="M8 14Q8 5 16 5Q24 5 24 14V20Q23 26 16 27Q9 26 8 20Z" fill="#75442f"/>
+<path d="M11 8Q16 5 21 8" fill="none" stroke="#a46a45" stroke-width="1"/>
+<path d="M8 16L6 14V20L9 21 M24 16L26 14V20L23 21" fill="#75442f"/>
+<path d="M11 16Q13 15 15 16M17 16Q19 15 21 16" fill="none" stroke="#241f21" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="13" cy="17" r="0.7" fill="#efe1be"/><circle cx="19" cy="17" r="0.7" fill="#efe1be"/>
+<path d="M15 18L14 21Q16 22 18 21L17 18M13 23Q16 24 19 23" fill="none" stroke="#3a2523" stroke-width="1" stroke-linecap="round"/>
+<path d="M9 27L13 24L16 27L19 24L23 27L20 30H12Z" fill="#ded1b3"/>
+
+</g>
+<text x="240" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Besouro Mangangá</text>
+<g transform="translate(362 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H20Q24 24 27 29Z" fill="#586855"/>
+<path d="M7 14Q7 8 16 7Q25 8 25 14V27H7Z" fill="#22242a"/>
+<path d="M9 15Q9 10 16 10Q23 10 23 15V21Q21 27 16 27Q11 27 9 21Z" fill="#b67a56"/>
+<path d="M7 13Q8 9 11 7L9 3L12 5L13 2L15 5L17 2L19 5L21 3L21 8Q24 9 25 13L21 12Q16 9 11 12Z" fill="#171c22"/>
+<path d="M9 10L8 4 M13 9L12 2 M17 8L17 2 M21 9L22 4" stroke="#59616a" stroke-width="0.7"/>
+<path d="M11 17L14 17M18 17L21 17" stroke="#302a2a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M16 18L15 21H17M14 23Q16 24 18 23" fill="none" stroke="#744d3b" stroke-width="1" stroke-linecap="round"/>
+<path d="M9 24Q12 27 12 29M23 24Q20 27 20 29" fill="none" stroke="#22242a" stroke-width="2"/>
+
+</g>
+<text x="400" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Iúna</text></svg>

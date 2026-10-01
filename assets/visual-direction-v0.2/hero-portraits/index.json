@@ -1,0 +1,260 @@
+{
+  "miyamoto": {
+    "name": "Miyamoto Musashi",
+    "people": "humanos",
+    "file": "hero-miyamoto-32.svg",
+    "stage": "intermediate"
+  },
+  "besouro": {
+    "name": "Besouro Mangangá",
+    "people": "humanos",
+    "file": "hero-besouro-32.svg",
+    "stage": "intermediate"
+  },
+  "iuna": {
+    "name": "Iúna",
+    "people": "humanos",
+    "file": "hero-iuna-32.svg",
+    "stage": "intermediate"
+  },
+  "barbadourada": {
+    "name": "Barbadourada",
+    "people": "anoes",
+    "file": "hero-barbadourada-32.svg",
+    "stage": "intermediate"
+  },
+  "ori": {
+    "name": "Ori, Velho Mestre Ferreiro",
+    "people": "anoes",
+    "file": "hero-ori-32.svg",
+    "stage": "intermediate"
+  },
+  "seven_dwarves": {
+    "name": "Os 7 Anoes",
+    "people": "anoes",
+    "file": "hero-seven_dwarves-32.svg",
+    "stage": "intermediate"
+  },
+  "dain": {
+    "name": "Atim",
+    "people": "anoes",
+    "file": "hero-dain-32.svg",
+    "stage": "intermediate"
+  },
+  "buin": {
+    "name": "Dengoso",
+    "people": "anoes",
+    "file": "hero-buin-32.svg",
+    "stage": "intermediate"
+  },
+  "bein": {
+    "name": "Soneca",
+    "people": "anoes",
+    "file": "hero-bein-32.svg",
+    "stage": "intermediate"
+  },
+  "boin": {
+    "name": "Feliz",
+    "people": "anoes",
+    "file": "hero-boin-32.svg",
+    "stage": "intermediate"
+  },
+  "tintin": {
+    "name": "Dunga",
+    "people": "anoes",
+    "file": "hero-tintin-32.svg",
+    "stage": "intermediate"
+  },
+  "don": {
+    "name": "Zangado",
+    "people": "anoes",
+    "file": "hero-don-32.svg",
+    "stage": "intermediate"
+  },
+  "din": {
+    "name": "Mestre",
+    "people": "anoes",
+    "file": "hero-din-32.svg",
+    "stage": "intermediate"
+  },
+  "garoche": {
+    "name": "Ga'Roche, Rei do Sertao",
+    "people": "orcs",
+    "file": "hero-garoche-32.svg",
+    "stage": "intermediate"
+  },
+  "arken": {
+    "name": "Arken, Cacador de Uma So Flecha",
+    "people": "orcs",
+    "file": "hero-arken-32.svg",
+    "stage": "intermediate"
+  },
+  "vovo_gamba": {
+    "name": "Vovo Gamba, Protetora dos Espiritos",
+    "people": "orcs",
+    "file": "hero-vovo_gamba-32.svg",
+    "stage": "intermediate"
+  },
+  "ainai": {
+    "name": "Ainai, Fada da Vinganca",
+    "people": "fadas",
+    "file": "hero-ainai-32.svg",
+    "stage": "intermediate"
+  },
+  "valendar": {
+    "name": "Valendar, Rainha Maga",
+    "people": "fadas",
+    "file": "hero-valendar-32.svg",
+    "stage": "intermediate"
+  },
+  "luna": {
+    "name": "Luna, Sonhadora de Realidades",
+    "people": "fadas",
+    "file": "hero-luna-32.svg",
+    "stage": "intermediate"
+  },
+  "dracula": {
+    "name": "Dracula",
+    "people": "vampiros",
+    "file": "hero-dracula-32.svg",
+    "stage": "intermediate"
+  },
+  "dandara": {
+    "name": "Dandara, Cacadora de Burgueses",
+    "people": "vampiros",
+    "file": "hero-dandara-32.svg",
+    "stage": "intermediate"
+  },
+  "luide_vampa": {
+    "name": "Luide Vampa, Lider dos Bandidos",
+    "people": "vampiros",
+    "file": "hero-luide_vampa-32.svg",
+    "stage": "intermediate"
+  },
+  "lupa_lider": {
+    "name": "Lupa, Lider da Matilha",
+    "people": "lobisomens",
+    "file": "hero-lupa_lider-32.svg",
+    "stage": "intermediate"
+  },
+  "cigana": {
+    "name": "Cigana, Caminhante da Nevoa",
+    "people": "lobisomens",
+    "file": "hero-cigana-32.svg",
+    "stage": "intermediate"
+  },
+  "luarado": {
+    "name": "Luarado, Filhote da Mare",
+    "people": "lobisomens",
+    "file": "hero-luarado-32.svg",
+    "stage": "intermediate"
+  },
+  "joao_grandao": {
+    "name": "Joao Grandao, Protetor do Pe Desenterrado",
+    "people": "gigantes",
+    "file": "hero-joao_grandao-32.svg",
+    "stage": "intermediate"
+  },
+  "pe_descalco": {
+    "name": "Pe Descalco, Aquela que Treme a Terra",
+    "people": "gigantes",
+    "file": "hero-pe_descalco-32.svg",
+    "stage": "intermediate"
+  },
+  "caroco": {
+    "name": "Caroco, o Dende Teimoso",
+    "people": "gigantes",
+    "file": "hero-caroco-32.svg",
+    "stage": "intermediate"
+  },
+  "cobra": {
+    "name": "Cobra, o Paje Caido",
+    "people": "mortos_vivos",
+    "file": "hero-cobra-32.svg",
+    "stage": "intermediate"
+  },
+  "zoia": {
+    "name": "Zoia Bulbo Negro, Pressagio da Peste",
+    "people": "mortos_vivos",
+    "file": "hero-zoia-32.svg",
+    "stage": "intermediate"
+  },
+  "cova_rasa": {
+    "name": "Cova Rasa da Terra Funda",
+    "people": "mortos_vivos",
+    "file": "hero-cova_rasa-32.svg",
+    "stage": "intermediate"
+  },
+  "guarari": {
+    "name": "Guarari, Centauro Guardiao da Floresta",
+    "people": "filhos_floresta",
+    "file": "hero-guarari-32.svg",
+    "stage": "intermediate"
+  },
+  "aiquara": {
+    "name": "Aiquara, Ninfa da Baia Doce",
+    "people": "filhos_floresta",
+    "file": "hero-aiquara-32.svg",
+    "stage": "intermediate"
+  },
+  "baoba_ba": {
+    "name": "Baoba-ba, Anciao Milenar",
+    "people": "filhos_floresta",
+    "file": "hero-baoba_ba-32.svg",
+    "stage": "intermediate"
+  },
+  "bimbo_do_mal": {
+    "name": "Bimbo do Mal",
+    "people": "gnomos_duendes",
+    "file": "hero-bimbo_do_mal-32.svg",
+    "stage": "intermediate"
+  },
+  "sao_tome": {
+    "name": "Sao Tome, Morador de Piramide",
+    "people": "gnomos_duendes",
+    "file": "hero-sao_tome-32.svg",
+    "stage": "intermediate"
+  },
+  "zebum": {
+    "name": "Zebum, o Mistico Viajante",
+    "people": "gnomos_duendes",
+    "file": "hero-zebum-32.svg",
+    "stage": "intermediate"
+  },
+  "barba_negra": {
+    "name": "Barba Negra, o Rei do Mundo",
+    "people": "dragoes",
+    "file": "hero-barba_negra-32.svg",
+    "stage": "intermediate"
+  },
+  "purpura": {
+    "name": "Purpura, Filhote de Nebula",
+    "people": "dragoes",
+    "file": "hero-purpura-32.svg",
+    "stage": "intermediate"
+  },
+  "valtherion": {
+    "name": "Valtherion, o Pai da Primeira Aurora",
+    "people": "dragoes",
+    "file": "hero-valtherion-32.svg",
+    "stage": "intermediate"
+  },
+  "belial": {
+    "name": "Belial, Senhor das Chamas",
+    "people": "demonios",
+    "file": "hero-belial-32.svg",
+    "stage": "intermediate"
+  },
+  "tuza": {
+    "name": "Tuza, o Espectro Imortal",
+    "people": "demonios",
+    "file": "hero-tuza-32.svg",
+    "stage": "intermediate"
+  },
+  "rogue_devil": {
+    "name": "Rogue Devil do Inferno",
+    "people": "demonios",
+    "file": "hero-rogue_devil-32.svg",
+    "stage": "intermediate"
+  }
+}

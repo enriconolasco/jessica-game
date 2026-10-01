@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Iúna">
+<title>Iúna</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H20Q24 24 27 29Z" fill="#586855"/>
+<path d="M7 14Q7 8 16 7Q25 8 25 14V27H7Z" fill="#22242a"/>
+<path d="M9 15Q9 10 16 10Q23 10 23 15V21Q21 27 16 27Q11 27 9 21Z" fill="#b67a56"/>
+<path d="M7 13Q8 9 11 7L9 3L12 5L13 2L15 5L17 2L19 5L21 3L21 8Q24 9 25 13L21 12Q16 9 11 12Z" fill="#171c22"/>
+<path d="M9 10L8 4 M13 9L12 2 M17 8L17 2 M21 9L22 4" stroke="#59616a" stroke-width="0.7"/>
+<path d="M11 17L14 17M18 17L21 17" stroke="#302a2a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M16 18L15 21H17M14 23Q16 24 18 23" fill="none" stroke="#744d3b" stroke-width="1" stroke-linecap="round"/>
+<path d="M9 24Q12 27 12 29M23 24Q20 27 20 29" fill="none" stroke="#22242a" stroke-width="2"/>
+
+</svg>

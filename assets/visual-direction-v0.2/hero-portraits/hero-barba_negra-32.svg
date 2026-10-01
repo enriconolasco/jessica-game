@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Barba Negra, o Rei do Mundo">
+<title>Barba Negra, o Rei do Mundo</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#61a9a5" stroke-width="2"/>
+<path d="M4 6L11 10L16 6L21 10L28 6L26 17L23 24L16 28L9 24L6 17Z" fill="#252a31"/>
+<path d="M5 7L9 15L6 17M27 7L23 15L26 17" fill="#555c61"/>
+<path d="M10 15Q16 12 22 15L23 22L16 27L9 22Z" fill="#3b4248"/>
+<path d="M9 17L14 19M18 19L23 17" stroke="#eda653" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M13 23L16 20L19 23L17 25H15Z" fill="#3f4c4e"/><path d="M10 23L12 28L16 25L20 28L22 23" fill="#111920"/><path d="M10 8L8 3M22 8L24 3" stroke="#6c7273" stroke-width="2"/><path d="M11 13L14 12M18 12L21 13" stroke="#838681" stroke-width="0.8"/>
+</svg>

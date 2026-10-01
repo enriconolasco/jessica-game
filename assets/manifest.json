@@ -69,6 +69,16 @@
       "preview": "visual-direction-v0.2/icons/contact-sheet.svg",
       "usage": "Proposta de marcadores de povo no mapa, sujeita a validacao visual",
       "notes": "SVGs vetoriais em viewport 32x32, com estetica simples de fantasia classica. Substituem a linha de icones 16x16 descontinuada; nenhum PNG antigo deve ser integrado."
+    },
+    {
+      "id": "icons.heroes.portraits.v1",
+      "stage": "intermediate",
+      "index": "visual-direction-v0.2/hero-portraits/index.json",
+      "file_pattern": "visual-direction-v0.2/hero-portraits/hero-<hero_id>-32.svg",
+      "preview": "visual-direction-v0.2/hero-portraits/contact-sheet.png",
+      "revision_preview": "visual-direction-v0.2/hero-portraits/sheet-revisions.png",
+      "usage": "Retratos frontais individuais dos 43 IDs de heroi; exibir em 64x64 no minimapa",
+      "notes": "Direcao visual aprovada em 2026-10-01. Todos os SVGs tem viewport 32x32. Inclui o retrato coletivo de selecao dos Sete Anoes e os sete individuos. Dez retratos foram revisados conforme o feedback do usuario. Colecao de emblemas anterior rejeitada e fora do manifesto ativo."
     }
   ]
 }

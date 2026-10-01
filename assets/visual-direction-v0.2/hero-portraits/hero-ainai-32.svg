@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Ainai, Fada da Vinganca">
+<title>Ainai, Fada da Vinganca</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#b7d978" stroke-width="2"/>
+
+<path d="M5 29Q9 25 12 24H20Q23 25 27 29Z" fill="#5e436a"/>
+<path d="M6 13Q7 5 16 5Q25 5 26 13V28H6Z" fill="#24212d"/>
+<path d="M9 15L3 13L9 19M23 15L29 13L23 19" fill="#835239"/>
+<path d="M10 13Q10 8 16 8Q22 8 22 13V22Q21 27 16 27Q11 27 10 22Z" fill="#87543d"/>
+<path d="M9 14L10 7Q16 3 22 7L23 14L20 11L17 9L15 12L12 10Z" fill="#24212d"/>
+<path d="M8 14Q6 18 8 22Q6 25 9 28M24 14Q26 18 24 22Q26 25 23 28" fill="none" stroke="#3f303b" stroke-width="3" stroke-linecap="round"/>
+<path d="M8 18L9 20L8 22M24 18L23 20L24 22" fill="none" stroke="#a37b59" stroke-width="0.7"/>
+<path d="M12 17L15 17M17 17L20 17" stroke="#b9434c" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M16 19L15 22H17M14 24Q16 25 18 24" fill="none" stroke="#432b2b" stroke-width="1" stroke-linecap="round"/>
+
+</svg>

@@ -51,6 +51,15 @@ Versão: 0.4 — 2026-09-23
 - Humanos: mulher negra. Orcs: pele verde. Fadas: elfa loira, orelhas pontudas e olhos verdes.
 - Estado atual: concept. Avaliar em tamanho real no mapa antes de promover a intermediário. Não substituir os arquivos antigos em telas sem aprovação desta proposta.
 
+### Ícones individuais dos heróis — retratos v0.2
+
+- A coleção anterior de emblemas foi rejeitada; nenhum arquivo de `hero-icons/` deve ser integrado.
+- Ícones de heróis são rostos frontais individualizados, não símbolos abstratos. Mantêm a moldura, o fundo escuro e a cor de povo dos ícones das tropas.
+- O piloto de seis SVGs foi aprovado. A coleção expandida contém um retrato por `hero_id` do catálogo, com 43 arquivos 32×32. `seven_dwarves` é um retrato coletivo para a escolha do grupo; cada um dos sete integrantes também possui um retrato próprio.
+- As pranchas por povo e a prancha geral ficam em `assets/visual-direction-v0.2/hero-portraits/`; `index.json` mapeia cada ID ao arquivo.
+- No minimapa, a proposta é exibir os retratos em 64×64. Disponibilizar o nome textual em foco, toque e tooltip.
+- Estado: `intermediate`. Conjunto aprovado visualmente em 2026-10-01 para integração ao cliente; eventuais ajustes finos podem ocorrer durante os testes de legibilidade no mapa.
+
 - Toda unidade exibe vida atual/máxima no formato `4/6`; barras isoladas não substituem os números.
 - Preferência: cápsula numérica compacta abaixo ou ao lado do sprite, visível no zoom próximo.
 - Modificadores ocupam de um a três slots junto à vida; estados adicionais aparecem em painel/tooltip acessível.

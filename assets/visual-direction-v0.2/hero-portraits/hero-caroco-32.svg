@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Caroco, o Dende Teimoso">
+<title>Caroco, o Dende Teimoso</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6a087" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#725d83"/>
+<circle cx="16" cy="14" r="11" fill="none" stroke="#8fbbaa" stroke-width="1" opacity=".75"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#684332"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#bb8559"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#684332"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#a7f1d5" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M16 8L18 11L16 14L14 11Z" fill="#c6f1c9"/><circle cx="7" cy="18" r="1.2" fill="#b7ead4"/><circle cx="25" cy="18" r="1.2" fill="#b7ead4"/><path d="M12 23Q16 25 20 23" fill="none" stroke="#764e3e" stroke-width="1"/>
+
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Joao Grandao, Protetor do Pe Desenterrado">
+<title>Joao Grandao, Protetor do Pe Desenterrado</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6a087" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#65594a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#211c21"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#87523a"/>
+
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#ead4ad" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M11 23Q16 26 21 23L20 28H12Z" fill="#262026"/>
+<path d="M9 6Q6 10 7 18M12 5Q10 10 10 18M16 4Q15 9 15 14M20 5Q22 10 22 18M23 6Q26 11 25 18" fill="none" stroke="#211c21" stroke-width="2.6" stroke-linecap="round"/><path d="M14 20Q16 21 18 20" fill="none" stroke="#b77a55"/>
+
+</svg>

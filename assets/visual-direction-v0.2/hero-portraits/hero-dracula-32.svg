@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Dracula">
+<title>Dracula</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#ad6178" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#713647"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#211d2d"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#d5c4b7"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#211d2d"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#b44755" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M5 29L9 24L14 28H18L23 24L27 29" fill="#2a2534"/><path d="M13 23L14 25L15 23M17 23L18 25L19 23" fill="#f6eee0"/>
+
+</svg>

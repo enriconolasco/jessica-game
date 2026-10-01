@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 120" width="640" height="120"><rect width="640" height="120" fill="#111a26"/>
+<g transform="translate(42 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#81ad6d" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#67805b"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#3d352b"/>
+<path d="M9 16L3 12L8 21M23 16L29 12L24 21" fill="#a67954"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a67954"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#3d352b"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#5a5037" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M9 9L7 3L12 8M23 9L25 3L20 8" fill="#7b5b40"/><path d="M6 27L11 24M21 24L26 27" stroke="#b89a71"/>
+
+</g>
+<text x="80" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Guarari</text>
+<g transform="translate(202 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#81ad6d" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#527d8d"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#4c9b94"/>
+<path d="M9 16L3 12L8 21M23 16L29 12L24 21" fill="#a8c6ad"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a8c6ad"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#4c9b94"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#437f84" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M7 12Q5 18 8 23M25 12Q27 18 24 23" fill="none" stroke="#83d1bc" stroke-width="1.6"/><circle cx="24" cy="7" r="1.2" fill="#d5eee0"/>
+
+</g>
+<text x="240" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Aiquara</text>
+<g transform="translate(362 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#81ad6d" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#5d7951"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#54704d"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#8e7650"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13L21 11L19 8Q16 12 10 11Z" fill="#54704d"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#d0d399" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+<path d="M10 21Q16 24 22 21L21 28H11Z" fill="#a49a72"/>
+<path d="M8 9Q10 4 13 7L16 3L19 7Q22 4 24 9" fill="none" stroke="#87aa67" stroke-width="2"/><path d="M16 7V13" stroke="#b1a27b"/>
+
+</g>
+<text x="400" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Baoba-ba</text></svg>

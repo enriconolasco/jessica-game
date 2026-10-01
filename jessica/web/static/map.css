@@ -28,7 +28,7 @@
 .unit-marker.hero img{width:64px;height:64px}
 .unit-marker .unit-life{position:static;display:block;min-width:32px;line-height:17px;background:none;font-size:12px}
 .unit-marker[aria-pressed="true"]{outline:2px solid #f2d58c;outline-offset:1px}
-.unit-marker .unknown-icon{display:grid;place-items:center;width:32px;height:32px}
+.unit-marker .unknown-icon{display:grid;place-items:center;width:32px;height:32px;font-size:9px;line-height:1.1;overflow-wrap:anywhere;overflow:auto}
 .unit-marker.hero .unknown-icon{width:64px;height:64px}
 .house-roster{padding:1rem 0;border-top:1px solid #31545a}
 .house-roster h3{font:600 1rem/1.4 system-ui,sans-serif;color:#e0bb72;margin:0 0 .3rem}

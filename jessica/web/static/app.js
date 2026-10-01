@@ -4,6 +4,22 @@ let catalog = null;
 let pendingPlayerId = null;
 const $ = id => document.getElementById(id);
 const ICON_ROOT = "/assets/visual-direction-v0.2/icons/";
+const HERO_PORTRAIT_ROOT = "/assets/visual-direction-v0.2/hero-portraits/";
+let heroPortraits = {};
+let heroPortraitsReady = null;
+function loadHeroPortraits() {
+  return heroPortraitsReady ||= api(`${HERO_PORTRAIT_ROOT}index.json`).then(index => {
+    heroPortraits = index && typeof index === "object" && !Array.isArray(index) ? index : {};
+  }).catch(() => { heroPortraits = {}; });
+}
+function unitIconPath(unit, player) {
+  if (unit.kind === "hero") {
+    const entry = Object.hasOwn(heroPortraits, unit.hero_id) ? heroPortraits[unit.hero_id] : null;
+    return entry?.file === `hero-${unit.hero_id}-32.svg` && /^[a-z0-9_]+$/.test(unit.hero_id)
+      ? `${HERO_PORTRAIT_ROOT}${entry.file}` : null;
+  }
+  return PEOPLE_ICON[player?.people] ? `${ICON_ROOT}people-${PEOPLE_ICON[player.people]}-32.svg` : null;
+}
 const PEOPLE_ICON = {humanos:"humanos", anoes:"anoes", orcs:"orcs", fadas:"fadas", vampiros:"vampiros", lobisomens:"lobisomens", gigantes:"gigantes", mortos_vivos:"mortos-vivos", filhos_floresta:"filhos-floresta", gnomos_duendes:"gnomos-duendes", dragoes:"dragoes", demonios:"demonios"};
 const HOUSE_NAMES = {center:"Centro", city_1:"Cidade 1 (Sul)", city_2:"Cidade 2 (Leste)", city_3:"Cidade 3 (Norte)", city_4:"Cidade 4 (Oeste)"};
 const HOUSE_POSITIONS = {center:"center", city_1:"south", city_2:"east", city_3:"north", city_4:"west"};
@@ -98,14 +114,16 @@ function renderUnitGroups(root, units, players) {
     const fallback = () => {
       const text = document.createElement("span");
       text.className = "unknown-icon";
-      text.textContent = "?";
-      text.title = people;
+      text.textContent = unit.kind === "hero" ? unitName(unit) : people;
+      text.title = `${unitName(unit)} · ${people} · imagem indisponível`;
       return text;
     };
-    if (PEOPLE_ICON[player?.people]) {
+    const iconPath = unitIconPath(unit, player);
+    if (iconPath) {
       const image = document.createElement("img");
-      image.src = `${ICON_ROOT}people-${PEOPLE_ICON[player.people]}-32.svg`;
+      image.src = iconPath;
       image.alt = "";
+      image.width = image.height = unit.kind === "hero" ? 64 : 32;
       image.onerror = () => image.replaceWith(fallback());
       marker.appendChild(image);
     } else {
@@ -931,4 +949,4 @@ $("revealPlayer").onclick = async () => {
 createSaveControls();
 createGameplayControls();
 installShortcuts();
-api("/catalog").then(async data => { catalog = data; renderSetup(); await refreshSaves(); }).catch(error => { $("setupMessage").textContent = error.message; });
+Promise.all([api("/catalog"), loadHeroPortraits()]).then(async ([data]) => { catalog = data; renderSetup(); await refreshSaves(); }).catch(error => { $("setupMessage").textContent = error.message; });

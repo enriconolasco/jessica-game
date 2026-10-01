@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Luarado, Filhote da Mare">
+<title>Luarado, Filhote da Mare</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a08265" stroke-width="2"/>
+<path d="M7 8L11 11L16 9L21 11L25 8L25 19L22 25L16 28L10 25L6 19Z" fill="#957a62"/>
+<path d="M7 10L10 13L8 16M25 10L22 13L24 16" fill="#c6a98b"/>
+<path d="M9 17L13 15L16 18L19 15L23 17L21 24L16 27L11 24Z" fill="#c6a98b"/>
+<path d="M10 17L14 19M18 19L22 17" stroke="#e4c98a" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M13 22L16 24L19 22L17 25H15Z" fill="#373137"/><path d="M13 24Q16 26 19 24" fill="none" stroke="#75634e"/><circle cx="23" cy="8" r="1.2" fill="#d9d1bd"/>
+</svg>

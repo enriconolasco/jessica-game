@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Dunga">
+<title>Dunga</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#6a729c"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c39a7a"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#8c8fba"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<circle cx="13" cy="17" r="1.2" fill="#313037"/><circle cx="19" cy="17" r="1.2" fill="#313037"/>
+<path d="M16 17L15 20H17" fill="#c39a7a" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M12 22Q16 24 20 22" fill="none" stroke="#775b4e"/><path d="M10 5L12 2H19L22 5" fill="#8c8fba"/>
+
+</svg>

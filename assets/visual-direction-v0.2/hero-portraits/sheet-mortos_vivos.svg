@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 120" width="640" height="120"><rect width="640" height="120" fill="#111a26"/>
+<g transform="translate(42 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7c4a4" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#67736a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#363d39"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a7ad9e"/>
+
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#c5dba3" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M9 10Q16 6 22 10" fill="none" stroke="#c6b78d" stroke-width="1.5"/><path d="M23 11Q28 13 26 18Q25 22 21 21Q17 20 13 23Q10 26 13 28" fill="none" stroke="#80a16d" stroke-width="3.3" stroke-linecap="round"/><path d="M23 10L26 9L27 12L24 13Z" fill="#a2bf82"/><circle cx="26" cy="10" r="0.7" fill="#263d2b"/><path d="M10 24Q16 27 21 23" fill="none" stroke="#637263"/>
+
+</g>
+<text x="80" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Cobra</text>
+<g transform="translate(202 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7c4a4" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#675d66"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#25292e"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a8aa9a"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#25292e"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#b9d77d" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M8 12Q6 19 8 27M24 12Q26 19 24 27" fill="none" stroke="#25292e" stroke-width="2.6" stroke-linecap="round"/><path d="M10 21L12 22M20 22L22 21" stroke="#6d7770" stroke-width="0.8"/><path d="M13 23Q16 24 19 23" fill="none" stroke="#59635c"/>
+
+</g>
+<text x="240" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Zoia Bulbo Negro</text>
+<g transform="translate(362 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7c4a4" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#605a4b"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#4c483f"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#aaa38b"/>
+
+<path d="M11 16L14 16M18 16L21 16" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#95a68a" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 22 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M7 6Q16 2 25 6L27 13Q22 10 17 12Q12 9 5 14Z" fill="#625949"/><path d="M8 24L12 26M20 26L24 24" stroke="#82725c" stroke-width="2"/>
+
+</g>
+<text x="400" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Cova Rasa da Terra Funda</text></svg>

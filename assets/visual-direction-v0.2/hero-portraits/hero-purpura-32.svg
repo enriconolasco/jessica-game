@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Purpura, Filhote de Nebula">
+<title>Purpura, Filhote de Nebula</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#61a9a5" stroke-width="2"/>
+<path d="M4 6L11 10L16 6L21 10L28 6L26 17L23 24L16 28L9 24L6 17Z" fill="#7b679c"/>
+<path d="M5 7L9 15L6 17M27 7L23 15L26 17" fill="#aaa0c7"/>
+<path d="M10 15Q16 12 22 15L23 22L16 27L9 22Z" fill="#a08bbc"/>
+<path d="M9 17L14 19M18 19L23 17" stroke="#e4c0eb" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M13 23L16 20L19 23L17 25H15Z" fill="#3f4c4e"/><circle cx="12" cy="18" r="1.2" fill="#f2e6e4"/><circle cx="20" cy="18" r="1.2" fill="#f2e6e4"/><path d="M14 24Q16 26 18 24" fill="none" stroke="#735d87"/>
+</svg>

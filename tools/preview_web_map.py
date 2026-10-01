@@ -17,6 +17,8 @@ def fixture():
         {"id": 3, "name": "Cris", "people": "fadas"},
         {"id": 4, "name": "Dani", "people": "povo_desconhecido"},
     ]
+    for player in players:
+        player["city"] = {"life": 6, "life_max": 6}
     units = []
     for index in range(36):
         owner = index % 4 + 1
@@ -30,7 +32,7 @@ def fixture():
             "statuses": {"invisivel_until_turn": 3} if index == 0 else {},
             "resistance_stacks": 1 if index == 1 else 0, "double_damage": False,
         })
-    return {"players": players, "board": {"units": units}}
+    return {"curuna_id": 2, "players": players, "board": {"units": units}}
 
 
 class PreviewHandler(Handler):
@@ -39,14 +41,15 @@ class PreviewHandler(Handler):
             return super().do_GET()
         script = """
 <script>
-api('/catalog').then(data => {
+Promise.all([api('/catalog'), loadHeroPortraits()]).then(([data]) => {
   catalog = data;
   $('start').hidden = true;
   $('game').hidden = false;
   $('status').textContent = 'Prévia de teste · 36 unidades sintéticas · nenhum save alterado';
   $('save').hidden = true;
   document.querySelector('#game > .grid').remove();
-  renderMap(FIXTURE);
+  currentView = FIXTURE;
+  renderMap(currentView);
 });
 </script>
 """.replace("FIXTURE", json.dumps(fixture(), ensure_ascii=False))

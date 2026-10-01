@@ -1,0 +1,619 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 1320" width="640" height="1320"><rect width="640" height="1320" fill="#111a26"/>
+<g transform="translate(42 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 14 24H19Q25 24 27 29Z" fill="#3d526b"/>
+<path d="M13 23H19V27L16 29L13 27Z" fill="#b47752"/>
+<path d="M13 5Q11 3 14 2H19Q21 3 19 5L20 8H12Z" fill="#26232a"/>
+<path d="M8 12Q8 5 16 5Q24 5 24 12V19Q23 25 16 26Q9 25 8 19Z" fill="#bf855e"/>
+<path d="M8 16V11Q9 5 15 6L13 10L10 12V18Z M24 16V11Q23 5 18 6L19 10L22 12V18Z" fill="#25252c"/>
+<path d="M9 11Q16 9 23 11L23 13Q16 12 9 13Z" fill="#903f3d"/>
+<path d="M11 16L14 16M18 16L21 16" stroke="#28242a" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 17L15 21H17M14 23Q16 24 18 23" fill="none" stroke="#714b3c" stroke-width="1" stroke-linecap="round"/>
+<path d="M11 26L16 29L21 26" fill="none" stroke="#c9aa76" stroke-width="1"/>
+
+</g>
+<text x="80" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Miyamoto Musashi</text>
+<g transform="translate(202 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#56645a"/>
+<path d="M13 22H19V27H13Z" fill="#70442f"/>
+<path d="M8 14Q8 5 16 5Q24 5 24 14V20Q23 26 16 27Q9 26 8 20Z" fill="#75442f"/>
+<path d="M11 8Q16 5 21 8" fill="none" stroke="#a46a45" stroke-width="1"/>
+<path d="M8 16L6 14V20L9 21 M24 16L26 14V20L23 21" fill="#75442f"/>
+<path d="M11 16Q13 15 15 16M17 16Q19 15 21 16" fill="none" stroke="#241f21" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="13" cy="17" r="0.7" fill="#efe1be"/><circle cx="19" cy="17" r="0.7" fill="#efe1be"/>
+<path d="M15 18L14 21Q16 22 18 21L17 18M13 23Q16 24 19 23" fill="none" stroke="#3a2523" stroke-width="1" stroke-linecap="round"/>
+<path d="M9 27L13 24L16 27L19 24L23 27L20 30H12Z" fill="#ded1b3"/>
+
+</g>
+<text x="240" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Besouro Mangangá</text>
+<g transform="translate(362 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7995c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H20Q24 24 27 29Z" fill="#586855"/>
+<path d="M7 14Q7 8 16 7Q25 8 25 14V27H7Z" fill="#22242a"/>
+<path d="M9 15Q9 10 16 10Q23 10 23 15V21Q21 27 16 27Q11 27 9 21Z" fill="#b67a56"/>
+<path d="M7 13Q8 9 11 7L9 3L12 5L13 2L15 5L17 2L19 5L21 3L21 8Q24 9 25 13L21 12Q16 9 11 12Z" fill="#171c22"/>
+<path d="M9 10L8 4 M13 9L12 2 M17 8L17 2 M21 9L22 4" stroke="#59616a" stroke-width="0.7"/>
+<path d="M11 17L14 17M18 17L21 17" stroke="#302a2a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M16 18L15 21H17M14 23Q16 24 18 23" fill="none" stroke="#744d3b" stroke-width="1" stroke-linecap="round"/>
+<path d="M9 24Q12 27 12 29M23 24Q20 27 20 29" fill="none" stroke="#22242a" stroke-width="2"/>
+
+</g>
+<text x="400" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Iúna</text>
+<g transform="translate(522 10) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#786543"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c38d67"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#9d7547"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 16H14M18 16H21" stroke="#313037" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M16 17L15 20H17" fill="#c38d67" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#dfad42"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M10 8H22" stroke="#f0cb68" stroke-width="1.3"/><circle cx="16" cy="8" r="1.5" fill="#f0cb68"/>
+
+</g>
+<text x="560" y="95" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Barbadourada</text>
+<g transform="translate(42 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q8 25 12 24H20Q24 25 27 29Z" fill="#69747a"/>
+<path d="M8 14Q8 6 16 6Q24 6 24 14V20H8Z" fill="#c18c67"/>
+<path d="M7 8L11 5H21L25 8V12H7Z" fill="#737f85"/>
+<path d="M9 9H23V11H9Z" fill="#b5c0bd"/>
+<path d="M11 8H13V11H11ZM19 8H21V11H19Z" fill="#d7ac5c"/>
+<path d="M10 15L14 14M18 14L22 15" stroke="#ecdfc8" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="13" cy="16" r="0.8" fill="#343638"/><circle cx="19" cy="16" r="0.8" fill="#343638"/>
+<path d="M8 19Q10 18 12 19L14 18L16 20L18 18L20 19Q22 18 24 19L23 25L19 29H13L9 25Z" fill="#e1d9c9"/>
+<path d="M13 20L16 22L19 20M16 22V28" fill="none" stroke="#acb3ae" stroke-width="1.2"/>
+<path d="M15 17L14 20H18L17 17" fill="#c18c67"/>
+
+</g>
+<text x="80" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Ori</text>
+<g transform="translate(202 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+<path d="M4 22Q3 13 9 12Q12 7 16 9Q20 7 23 12Q29 13 28 22V29H4Z" fill="#5c6071"/>
+<circle cx="9" cy="19" r="5" fill="#d09a72"/><circle cx="23" cy="19" r="5" fill="#bd8764"/><circle cx="16" cy="17" r="6" fill="#c79971"/>
+<path d="M4 18Q5 11 10 12M19 12Q24 10 28 18M10 13Q12 8 16 8Q20 8 22 13" fill="none" stroke="#d2b876" stroke-width="3"/>
+<path d="M13 18H15M17 18H19M7 19H9M23 19H25" stroke="#323039" stroke-width="1.2"/>
+<path d="M8 23Q9 25 11 23M20 23Q23 25 25 23M13 23Q16 26 19 23" fill="none" stroke="#674536" stroke-width="1"/>
+</g>
+<text x="240" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Os 7 Anoes</text>
+<g transform="translate(362 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#756a62"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c18c69"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#7d5d52"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<circle cx="13" cy="17" r="1.2" fill="#313037"/><circle cx="19" cy="17" r="1.2" fill="#313037"/>
+<path d="M16 17L15 20H17" fill="#c18c69" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#b8aea4"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M14 10Q16 12 18 10" fill="none" stroke="#d8b7a0"/><circle cx="16" cy="19" r="1.6" fill="#d59076"/>
+
+</g>
+<text x="400" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Atim</text>
+<g transform="translate(522 130) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#6b806e"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#d1a17b"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#819483"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 17H14M18 17H21" stroke="#313037" stroke-width="1"/>
+<path d="M16 17L15 20H17" fill="#d1a17b" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#a78461"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><circle cx="10" cy="19" r="1" fill="#b86c67"/><circle cx="22" cy="19" r="1" fill="#b86c67"/>
+
+</g>
+<text x="560" y="215" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Dengoso</text>
+<g transform="translate(42 250) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#67748a"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#caa07d"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#7185a0"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 17Q13 18 14 17M18 17Q20 18 21 17" fill="none" stroke="#313037" stroke-width="1.2"/>
+<path d="M16 17L15 20H17" fill="#caa07d" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#c6ad8e"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M21 9Q24 7 25 10" fill="none" stroke="#f0e8d3"/>
+
+</g>
+<text x="80" y="335" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Soneca</text>
+<g transform="translate(202 250) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#82915b"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#d3a27a"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#d6a259"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 16Q13 14 14 16M18 16Q20 14 21 16" fill="none" stroke="#313037" stroke-width="1.3"/>
+<path d="M16 17L15 20H17" fill="#d3a27a" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#a55b38"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M13 20Q16 22 19 20" fill="none" stroke="#784735" stroke-width="1.2"/>
+
+</g>
+<text x="240" y="335" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Feliz</text>
+<g transform="translate(362 250) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#6a729c"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c39a7a"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#8c8fba"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<circle cx="13" cy="17" r="1.2" fill="#313037"/><circle cx="19" cy="17" r="1.2" fill="#313037"/>
+<path d="M16 17L15 20H17" fill="#c39a7a" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M12 22Q16 24 20 22" fill="none" stroke="#775b4e"/><path d="M10 5L12 2H19L22 5" fill="#8c8fba"/>
+
+</g>
+<text x="400" y="335" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Dunga</text>
+<g transform="translate(522 250) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#744849"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#ba805c"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#a4544d"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 15L14 17M18 17L21 15" stroke="#313037" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M16 17L15 20H17" fill="#ba805c" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#613f36"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M11 14L14 15M18 15L21 14" stroke="#573632" stroke-width="2"/>
+
+</g>
+<text x="560" y="335" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Zangado</text>
+<g transform="translate(42 370) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#51616a"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c29572"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#718184"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 16H14M18 16H21" stroke="#313037" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M16 17L15 20H17" fill="#c29572" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#d2d0c4"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><circle cx="13" cy="17" r="2.2" fill="none" stroke="#d9c89e" stroke-width="0.8"/><circle cx="19" cy="17" r="2.2" fill="none" stroke="#d9c89e" stroke-width="0.8"/><path d="M15 17H17" stroke="#d9c89e"/>
+
+</g>
+<text x="80" y="455" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Mestre</text>
+<g transform="translate(202 370) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 25 12 24H20Q24 25 27 29Z" fill="#766349"/>
+<path d="M8 12L3 10L4 17L9 19M24 12L29 10L28 17L23 19" fill="#668742"/>
+<path d="M8 12Q8 6 16 6Q24 6 24 12V22Q21 28 16 28Q11 28 8 22Z" fill="#648642"/>
+<path d="M8 9L12 7L16 8L20 7L24 9V12H8Z" fill="#b88447"/>
+<path d="M14 8L16 5L18 8" fill="#e1bd78"/>
+<path d="M10 15L14 16M18 16L22 15" stroke="#304a2d" stroke-width="1.7" stroke-linecap="round"/>
+<circle cx="12.5" cy="17" r="0.8" fill="#e4d39b"/><circle cx="19.5" cy="17" r="0.8" fill="#e4d39b"/>
+<path d="M15 18L14 21L18 21L17 18" fill="#83a15a"/>
+<path d="M10 22L12 20L14 25ZM18 25L20 20L22 22Z" fill="#eadfc0"/>
+<path d="M13 24H19" stroke="#34482d" stroke-width="1.4" stroke-linecap="round"/>
+
+</g>
+<text x="240" y="455" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Ga&#x27;Roche</text>
+<g transform="translate(362 370) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#58685a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#344338"/>
+<path d="M9 14L3 10L4 20L10 21M23 14L29 10L28 20L22 21" fill="#6a8a4b"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#6a8a4b"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#344338"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#d9c87e" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M6 11L11 5H21L26 11L22 10L19 13L13 12L10 14Z" fill="#485542"/><path d="M24 7L27 10L24 13" fill="#c8aa6d"/>
+
+</g>
+<text x="400" y="455" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Arken</text>
+<g transform="translate(522 370) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#87694c"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#e0d8bb"/>
+<path d="M9 14L3 10L4 20L10 21M23 14L29 10L28 20L22 21" fill="#7c9356"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#7c9356"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#e0d8bb"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#3a3834" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M9 11Q10 4 16 5Q22 4 23 11" fill="none" stroke="#ded8c4" stroke-width="2"/><path d="M12 22Q16 25 20 22" fill="none" stroke="#5f5d47"/><path d="M8 14L6 23M24 14L26 23" stroke="#e0d8bb" stroke-width="2"/>
+
+</g>
+<text x="560" y="455" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Vovo Gamba</text>
+<g transform="translate(42 490) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#b7d978" stroke-width="2"/>
+
+<path d="M5 29Q9 25 12 24H20Q23 25 27 29Z" fill="#5e436a"/>
+<path d="M6 13Q7 5 16 5Q25 5 26 13V28H6Z" fill="#24212d"/>
+<path d="M9 15L3 13L9 19M23 15L29 13L23 19" fill="#835239"/>
+<path d="M10 13Q10 8 16 8Q22 8 22 13V22Q21 27 16 27Q11 27 10 22Z" fill="#87543d"/>
+<path d="M9 14L10 7Q16 3 22 7L23 14L20 11L17 9L15 12L12 10Z" fill="#24212d"/>
+<path d="M8 14Q6 18 8 22Q6 25 9 28M24 14Q26 18 24 22Q26 25 23 28" fill="none" stroke="#3f303b" stroke-width="3" stroke-linecap="round"/>
+<path d="M8 18L9 20L8 22M24 18L23 20L24 22" fill="none" stroke="#a37b59" stroke-width="0.7"/>
+<path d="M12 17L15 17M17 17L20 17" stroke="#b9434c" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M16 19L15 22H17M14 24Q16 25 18 24" fill="none" stroke="#432b2b" stroke-width="1" stroke-linecap="round"/>
+
+</g>
+<text x="80" y="575" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Ainai</text>
+<g transform="translate(202 490) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#b7d978" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#7a718c"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#e4d085"/>
+<path d="M9 16L3 12L8 21M23 16L29 12L24 21" fill="#e8b18a"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#e8b18a"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#e4d085"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#4c765a" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M8 11L11 6L16 8L21 6L24 11" fill="none" stroke="#d8bd66" stroke-width="2"/><circle cx="16" cy="8" r="1.5" fill="#99c695"/>
+
+</g>
+<text x="240" y="575" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Valendar</text>
+<g transform="translate(362 490) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#b7d978" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#68749d"/>
+<path d="M21 3Q15 5 17 10Q19 13 24 11Q20 16 16 13Q12 9 16 5Q18 3 21 3Z" fill="#cbd3e2"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#f3cf7a"/>
+<path d="M9 16L3 12L8 21M23 16L29 12L24 21" fill="#daa883"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#daa883"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#f3cf7a"/>
+<path d="M11 16L14 16M18 16L21 16" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#6179a4" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 22 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<circle cx="24" cy="8" r="1" fill="#edf0dd"/>
+
+</g>
+<text x="400" y="575" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Luna</text>
+<g transform="translate(522 490) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#ad6178" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#713647"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#211d2d"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#d5c4b7"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#211d2d"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#b44755" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M5 29L9 24L14 28H18L23 24L27 29" fill="#2a2534"/><path d="M13 23L14 25L15 23M17 23L18 25L19 23" fill="#f6eee0"/>
+
+</g>
+<text x="560" y="575" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Dracula</text>
+<g transform="translate(42 610) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#ad6178" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#65516b"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#241c2a"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#8b533d"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#241c2a"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#c34853" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M8 12L6 23M24 12L26 23" stroke="#332438" stroke-width="2"/><path d="M14 23L15 25L16 23M17 23L18 25L19 23" fill="#eee3d0"/>
+
+</g>
+<text x="80" y="695" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Dandara</text>
+<g transform="translate(202 610) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#ad6178" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#7e3f49"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#332632"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#b28a78"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13L21 11L19 8Q16 12 10 11Z" fill="#332632"/>
+<path d="M11 15Q13 14 14 15M18 15Q20 14 21 15" fill="none" stroke="#342b2b" stroke-width="1.2"/>
+<path d="M12 18H14M18 18H20" stroke="#913c49" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M12 22Q16 27 20 22" fill="none" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M11 22Q14 20 16 22Q18 20 21 22L19 23L16 22L13 23Z" fill="#2e222b"/><path d="M7 27L12 24M20 24L25 27" stroke="#c09c62" stroke-width="1"/>
+
+</g>
+<text x="240" y="695" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Luide Vampa</text>
+<g transform="translate(362 610) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a08265" stroke-width="2"/>
+<path d="M4 5L11 10L16 8L21 10L28 5L26 19L22 25L16 28L10 25L6 19Z" fill="#62564e"/>
+<path d="M7 10L10 13L8 16M25 10L22 13L24 16" fill="#a38a72"/>
+<path d="M9 17L13 15L16 18L19 15L23 17L21 24L16 27L11 24Z" fill="#a38a72"/>
+<path d="M10 17L14 19M18 19L22 17" stroke="#ead293" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M13 22L16 24L19 22L17 25H15Z" fill="#373137"/><path d="M7 14L10 5L13 11M25 14L22 5L19 11" fill="#a8947f"/><path d="M12 24Q16 27 20 24" fill="none" stroke="#d7c3a4"/>
+</g>
+<text x="400" y="695" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Lupa</text>
+<g transform="translate(522 610) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a08265" stroke-width="2"/>
+<path d="M5 20Q4 5 16 5Q28 5 27 20" fill="none" stroke="#a19baa" stroke-width="2"/><path d="M4 5L11 10L16 8L21 10L28 5L26 19L22 25L16 28L10 25L6 19Z" fill="#756b7d"/>
+<path d="M7 10L10 13L8 16M25 10L22 13L24 16" fill="#ac9c9c"/>
+<path d="M9 17L13 15L16 18L19 15L23 17L21 24L16 27L11 24Z" fill="#ac9c9c"/>
+<path d="M10 17L14 19M18 19L22 17" stroke="#d7c9d8" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M13 22L16 24L19 22L17 25H15Z" fill="#373137"/><path d="M7 12Q16 8 25 12" fill="none" stroke="#d7bc8e" stroke-width="1.3"/>
+</g>
+<text x="560" y="695" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Cigana</text>
+<g transform="translate(42 730) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a08265" stroke-width="2"/>
+<path d="M7 8L11 11L16 9L21 11L25 8L25 19L22 25L16 28L10 25L6 19Z" fill="#957a62"/>
+<path d="M7 10L10 13L8 16M25 10L22 13L24 16" fill="#c6a98b"/>
+<path d="M9 17L13 15L16 18L19 15L23 17L21 24L16 27L11 24Z" fill="#c6a98b"/>
+<path d="M10 17L14 19M18 19L22 17" stroke="#e4c98a" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M13 22L16 24L19 22L17 25H15Z" fill="#373137"/><path d="M13 24Q16 26 19 24" fill="none" stroke="#75634e"/><circle cx="23" cy="8" r="1.2" fill="#d9d1bd"/>
+</g>
+<text x="80" y="815" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Luarado</text>
+<g transform="translate(202 730) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6a087" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#65594a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#211c21"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#87523a"/>
+
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#ead4ad" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M11 23Q16 26 21 23L20 28H12Z" fill="#262026"/>
+<path d="M9 6Q6 10 7 18M12 5Q10 10 10 18M16 4Q15 9 15 14M20 5Q22 10 22 18M23 6Q26 11 25 18" fill="none" stroke="#211c21" stroke-width="2.6" stroke-linecap="round"/><path d="M14 20Q16 21 18 20" fill="none" stroke="#b77a55"/>
+
+</g>
+<text x="240" y="815" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Joao Grandao</text>
+<g transform="translate(362 730) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6a087" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#8c684f"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#241e26"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a47253"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#241e26"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#29262c" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M9 11Q6 17 8 26M12 10Q10 18 11 27M23 11Q26 17 24 26M20 10Q22 18 21 27" fill="none" stroke="#241e26" stroke-width="2.4" stroke-linecap="round"/><path d="M8 19L10 21M22 21L24 19M11 25L13 27M19 27L21 25" stroke="#bf9e6b" stroke-width="0.9"/><path d="M12 7L16 5L20 7" fill="none" stroke="#c8a05e"/>
+
+</g>
+<text x="400" y="815" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Pe Descalco</text>
+<g transform="translate(522 730) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6a087" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#725d83"/>
+<circle cx="16" cy="14" r="11" fill="none" stroke="#8fbbaa" stroke-width="1" opacity=".75"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#684332"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#bb8559"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#684332"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#a7f1d5" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M16 8L18 11L16 14L14 11Z" fill="#c6f1c9"/><circle cx="7" cy="18" r="1.2" fill="#b7ead4"/><circle cx="25" cy="18" r="1.2" fill="#b7ead4"/><path d="M12 23Q16 25 20 23" fill="none" stroke="#764e3e" stroke-width="1"/>
+
+</g>
+<text x="560" y="815" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Caroco</text>
+<g transform="translate(42 850) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7c4a4" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#67736a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#363d39"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a7ad9e"/>
+
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#c5dba3" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M9 10Q16 6 22 10" fill="none" stroke="#c6b78d" stroke-width="1.5"/><path d="M23 11Q28 13 26 18Q25 22 21 21Q17 20 13 23Q10 26 13 28" fill="none" stroke="#80a16d" stroke-width="3.3" stroke-linecap="round"/><path d="M23 10L26 9L27 12L24 13Z" fill="#a2bf82"/><circle cx="26" cy="10" r="0.7" fill="#263d2b"/><path d="M10 24Q16 27 21 23" fill="none" stroke="#637263"/>
+
+</g>
+<text x="80" y="935" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Cobra</text>
+<g transform="translate(202 850) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7c4a4" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#675d66"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#25292e"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a8aa9a"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#25292e"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#b9d77d" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M8 12Q6 19 8 27M24 12Q26 19 24 27" fill="none" stroke="#25292e" stroke-width="2.6" stroke-linecap="round"/><path d="M10 21L12 22M20 22L22 21" stroke="#6d7770" stroke-width="0.8"/><path d="M13 23Q16 24 19 23" fill="none" stroke="#59635c"/>
+
+</g>
+<text x="240" y="935" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Zoia Bulbo Negro</text>
+<g transform="translate(362 850) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c7c4a4" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#605a4b"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#4c483f"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#aaa38b"/>
+
+<path d="M11 16L14 16M18 16L21 16" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#95a68a" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 22 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M7 6Q16 2 25 6L27 13Q22 10 17 12Q12 9 5 14Z" fill="#625949"/><path d="M8 24L12 26M20 26L24 24" stroke="#82725c" stroke-width="2"/>
+
+</g>
+<text x="400" y="935" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Cova Rasa da Terra Funda</text>
+<g transform="translate(522 850) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#81ad6d" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#67805b"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#3d352b"/>
+<path d="M9 16L3 12L8 21M23 16L29 12L24 21" fill="#a67954"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a67954"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#3d352b"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#5a5037" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M9 9L7 3L12 8M23 9L25 3L20 8" fill="#7b5b40"/><path d="M6 27L11 24M21 24L26 27" stroke="#b89a71"/>
+
+</g>
+<text x="560" y="935" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Guarari</text>
+<g transform="translate(42 970) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#81ad6d" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#527d8d"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#4c9b94"/>
+<path d="M9 16L3 12L8 21M23 16L29 12L24 21" fill="#a8c6ad"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a8c6ad"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#4c9b94"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#437f84" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M7 12Q5 18 8 23M25 12Q27 18 24 23" fill="none" stroke="#83d1bc" stroke-width="1.6"/><circle cx="24" cy="7" r="1.2" fill="#d5eee0"/>
+
+</g>
+<text x="80" y="1055" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Aiquara</text>
+<g transform="translate(202 970) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#81ad6d" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#5d7951"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#54704d"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#8e7650"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13L21 11L19 8Q16 12 10 11Z" fill="#54704d"/>
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#d0d399" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+<path d="M10 21Q16 24 22 21L21 28H11Z" fill="#a49a72"/>
+<path d="M8 9Q10 4 13 7L16 3L19 7Q22 4 24 9" fill="none" stroke="#87aa67" stroke-width="2"/><path d="M16 7V13" stroke="#b1a27b"/>
+
+</g>
+<text x="240" y="1055" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Baoba-ba</text>
+<g transform="translate(362 970) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6aa7c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#634563"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#4a3a4d"/>
+<path d="M9 16L3 12L5 22L10 21M23 16L29 12L27 22L22 21" fill="#a0ad70"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a0ad70"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#4a3a4d"/>
+<path d="M11 15Q13 14 14 15M18 15Q20 14 21 15" fill="none" stroke="#342b2b" stroke-width="1.2"/>
+<path d="M12 18H14M18 18H20" stroke="#e3d27d" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M12 22Q16 27 20 22" fill="none" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M6 11L11 5H21L26 11" fill="#684a72" stroke="#b49379" stroke-width="1"/><path d="M13 23Q16 25 20 22" fill="none" stroke="#39313a"/>
+
+</g>
+<text x="400" y="1055" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Bimbo do Mal</text>
+<g transform="translate(522 970) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6aa7c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#a08864"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#837650"/>
+<path d="M9 16L3 12L5 22L10 21M23 16L29 12L27 22L22 21" fill="#bfa178"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#bfa178"/>
+
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#5d5545" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+<path d="M11 21Q16 24 21 21L19 27H13Z" fill="#e6d8b2"/>
+<path d="M9 11L16 3L23 11Z" fill="#b89a68" stroke="#d9c492" stroke-width="1"/>
+
+</g>
+<text x="560" y="1055" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Sao Tome</text>
+<g transform="translate(42 1090) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6aa7c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#5d607a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#4f5166"/>
+<path d="M9 16L3 12L5 22L10 21M23 16L29 12L27 22L22 21" fill="#a1a77d"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a1a77d"/>
+
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#b5ca92" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M4 12Q5 3 16 3Q27 3 28 12L24 14H8Z" fill="#ad6559" stroke="#dfb68d" stroke-width="1"/><path d="M9 13H23V16H9Z" fill="#e6d4b1"/><circle cx="11" cy="8" r="1.6" fill="#f2e4c4"/><circle cx="19" cy="7" r="1.3" fill="#f2e4c4"/><circle cx="23" cy="10" r="1.1" fill="#f2e4c4"/><path d="M13 24Q16 26 19 24" fill="none" stroke="#515745"/>
+
+</g>
+<text x="80" y="1175" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Zebum</text>
+<g transform="translate(202 1090) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#61a9a5" stroke-width="2"/>
+<path d="M4 6L11 10L16 6L21 10L28 6L26 17L23 24L16 28L9 24L6 17Z" fill="#252a31"/>
+<path d="M5 7L9 15L6 17M27 7L23 15L26 17" fill="#555c61"/>
+<path d="M10 15Q16 12 22 15L23 22L16 27L9 22Z" fill="#3b4248"/>
+<path d="M9 17L14 19M18 19L23 17" stroke="#eda653" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M13 23L16 20L19 23L17 25H15Z" fill="#3f4c4e"/><path d="M10 23L12 28L16 25L20 28L22 23" fill="#111920"/><path d="M10 8L8 3M22 8L24 3" stroke="#6c7273" stroke-width="2"/><path d="M11 13L14 12M18 12L21 13" stroke="#838681" stroke-width="0.8"/>
+</g>
+<text x="240" y="1175" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Barba Negra</text>
+<g transform="translate(362 1090) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#61a9a5" stroke-width="2"/>
+<path d="M4 6L11 10L16 6L21 10L28 6L26 17L23 24L16 28L9 24L6 17Z" fill="#7b679c"/>
+<path d="M5 7L9 15L6 17M27 7L23 15L26 17" fill="#aaa0c7"/>
+<path d="M10 15Q16 12 22 15L23 22L16 27L9 22Z" fill="#a08bbc"/>
+<path d="M9 17L14 19M18 19L23 17" stroke="#e4c0eb" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M13 23L16 20L19 23L17 25H15Z" fill="#3f4c4e"/><circle cx="12" cy="18" r="1.2" fill="#f2e6e4"/><circle cx="20" cy="18" r="1.2" fill="#f2e6e4"/><path d="M14 24Q16 26 18 24" fill="none" stroke="#735d87"/>
+</g>
+<text x="400" y="1175" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Purpura</text>
+<g transform="translate(522 1090) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#61a9a5" stroke-width="2"/>
+<path d="M4 6L11 10L16 6L21 10L28 6L26 17L23 24L16 28L9 24L6 17Z" fill="#ece9d9"/>
+<path d="M5 7L9 15L6 17M27 7L23 15L26 17" fill="#cfb57f"/>
+<path d="M10 15Q16 12 22 15L23 22L16 27L9 22Z" fill="#ccd8d2"/>
+<path d="M9 17L14 19M18 19L23 17" stroke="#3f6979" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M13 23L16 20L19 23L17 25H15Z" fill="#3f4c4e"/><path d="M7 8L10 3L16 8L22 3L25 8" fill="none" stroke="#d7bd83" stroke-width="2"/><path d="M16 9V14" stroke="#d6bb7f"/><path d="M11 13L14 12M18 12L21 13" stroke="#a6b6b4" stroke-width="0.8"/>
+</g>
+<text x="560" y="1175" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Valtherion</text>
+<g transform="translate(42 1210) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c67065" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#914342"/>
+<path d="M5 28Q2 23 6 18Q3 13 8 10L7 4L13 8Q16 1 19 8L25 4L24 11Q29 15 26 19Q30 24 26 28Z" fill="#d7653f"/><path d="M8 14Q5 10 9 6M23 14Q27 10 23 6" fill="none" stroke="#f2aa51" stroke-width="2"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#80353e"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#ad5848"/>
+<path d="M8 14Q7 6 16 5Q24 5 24 14L20 12L18 14L15 11L12 14L10 12Z" fill="#80353e"/>
+<path d="M11 15L14 16M18 16L21 15" stroke="#342b2b" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#f6ca81" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M13 23H19" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M8 11L6 5L12 9M24 11L26 5L20 9" fill="#e28a53"/><path d="M10 8Q13 3 15 8Q17 1 20 7L22 10" fill="none" stroke="#f8bc61" stroke-width="2.2"/><path d="M9 25Q8 28 11 30M23 25Q24 28 21 30" fill="none" stroke="#ed974e" stroke-width="1.5"/>
+
+</g>
+<text x="80" y="1295" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Belial</text>
+<g transform="translate(202 1210) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c67065" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#615877"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#453d5a"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#9d8a9f"/>
+<path d="M8 14Q7 6 16 5Q23 5 24 13L20 12L17 8Q14 12 10 12Z" fill="#453d5a"/>
+<path d="M11 16L14 16M18 16L21 16" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#d9cde0" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 22 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M8 9Q6 15 8 24L6 27M24 9Q26 15 24 24L26 27" fill="none" stroke="#b5a7bf" stroke-width="1.4"/><path d="M12 23Q16 21 20 23" fill="none" stroke="#5d5269"/>
+
+</g>
+<text x="240" y="1295" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Tuza</text>
+<g transform="translate(362 1210) scale(2)"><rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#c67065" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#762e45"/>
+<path d="M4 29L6 11Q8 3 16 3Q24 3 26 11L28 29Z" fill="#2d2939"/>
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#332a3f"/>
+
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#b0444c"/>
+
+<path d="M11 15Q13 14 14 15M18 15Q20 14 21 15" fill="none" stroke="#342b2b" stroke-width="1.2"/>
+<path d="M12 18H14M18 18H20" stroke="#f2c177" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M12 22Q16 27 20 22" fill="none" stroke="#473331" stroke-width="1.2" stroke-linecap="round"/>
+
+<path d="M6 26L7 12Q8 6 13 5L10 14L9 25Z M26 26L25 12Q24 6 19 5L22 14L23 25Z" fill="#2d2939"/><path d="M8 11Q11 4 16 4Q21 4 24 11L21 9L16 6L11 9Z" fill="#46374c"/><path d="M13 23L14 25L16 23M17 23L18 25L19 23" fill="#f1ddbb"/><path d="M21 13L22 20" stroke="#7c293c"/>
+
+</g>
+<text x="400" y="1295" text-anchor="middle" fill="#f2e6c7" font-family="Arial,sans-serif" font-size="11">Rogue Devil do Inferno</text></svg>

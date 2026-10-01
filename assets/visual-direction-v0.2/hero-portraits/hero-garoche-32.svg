@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Ga&#x27;Roche, Rei do Sertao">
+<title>Ga&#x27;Roche, Rei do Sertao</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#88a357" stroke-width="2"/>
+
+<path d="M5 29Q8 25 12 24H20Q24 25 27 29Z" fill="#766349"/>
+<path d="M8 12L3 10L4 17L9 19M24 12L29 10L28 17L23 19" fill="#668742"/>
+<path d="M8 12Q8 6 16 6Q24 6 24 12V22Q21 28 16 28Q11 28 8 22Z" fill="#648642"/>
+<path d="M8 9L12 7L16 8L20 7L24 9V12H8Z" fill="#b88447"/>
+<path d="M14 8L16 5L18 8" fill="#e1bd78"/>
+<path d="M10 15L14 16M18 16L22 15" stroke="#304a2d" stroke-width="1.7" stroke-linecap="round"/>
+<circle cx="12.5" cy="17" r="0.8" fill="#e4d39b"/><circle cx="19.5" cy="17" r="0.8" fill="#e4d39b"/>
+<path d="M15 18L14 21L18 21L17 18" fill="#83a15a"/>
+<path d="M10 22L12 20L14 25ZM18 25L20 20L22 22Z" fill="#eadfc0"/>
+<path d="M13 24H19" stroke="#34482d" stroke-width="1.4" stroke-linecap="round"/>
+
+</svg>

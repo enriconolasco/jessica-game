@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Lupa, Lider da Matilha">
+<title>Lupa, Lider da Matilha</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a08265" stroke-width="2"/>
+<path d="M4 5L11 10L16 8L21 10L28 5L26 19L22 25L16 28L10 25L6 19Z" fill="#62564e"/>
+<path d="M7 10L10 13L8 16M25 10L22 13L24 16" fill="#a38a72"/>
+<path d="M9 17L13 15L16 18L19 15L23 17L21 24L16 27L11 24Z" fill="#a38a72"/>
+<path d="M10 17L14 19M18 19L22 17" stroke="#ead293" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M13 22L16 24L19 22L17 25H15Z" fill="#373137"/><path d="M7 14L10 5L13 11M25 14L22 5L19 11" fill="#a8947f"/><path d="M12 24Q16 27 20 24" fill="none" stroke="#d7c3a4"/>
+</svg>

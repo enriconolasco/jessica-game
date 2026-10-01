@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Zebum, o Mistico Viajante">
+<title>Zebum, o Mistico Viajante</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#a6aa7c" stroke-width="2"/>
+
+<path d="M5 29Q8 24 13 24H19Q24 24 27 29Z" fill="#5d607a"/>
+
+<path d="M8 13Q8 5 16 5Q24 5 24 13V26H8Z" fill="#4f5166"/>
+<path d="M9 16L3 12L5 22L10 21M23 16L29 12L27 22L22 21" fill="#a1a77d"/>
+<path d="M9 13Q9 8 16 8Q23 8 23 13V21Q21 27 16 27Q11 27 9 21Z" fill="#a1a77d"/>
+
+<path d="M11 15H14M18 15H21" stroke="#342b2b" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 18H14M18 18H20" stroke="#b5ca92" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M16 18L15 21H17" fill="none" stroke="#765441" stroke-width="1" stroke-linecap="round"/>
+<path d="M14 23Q16 24 18 23" fill="none" stroke="#473331" stroke-width="1" stroke-linecap="round"/>
+
+<path d="M4 12Q5 3 16 3Q27 3 28 12L24 14H8Z" fill="#ad6559" stroke="#dfb68d" stroke-width="1"/><path d="M9 13H23V16H9Z" fill="#e6d4b1"/><circle cx="11" cy="8" r="1.6" fill="#f2e4c4"/><circle cx="19" cy="7" r="1.3" fill="#f2e4c4"/><circle cx="23" cy="10" r="1.1" fill="#f2e4c4"/><path d="M13 24Q16 26 19 24" fill="none" stroke="#515745"/>
+
+</svg>

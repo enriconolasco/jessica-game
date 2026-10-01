@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Barbadourada">
+<title>Barbadourada</title>
+<rect x="1" y="1" width="30" height="30" rx="6" fill="#18202b" stroke="#cda15e" stroke-width="2"/>
+
+<path d="M5 29Q9 24 13 24H19Q23 24 27 29Z" fill="#786543"/>
+<path d="M8 13Q8 6 16 6Q24 6 24 13V21H8Z" fill="#c38d67"/>
+<path d="M7 10L10 5H22L25 10V13H7Z" fill="#9d7547"/>
+<path d="M9 12H23" stroke="#e3c987" stroke-width="1"/>
+<path d="M11 16H14M18 16H21" stroke="#313037" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M16 17L15 20H17" fill="#c38d67" stroke="#8e684f" stroke-width="0.7"/>
+<path d="M8 19Q11 17 13 19L16 20L19 19Q22 17 24 19L23 25L19 29H13L9 25Z" fill="#dfad42"/>
+<path d="M13 20L16 22L19 20M16 23V28" fill="none" stroke="#9e8f81" stroke-width="0.8"/><path d="M10 8H22" stroke="#f0cb68" stroke-width="1.3"/><circle cx="16" cy="8" r="1.5" fill="#f0cb68"/>
+
+</svg>
