@@ -25,6 +25,15 @@ terminal. O comparador exige mesma ordem de ataques, estado, logs e RNG.
 Pagamentos de Armadura deste cenário são zero. Consultas não modificam estado;
 cada decisão web é repetida após serialização/restauração.
 
+Reforço posterior: `test_luna_luide_armor_payment_qd_ainai_matches_real_windows`
+reexecuta a mesma cadeia pagando 1 Ouro nas duas defesas. O terminal recebe a
+mesma política de pagamento; a web envia escolhas estruturadas limitadas pelo
+motor. Ouro final das Fadas: 10 (8 inicial − 2 pagos + 4 de Q♦), em vez dos 12
+com pagamento zero. Ordem de janelas, ataques, estado, logs e RNG são comparados;
+persistência e consultas sem mutação continuam verificadas. Nenhuma regra mudou.
+Revalidação: 450 testes Python aprovados, zero falhas; comparação independente
+de 125 ações e dez noites com Downloads e `git diff --check` aprovados.
+
 ## Quatro itens e Relógio
 
 `test_rogue_four_items_base_attack_and_real_clock_window` parte de um estado

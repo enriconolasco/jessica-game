@@ -24,7 +24,7 @@ def mechanics(state):
 
 
 def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=(), artifact_choices=None,
-            window_trace=None, decision_trace=None, clock_destination=None):
+            window_trace=None, decision_trace=None, clock_destination=None, armor_gold=0):
     direct = state_from_dict(state_to_dict(state))
     terminal_trace = []
     remaining = deepcopy(plan)
@@ -42,7 +42,8 @@ def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=()
         return attack
 
     with ExitStack() as patches:
-        patches.enter_context(patch.object(combat, "_armor_choice_fn", lambda player, damage: 0))
+        patches.enter_context(patch.object(combat, "_armor_choice_fn",
+            lambda player, damage: min(armor_gold, damage, player.city.gold)))
         patches.enter_context(patch.object(terminal, "console", Mock()))
         patches.enter_context(patch.object(terminal.Prompt, "ask",
             lambda prompt, **kwargs: "s" if clock_destination and "Relógio de bolso?" in prompt
@@ -87,7 +88,8 @@ def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=()
             action = scripted
             web_windows.pop(0)
         elif choices[0]["type"] == "armor_payment":
-            action = next(a for a in choices if a["params"]["gold"] == 0)
+            action = deepcopy(choices[0])
+            action["params"] = {"gold": min(armor_gold, action["selection"]["max_gold"])}
         elif choices[0]["type"] == "night_setup":
             action = next(a for a in choices if a["params"].get("position") ==
                           state.players[a["player_id"] - 1].vovo_position
@@ -447,7 +449,7 @@ def test_ainai_window_timing_matches_terminal_including_empty_houses():
     assert actual == expected, (actual, expected)
 
 
-def test_luna_luide_armor_qd_ainai_chain_matches_real_windows():
+def luna_luide_armor_chain(armor_gold=0):
     state = night()
     state.players[0].people = "vampiros"
     state.players[0].city.magic = 20
@@ -478,15 +480,24 @@ def test_luna_luide_armor_qd_ainai_chain_matches_real_windows():
         return 0
 
     final, trace = compare(state, {"luide": [("unit", "fallen")], "ainai": [("unit", "luide")]},
-        picker, windows, ("_try_luna_return", "_ainai_prompt_all"), decision_trace=decisions)
+        picker, windows, ("_try_luna_return", "_ainai_prompt_all"), decision_trace=decisions,
+        armor_gold=armor_gold)
     assert not windows
     assert [a["attacker_unit_id"] for a in trace] == ["luide", "ainai"]
     ordered = ["night_setup", "night_luide_spell", "night_attack", "armor_payment",
                "night_resolve_choice", "night_ainai"]
     positions = [decisions.index(kind) for kind in ordered]
     assert positions == sorted(positions), decisions
-    assert final.players[1].city.gold == 12
+    assert final.players[1].city.gold == 12 - 2 * armor_gold
     assert not final.players[1].pending_artifact_choice
+
+
+def test_luna_luide_armor_qd_ainai_chain_matches_real_windows():
+    luna_luide_armor_chain()
+
+
+def test_luna_luide_armor_payment_qd_ainai_matches_real_windows():
+    luna_luide_armor_chain(armor_gold=1)
 
 
 def test_rogue_four_items_base_attack_and_real_clock_window():

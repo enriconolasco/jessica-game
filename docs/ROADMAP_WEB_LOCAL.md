@@ -1,6 +1,6 @@
 # Roteiro para a versão web local
 
-**Estado atual (01/10/2026):** candidata a playtest, base `c652408` e lote de fechamento, 449 testes
+**Estado atual (01/10/2026):** candidata a playtest, base `c652408` e lote de fechamento, 450 testes
 aprovados. A auditoria já mapeia todos os fluxos selecionáveis do terminal.
 Ver `FECHAMENTO_WEB_LOCAL.md` para abrir, reportar bugs e o fechamento limitado.
 O texto abaixo conserva o histórico de implementação; não indica que as antigas

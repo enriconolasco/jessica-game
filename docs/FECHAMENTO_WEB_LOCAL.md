@@ -10,7 +10,7 @@ dispositivo, servidor Python local, sem bots ou multiplayer remoto.
 A auditoria de conteúdo mapeou todos os fluxos selecionáveis do terminal para
 ações/consultas web. Não há ação mecânica faltante identificada nem divergência
 funcional conhecida em aberto no registro de paridade.
-449 testes aprovados; comparação independente de 125 ações e dez noites;
+450 testes aprovados; comparação independente de 125 ações e dez noites;
 partidas completas dos 12 povos, Bases Dragões e progressão de Rogue; QA real
 das principais escolhas complexas, desktop e largura móvel.
 Isso é evidência do recorte testado, não prova exaustiva.
