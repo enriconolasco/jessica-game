@@ -271,6 +271,19 @@ def test_public_pact_history_http_privacy_save_and_invalid_action():
         assert [e for e in events if e["visibility"]["kind"] == "public"] == histories[1]
 
 
+def test_web_launcher_reuses_setup_and_preserves_terminal_default():
+    root = Path(__file__).resolve().parents[1]
+    launcher = (root / "JOGAR_WEB.cmd").read_text(encoding="utf-8")
+    shared = (root / "JOGAR.cmd").read_text(encoding="utf-8")
+    assert 'call "%~dp0JOGAR.cmd" web' in launcher
+    assert 'exit /b %errorlevel%' in launcher
+    assert 'if /i "%~1"=="web" goto web' in shared
+    assert '".venv\\Scripts\\python.exe" -m jessica.main' in shared
+    assert '".venv\\Scripts\\python.exe" -m jessica.web.server' in shared
+    assert "http://127.0.0.1:8765" in shared
+    assert 'cd /d "%~dp0"' in shared
+
+
 def test_browser_qa_scenarios_restore_their_required_decisions():
     from jessica.core.headless import SAVE_VERSION
     from serve_ui_scenarios import scenarios

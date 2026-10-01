@@ -45,6 +45,8 @@ Banho de Sangue, Cabeças de Heróis e aquisição dos quatro itens agora possue
 partidas completas até vitória, sem preparação artificial de unidades/itens:
 `VALIDACAO_PROGRESSAO_ROGUE.md`. Histórico público de pactos também validado por HTTP.
 
-Ainda ampliar: adversários que declarem ataques nesses roteiros, outros
-cruzamentos de janelas e playtest físico por toque/PWA.
+Seeds 913/914 também validam as duas quests em partidas completas com adversários
+atacando e mortes por retaliação; ver `VALIDACAO_PROGRESSAO_ROGUE.md`.
+
+Ainda ampliar: outros cruzamentos de janelas/povos e playtest físico por toque/PWA.
 São lacunas de validação; não há, por isso só, evidência de mecânica ausente.

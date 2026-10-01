@@ -1,5 +1,11 @@
 # Roteiro para a versão web local
 
+**Estado atual (01/10/2026):** candidata a playtest, base `c652408` e lote de fechamento, 449 testes
+aprovados. A auditoria já mapeia todos os fluxos selecionáveis do terminal.
+Ver `FECHAMENTO_WEB_LOCAL.md` para abrir, reportar bugs e o fechamento limitado.
+O texto abaixo conserva o histórico de implementação; não indica que as antigas
+restrições de heróis ainda estejam presentes. PWA é planejada, não entregue.
+
 Status em 2026-09-29: Dia ampliado e Noite expandida em lote. O motor continua
 sendo a única autoridade mecânica. Multiplayer online não faz parte deste roteiro.
 
@@ -39,8 +45,9 @@ oferece Ouro/Magia e retoma a fila. Escolhas J♦/Feliz já pendentes também us
 a resolução existente. A interrupção é preservada em save/load.
 
 Lote noturno adicional: heróis de combate/passivas já resolvidos no core,
-incluindo anões, lobisomens, gigantes, mortos-vivos e dragões; pactos de Belial
-com aceitar/recusar e ofertas de Rogue; Relógio de bolso opcional uma vez antes
+incluindo anões, lobisomens, gigantes, mortos-vivos e dragões; ofertas de Rogue;
+Belial guarda ofertas para o Dia seguinte (decisão de 01/10/2026);
+Relógio de bolso opcional uma vez antes
 do encerramento; Mar de Chamas preparado no Dia aplicado uma vez ao preparar
 a Noite. Belial já executa seu efeito pelo hook existente de início da Noite.
 Matriz de paridade cobre ataque de cada herói liberado, não todas as combinações.

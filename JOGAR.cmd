@@ -10,7 +10,14 @@ if errorlevel 1 (
   ".venv\Scripts\python.exe" -m pip install -r requirements.txt
   if errorlevel 1 goto erro
 )
+if /i "%~1"=="web" goto web
 ".venv\Scripts\python.exe" -m jessica.main
+if errorlevel 1 goto erro
+exit /b 0
+:web
+echo Abra http://127.0.0.1:8765 no navegador. Mantenha esta janela aberta.
+echo Para encerrar o servidor, pressione Ctrl+C nesta janela.
+".venv\Scripts\python.exe" -m jessica.web.server
 if errorlevel 1 goto erro
 exit /b 0
 :erro

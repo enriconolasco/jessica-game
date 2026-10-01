@@ -21,7 +21,7 @@ def completed(state, pact_id):
     return any(p["pact_id"] == pact_id and p["completed"] for p in state.demon_pacts)
 
 
-def progression(pact_id, seed, all_items=False):
+def progression(pact_id, seed, all_items=False, enemy_attacks=False):
     seen = Counter()
     pacts = ["sacrifique_futuro", "banho_sangue", "vida_lider", "cabecas_herois"]
     items = ["bracelete", "adaga", "relogio", "capa"]
@@ -57,6 +57,13 @@ def progression(pact_id, seed, all_items=False):
         return choose_day(state, choices, used)
 
     def night_policy(state, choices):
+        if enemy_attacks:
+            units = {u.id: u for p in state.players for u in p.units}
+            attacks = [a for a in choices if a["type"] == "night_attack" and a["player_id"] != 1
+                       and a["params"]["target_type"] == "unit"
+                       and units[a["params"]["target_id"]].owner_id == 1]
+            if attacks:
+                return max(attacks, key=lambda a: units[a["params"]["target_id"]].life)
         if not all_items and not completed(state, pact_id):
             attacks = [a for a in choices if a["type"] == "night_attack" and a["player_id"] == 1
                        and a["params"]["target_type"] == "unit"]
@@ -70,6 +77,11 @@ def progression(pact_id, seed, all_items=False):
 
     def observe(before, action, after):
         old, player = before.players[0], after.players[0]
+        if action["type"] == "night_attack" and action["player_id"] != 1:
+            seen["enemy_attack"] += 1
+            alive = {u.id for p in after.players for u in p.units if u.is_alive()}
+            if action["params"]["attacker_unit_id"] not in alive:
+                seen["retaliation_kill"] += 1
         snapshot = state_to_dict(after)
         events = session.changes(session.public_snapshot(before), after, action)
         pact_changes = [c for e in events if e["type"] == "public_state_changed"
@@ -114,6 +126,8 @@ def progression(pact_id, seed, all_items=False):
 
     result = match(GROUP, seed, day_policy=policy, on_step=observe, night_policy=night_policy)
     assert seen["signed"], seen
+    if enemy_attacks:
+        assert seen["enemy_attack"] and seen["retaliation_kill"], seen
     if all_items:
         assert seen["four_items"] and seen["sacrificed"] >= 3 and seen["restored"] >= 3 and seen["rogue_base"], seen
     else:
@@ -131,6 +145,16 @@ def test_hero_peoples_quest_from_setup_to_victory():
 
 def test_four_items_from_invocation_to_victory():
     return progression("vida_lider", 911, all_items=True)
+
+
+def test_quests_with_enemy_attacks_and_retaliation():
+    counts = Counter()
+    last_turn = 0
+    for pact, seed in (("banho_sangue", 913), ("cabecas_herois", 914)):
+        result, turn = progression(pact, seed, enemy_attacks=True)
+        counts.update(result)
+        last_turn = max(last_turn, turn)
+    return dict(counts), last_turn
 
 
 if __name__ == "__main__":

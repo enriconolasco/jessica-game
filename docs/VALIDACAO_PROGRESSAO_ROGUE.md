@@ -20,6 +20,17 @@ Cada ação web é repetida após save/load, com validação real de saves. Deci
 diurnas são comparadas às funções de regras usadas pelo terminal; cada Noite é
 reexecutada por `jessica.main.run_night_phase`, comparando estado, logs e RNG.
 
+## Reforço: adversários atacando
+
+Seeds 913/914 acrescentam partidas completas das duas quests com adversários
+declarando ataques contra J1. Ambas chegam à vitória, somando 494 decisões e
+com duração máxima T25. O teste exige ataques inimigos e mortes dos atacantes
+por retaliação, além das recompensas/progressão/persistência já verificadas.
+A política escolhe alvos legais e é comparada à orquestração terminal;
+não é um bot de produção nem seleção aleatória de todas as interações.
+Revalidação com este reforço e o atalho web: 449 testes Python e cinco scripts
+Node aprovados, zero falhas; `git diff --check` aprovado.
+
 O terceiro roteiro usa Sacrifício e reinvocação para obter os itens por ações
 legais. Confirma três sacrifícios, persistência de vida/itens e seleção/execução
 de ataques à Base pelo Rogue completo. As recompensas são imediatas ao firmar;
@@ -42,8 +53,9 @@ não foi alterada neste ciclo.
 
 ## Limites
 
-Os adversários passam suas declarações noturnas; são partidas completas
-dirigidas, não adversários inteligentes nem exploração de todas as combinações.
+Nos três primeiros roteiros os adversários passam; nos dois adicionais atacam.
+São partidas completas dirigidas, não adversários inteligentes nem exploração
+de todas as combinações.
 Relógio é adquirido, mas seu uso continua validado no cenário específico de
 `VALIDACAO_QUESTS_E_JANELAS.md`, não nestas partidas.
 
@@ -53,4 +65,4 @@ três novos roteiros naquele processo: essa comparação usa a orquestração te
 da cópia web. Esta distinção evita certificar equivalência sem evidência.
 
 Este lote não inclui nova inspeção manual do navegador ou teste físico de PWA.
-Permanecem cruzamentos de janelas e adversários atuantes a ampliar.
+Permanecem outros cruzamentos de janelas/povos a ampliar.
