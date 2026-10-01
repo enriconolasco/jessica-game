@@ -65,8 +65,9 @@ Os testes específicos de reações também validam pagamentos positivos.
 | 902 | Turno 10 | 154 | 18 |
 | 903 | Turno 10 | 149 | 6 |
 
-O lote não inclui novo teste manual no navegador nem resolução de pactos de
-Belial: `PENDENCIAS_PARIDADE.md` registra a diferença de timing conhecida.
+O lote não inclui novo teste manual no navegador nem partida completa com pactos
+de Belial. O timing foi posteriormente confirmado e corrigido com testes dirigidos;
+ver `PENDENCIAS_PARIDADE.md`.
 Não cobre todas as combinações de heróis, todas as cartas nem todas as decisões.
 
 `tests/run_all.py` agora retorna código 1 quando houver falhas, crash de processo
@@ -76,3 +77,9 @@ contrato; uma contagem aparentemente verde não encobre um subprocesso quebrado.
 Verificação deste lote: **430 testes Python e cinco scripts Node aprovados**;
 replay independente com 125 ações diurnas e sete cenários noturnos aprovado;
 `git diff --check` limpo. Regras do motor e instalação terminal não foram alteradas.
+
+Correção posterior de Belial: **433 testes Python, zero falhas**, cinco scripts
+Node e sintaxe JavaScript aprovados; replay independente de 125 ações diurnas
+e nove cenários noturnos equivalente. Ofertas noturnas persistem até o Dia do
+beneficiário, inclusive após save/load; uma oferta em save antigo não bloqueia
+o próximo declarante. A instalação terminal continua sem alterações.

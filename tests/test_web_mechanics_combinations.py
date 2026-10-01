@@ -125,9 +125,14 @@ def test_recusa_opcional_continua_disponivel_com_loja_de_pactos_esgotada():
     state.players[0].demon_pact_offers = [{"source": "belial", "demon_player_id": 1}]
     end_day(state)
     choices = legal_actions(state, 1)
-    assert [a["type"] for a in choices] == ["night_decline_pact"]
+    assert [a["type"] for a in choices] == ["finish_night"]
     assert apply_action(state, choices[0])["success"]
-    assert any(a["type"] == "finish_night" for a in legal_actions(state, 1))
+    while state.active_player_id != 1:
+        assert apply_action(state, next(a for a in legal_actions(state, state.active_player_id)
+                                       if a["type"] == "end_turn"))["success"]
+    decline = next(a for a in legal_actions(state, 1) if a["type"] == "decline_pact")
+    assert apply_action(state, decline)["success"]
+    assert not state.players[0].demon_pact_offers
 
 
 def ability_scenarios():

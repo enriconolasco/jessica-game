@@ -327,3 +327,14 @@ e `finish`. Durante preparação/escolhas/finalização, `house` e `unit_id` pod
 ser nulos; a interface não deve usar um ataque futuro para preencher esses campos.
 `player_id` identifica quem decide nesta janela, não expõe a decisão privada.
 Campos aditivos; não muda versões de ações, eventos ou saves.
+
+## Ofertas de Belial — 01/10/2026
+
+Uma oferta de `source: belial` gerada na Noite permanece em
+`self.demon_pact_offers` do beneficiário e no save. Não oferece `night_pact`
+nem `night_decline_pact`; `demon_pact`/`decline_pact` ficam disponíveis na
+próxima jogada diurna desse jogador. Rogue mantém seu fluxo imediato.
+Durante a Noite, `active_player_id` da visão acompanha o decisor calculado pela
+fila, inclusive para saves antigos pausados em Belial; reações de Armadura
+preservam seu próprio decisor. A consulta não modifica o estado nem o RNG.
+Não muda formato nem versões de ações, eventos, visão ou saves.

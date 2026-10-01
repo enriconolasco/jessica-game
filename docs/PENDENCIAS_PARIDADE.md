@@ -3,25 +3,27 @@
 Este arquivo registra divergências conhecidas, não funcionalidades apenas sem playtest.
 Ter um adaptador e testes aprovados não encerra automaticamente uma pendência.
 
-## WEB-001 — Momento de decidir um pacto de Belial
+## WEB-001 — Momento de decidir um pacto de Belial — resolvida
 
 - Condição: Belial vivo; um herói mata outro durante a Noite, gerando uma oferta.
 - Terminal: `_declarar_casa` continua os combates e resolve escolhas de artefatos
   via `_resolver_qd_pendente`; não abre `_demon_pact_ui`. A oferta permanece e
   pode ser usada pelo beneficiário no menu diurno.
-- Web: `night_actions.pending_owner` suspende a fila; oferece `night_pact` ou
-  `night_decline_pact` imediatamente, antes da declaração seguinte.
-- Impacto: altera quando entram artefatos/recompensas e penalidades, podendo
-  modificar os combates restantes. Não é apenas uma diferença de apresentação.
-- Decisão necessária: oferecer imediatamente na Noite ou guardar para o Dia?
-  Nenhuma das duas interfaces foi alterada nesta revisão para escolher uma regra.
+- Decisão do usuário em 01/10/2026: pacto no próximo Dia, na jogada do beneficiário.
+- Web corrigida: a oferta de Belial permanece salva, não interrompe a Noite e
+  não permite aceitar/recusar nessa fase. As ações diurnas existentes a resolvem.
+- A HUD informa o adiamento. Saves antigos parados nessa oferta apresentam o
+  próximo declarante correto, sem alterar estado/RNG durante consultas.
+- Ofertas de Rogue continuam imediatas; esta correção não altera suas recompensas.
 
 Fontes: `jessica/main.py::_declarar_casa`, `_menu_especiais`/`_do_action` (opção D),
 `jessica/core/night_actions.py::pending_owner`/`legal`,
-`tests/test_web_cycle_parity.py::test_armor_then_qd_then_belial_pact_resumes_original_queue`.
+`tests/test_web_cycle_parity.py::test_armor_then_qd_preserves_belial_pact_for_next_day`,
+`tests/test_night_terminal_parity.py` (morte por ataque, retaliação e save antigo).
 
-As partidas mistas deste lote usam Tuza, não Belial. Sua aprovação não fecha
-WEB-001 nem certifica o timing de pactos de Belial.
+Os testes dirigidos comparam a Noite ao terminal e confirmam oferta no Dia seguinte,
+rejeição atômica de pacto noturno e persistência no save. As partidas mistas completas
+usam Tuza, não Belial; não certificam todos os cruzamentos de pactos.
 
 ## Cobertura ainda a ampliar
 

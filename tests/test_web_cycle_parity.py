@@ -198,7 +198,7 @@ def test_elimination_during_armor_reaction_reaches_victory():
     assert all(legal_actions(state, p.id) == [] for p in state.players)
 
 
-def test_armor_then_qd_then_belial_pact_resumes_original_queue():
+def test_armor_then_qd_preserves_belial_pact_for_next_day():
     from jessica.core.actions import resolve_pending_artifact_choice
     from jessica.core.interaction_actions import execute
     for accept in (False, True):
@@ -234,18 +234,29 @@ def test_armor_then_qd_then_belial_pact_resumes_original_queue():
         night_actions.advance(direct)
         assert state_to_dict(state) == state_to_dict(direct)
         assert state.active_player_id == 1 and state.players[0].demon_pact_offers
+        assert not state.players[2].pending_artifact_choice
+        assert not state.demon_pacts
+        assert not any(a["type"] in ("night_pact", "night_decline_pact")
+                       for a in legal_actions(state, 1))
+        state = finish(state)
+        assert state.turn == 2 and state.active_player_id == 2
+        assert state.players[0].demon_pact_offers
+        assert not any(a["type"] == "demon_pact" for a in legal_actions(state, 1))
+        while state.active_player_id != 1:
+            state = step(state, next(a for a in legal_actions(state, state.active_player_id)
+                                    if a["type"] == "end_turn"))
+        assert state.phase == Phase.DAY
+        direct = deepcopy(state)
         if accept:
             action = next(a for a in legal_actions(state, 1)
                           if a["params"].get("pact_id") == "sacrifique_futuro")
         else:
-            action = next(a for a in legal_actions(state, 1) if a["type"] == "night_decline_pact")
+            action = next(a for a in legal_actions(state, 1) if a["type"] == "decline_pact")
         state = step(state, action)
-        execute(direct, dict(action, type="demon_pact" if accept else "decline_pact"))
-        night_actions.advance(direct)
+        execute(direct, action)
         assert state_to_dict(state) == state_to_dict(direct)
         assert not state.players[0].demon_pact_offers and not state.players[2].pending_artifact_choice
-        state = finish(state)
-        assert state.turn == 2 and state.active_player_id == 2
+        assert state.turn == 2 and state.active_player_id == 1
 
 
 def test_http_skipped_curuna_handoff_save_and_load():

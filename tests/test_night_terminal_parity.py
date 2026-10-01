@@ -139,6 +139,70 @@ def test_armor_reaction_in_real_terminal_night_matches_web():
     assert result.players[1].city.gold == 8
 
 
+def belial_night(attacker_life=8, defender_life=1):
+    state = night()
+    state.players[0].units = [Hero(id="killer", owner_id=1, house="center",
+                                  life=attacker_life, life_max=attacker_life, hero_id="miyamoto")]
+    state.players[1].units = [Hero(id="victim", owner_id=2, house="center",
+                                  life=defender_life, life_max=defender_life, hero_id="arken")]
+    state.players[3].people = "demonios"
+    state.players[3].units = [Hero(id="belial", owner_id=4, house="city_4",
+                                  life=2, life_max=2, hero_id="belial")]
+    return state, {"killer": [("unit", "victim")]}
+
+
+def belial_next_day(attacker_life, defender_life, recipient):
+    from jessica.core.headless import ACTION_VERSION
+    state, plan = belial_night(attacker_life, defender_life)
+    state, trace = compare(state, plan)
+    assert len(trace) == 1 and state.players[recipient - 1].demon_pact_offers
+    assert not state.demon_pacts
+    before = state_to_dict(state)
+    forged = {"version": ACTION_VERSION, "type": "night_pact", "player_id": recipient,
+              "params": {"offer_index": 0, "pact_id": "sacrifique_futuro", "item": None}}
+    assert not apply_action(state, forged)["success"]
+    assert state_to_dict(state) == before
+    assert apply_action(state, next(a for a in legal_actions(state, state.active_player_id)
+                                    if a["type"] == "finish_night"))["success"]
+    state = state_from_dict(state_to_dict(state))
+    assert state.turn == 2
+    while state.active_player_id != recipient:
+        assert not any(a["type"] == "demon_pact" for a in legal_actions(state, recipient))
+        action = next(a for a in legal_actions(state, state.active_player_id) if a["type"] == "end_turn")
+        assert apply_action(state, action)["success"]
+        state = state_from_dict(state_to_dict(state))
+    assert any(a["type"] == "demon_pact" for a in legal_actions(state, recipient))
+    assert state.players[recipient - 1].demon_pact_offers
+
+
+def test_belial_attack_offer_survives_to_beneficiary_next_day():
+    belial_next_day(8, 1, 1)
+
+
+def test_belial_retaliation_offer_survives_to_beneficiary_next_day():
+    belial_next_day(1, 6, 2)
+
+
+def test_old_save_paused_on_belial_hands_off_to_next_declaration():
+    from jessica.core.headless import SAVE_VERSION
+    from jessica.web.saves import validate
+    state, _ = belial_night()
+    troop(state, 2, "remaining")
+    attack = next(a for a in legal_actions(state, 1) if a["type"] == "night_attack"
+                  and a["params"]["target_id"] == "victim")
+    assert apply_action(state, attack)["success"]
+    assert state.active_player_id == 2 and state.players[0].demon_pact_offers
+    state.active_player_id = 1  # Save produzido antes da decisão sobre Belial.
+    state, _, _ = validate({"version": SAVE_VERSION, "state": state_to_dict(state), "events": []})
+    before = state_to_dict(state)
+    assert view_for_player(state, 1)["active_player_id"] == 2
+    assert not legal_actions(state, 1)
+    choices = legal_actions(state, 2)
+    assert choices and state_to_dict(state) == before
+    assert apply_action(state, next(a for a in choices if a["type"] == "night_pass"))["success"]
+    assert state.players[0].demon_pact_offers
+
+
 def test_occupation_arrival_and_reentry_priority():
     state = night()
     state.curuna_id = 3

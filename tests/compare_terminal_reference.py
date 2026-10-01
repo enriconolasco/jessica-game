@@ -64,7 +64,7 @@ def run(reference):
     from jessica.core.serialize import state_to_dict
     from test_interaction_actions import ready
     from test_web_mechanics_combinations import ability_scenarios, mixed_night_case
-    from test_night_terminal_parity import compare, troop
+    from test_night_terminal_parity import compare, troop, belial_night
     from test_night_web import night
 
     records, expected = [], []
@@ -132,6 +132,13 @@ def run(reference):
                     "label": "Noite com Armadura, pagamento zero"})
     web, _ = compare(state, plan)
     expected.append(state_to_dict(web))
+
+    for attacker_life, defender_life in ((8, 1), (1, 6)):
+        state, plan = belial_night(attacker_life, defender_life)
+        records.append({"state": state_to_dict(state), "module": "terminal", "args": {"plan": plan},
+                        "label": f"Belial: oferta diferida, vidas {attacker_life}/{defender_life}"})
+        web, _ = compare(state, plan)
+        expected.append(state_to_dict(web))
 
     completed = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve()),
                                 "--reference", str(reference), "--worker"],

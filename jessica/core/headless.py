@@ -398,6 +398,10 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         board["units"].extend(_unit_view(unit, state) for unit in player.units
                               if unit.is_alive())
 
+    night_window = night_actions.public_window(state)
+    active_player_id = state.active_player_id
+    if night_window and not state.web_reaction:
+        active_player_id = night_window["player_id"]
     view = {
         "version": VIEW_VERSION,
         "viewer_id": player_id,
@@ -405,11 +409,11 @@ def view_for_player(state: GameState, player_id: int) -> dict:
         "phase": state.phase.value,
         "curuna_id": state.curuna_id,
         "turn_order": list(state.turn_order),
-        "active_player_id": state.active_player_id,
+        "active_player_id": active_player_id,
         "game_over": state.game_over,
         "winner_id": state.winner_id,
         "night_limitations": night_actions.blockers(state) if state.phase == Phase.NIGHT else [],
-        "night_window": night_actions.public_window(state),
+        "night_window": night_window,
         "players": players,
         "board": board,
         "shop": {"size": state.shop.size(), "counts": dict(Counter(state.shop.deck))},

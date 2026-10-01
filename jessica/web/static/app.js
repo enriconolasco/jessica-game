@@ -531,7 +531,10 @@ async function refresh(allowPlayerSwitch = false) {
   const suits = {H:"Copas", D:"Ouros", C:"Paus", S:"Espadas"};
   const bets = Object.entries(view.self.bets).filter(([, target]) => target).map(([suit,target]) => `${suits[suit] || suit} → J${target} ${view.players.find(p => p.id === target)?.name || ""}`).join(" · ") || "nenhuma";
   const pending = view.self.pending_choice ? " | Resolva a escolha pendente nas ações abaixo." : "";
-  const offers = presence.pacts && view.self.demon_pact_offers?.length ? " | Há uma oferta de pacto nas ações abaixo." : "";
+  const deferredPacts = view.phase === "night" && view.self.demon_pact_offers?.some(o => o.source === "belial");
+  const readyPacts = view.self.demon_pact_offers?.some(o => view.phase !== "night" || o.source !== "belial");
+  const offers = presence.pacts ? (readyPacts ? " | Há uma oferta de pacto nas ações abaixo." : "")
+    + (deferredPacts ? " | Pacto de Belial disponível na sua jogada do próximo Dia." : "") : "";
   const copiedSpell = view.self.spell_copia_id ? ` | Feitiço copiado: ${view.self.spell_copia_id.replaceAll("_", " ")}` : "";
   $("self").textContent = `Mão: ${hand}${presence.bets ? ` | Apostas: ${bets} | Corretas: ${view.self.correct_bets}` : ""} | Curas: ${view.self.pending_heals || 0}${copiedSpell}${pending}${offers}`;
   if (presence.pacts) {

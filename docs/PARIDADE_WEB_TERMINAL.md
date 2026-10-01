@@ -6,8 +6,10 @@ Não há evidência suficiente para declarar paridade total ou estimar um percen
 
 Revisão de 01/10/2026: três partidas mistas completas aprovadas, com feitiços,
 habilidades, artefatos e apostas, mais comparação noturna dirigida de Armadura; ver
-`VALIDACAO_PARTIDAS_COMPLETAS.md`. Divergência identificada no timing dos pactos
-de Belial: **WEB-001**, em `PENDENCIAS_PARIDADE.md`, aguarda decisão de regra.
+`VALIDACAO_PARTIDAS_COMPLETAS.md`. O timing dos pactos de Belial (**WEB-001**)
+foi confirmado pelo usuário e corrigido: ofertas noturnas ficam para a jogada
+do beneficiário no próximo Dia, como no terminal. Testes incluem ataque,
+retaliação e retomada de save antigo; ver `PENDENCIAS_PARIDADE.md`.
 Portanto, "todos os fluxos têm adaptador" não significa "paridade total".
 
 Revisão de 2026-09-30: ver `AUDITORIA_PARIDADE_2026_09_30.md` para o mapeamento

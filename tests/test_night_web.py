@@ -312,8 +312,8 @@ def test_supported_hero_catalog_parity_matrix():
         assert state_to_dict(state) == state_to_dict(direct), hero_id
 
 
-def test_belial_pact_interrupt_accept_decline_and_save():
-    for accept in (True, False):
+def test_belial_pact_deferral_does_not_block_night_after_save():
+    for beneficiary in (1, 2):
         state = night()
         state.players[0].units.append(Hero(id="killer", owner_id=1, house="center",
                                           life=8, life_max=8, hero_id="miyamoto"))
@@ -325,21 +325,17 @@ def test_belial_pact_interrupt_accept_decline_and_save():
         attack = next(a for a in legal_actions(state, 1) if a["type"] == "night_attack")
         assert apply_action(state, attack)["success"]
         assert state.players[0].demon_pact_offers
+        if beneficiary == 2:
+            state.players[1].demon_pact_offers = state.players[0].demon_pact_offers
+            state.players[0].demon_pact_offers = []
         state = state_from_dict(state_to_dict(state))
         before = state_to_dict(state)
         offers = legal_actions(state, 1)
-        assert offers and {a["type"] for a in offers} <= {"night_pact", "night_decline_pact"}
+        assert [a["type"] for a in offers] == ["finish_night"]
         assert legal_actions(state, 2) == [] and state_to_dict(state) == before
-        action = next(a for a in offers if a["type"] == ("night_pact" if accept else "night_decline_pact"))
-        if accept:
-            action = next(a for a in offers if a["params"].get("pact_id") == "sacrifique_futuro")
-        direct = state_from_dict(before)
-        from jessica.core.interaction_actions import execute
-        execute(direct, dict(action, type="demon_pact" if accept else "decline_pact"))
-        night_actions.advance(direct)
-        assert apply_action(state, action)["success"]
-        assert state_to_dict(state) == state_to_dict(direct)
-        assert not state.players[0].demon_pact_offers
+        assert apply_action(state, offers[0])["success"]
+        assert state.phase == Phase.DAY and state.players[beneficiary - 1].demon_pact_offers
+        assert not state.demon_pacts
 
 
 def test_rogue_clock_once_at_night_end_and_save():

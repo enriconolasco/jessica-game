@@ -63,6 +63,10 @@ Atualização de 01/10: o replay independente inclui também uma Noite com Armad
 e pagamento zero, passando a 125 ações diurnas e **sete** cenários noturnos.
 As três partidas mistas completas estão em `VALIDACAO_PARTIDAS_COMPLETAS.md`.
 
+Belial, 01/10: mais duas noites com morte de herói por ataque e retaliação,
+comparadas à instalação terminal independente: **125 ações diurnas e nove
+cenários noturnos equivalentes**. As ofertas continuam guardadas para o Dia.
+
 ## Limites e próximos passos
 
 Não foi encontrado outro menu mecânico selecionável sem adaptador nesta revisão.

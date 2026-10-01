@@ -43,6 +43,8 @@ ABILITIES = {
 
 def pact_choices(state, player):
     for index, offer in enumerate(player.demon_pact_offers):
+        if offer.get("source") == "belial" and state.phase == Phase.NIGHT:
+            continue
         rogue = offer.get("source") == "rogue_devil"
         items = [i for i in peoples.ROGUE_ITEMS if i not in player.rogue_items] if rogue else [None]
         for pact in peoples.available_demon_pacts(state):
