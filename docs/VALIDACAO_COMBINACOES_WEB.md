@@ -59,6 +59,10 @@ uma segunda instalação independente.
 Validação geral do lote: **421 testes Python, zero falhas**, cinco scripts Node
 aprovados e sintaxe JavaScript validada.
 
+Atualização de 01/10: o replay independente inclui também uma Noite com Armadura
+e pagamento zero, passando a 125 ações diurnas e **sete** cenários noturnos.
+As três partidas mistas completas estão em `VALIDACAO_PARTIDAS_COMPLETAS.md`.
+
 ## Limites e próximos passos
 
 Não foi encontrado outro menu mecânico selecionável sem adaptador nesta revisão.

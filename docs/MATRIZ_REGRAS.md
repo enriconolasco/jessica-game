@@ -20,7 +20,8 @@ de mecânica deve atualizar sua linha e possuir ao menos um teste comportamental
 |---|---|---|
 | Dragões | Canastra, Bases móveis, Púrpura, Mar de Chamas e Chamado | `tests/test_dragoes.py` |
 | Anões | Sete Anões e empalamento temporário | `tests/test_7_dwarves.py`, `tests/test_seven_dwarves_abilities.py` |
-| Filhos da Floresta | Guarari/Centauro e Cabaça Cheia | `tests/test_filhos_floresta.py`, `tests/test_gigantes.py` |
+| Filhos da Floresta | Guarari/Centauro, Decompor e habilidades dos Filhos | `tests/test_filhos_floresta.py` |
+| Gigantes | Cabaça Cheia/Caroço, invocações iniciais e crescimento | `tests/test_gigantes.py` |
 | Gnomos e Duendes | Apostas por fatos gerais: vida da Base, artefato obtido, invocação e artefato jogado | `tests/test_gnomos_duendes.py` |
 | Demônios | Banco de Almas, seis pactos, Belial, Tuza, Rogue Devil e Sacrifício | `tests/test_demonios.py` |
 
@@ -31,3 +32,14 @@ de mecânica deve atualizar sua linha e possuir ao menos um teste comportamental
 3. Atualizar/adicionar o teste comportamental canônico.
 4. Rodar o teste focal e `tests/run_all.py`.
 5. Atualizar esta matriz somente se surgirem novos pontos de entrada.
+
+## Rastreabilidade da web
+
+- Caminhos adaptados: `PARIDADE_WEB_TERMINAL.md` e `AUDITORIA_PARIDADE_2026_09_30.md`.
+- Cenários efetivamente validados: `VALIDACAO_*.md` e os testes ali identificados.
+- Divergências conhecidas/decisões pendentes: `PENDENCIAS_PARIDADE.md`.
+- Comparação automatizada com outra instalação: `tests/compare_terminal_reference.py`.
+
+"Implementado", "validado neste cenário" e "aguardando confirmação" são estados
+distintos. Não registrar uma mecânica como totalmente validada apenas porque seu
+menu existe ou porque a suíte global está verde.

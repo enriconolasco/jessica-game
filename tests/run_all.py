@@ -12,7 +12,7 @@ TEST_FILES = sorted(HERE.glob("test_*.py"))
 def main():
     print(f"Encontrados {len(TEST_FILES)} arquivos de teste.\n")
     total_pass = 0
-    total_fail = 0
+    total_fail = 0 if TEST_FILES else 1
     failed_files = []
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     for tf in TEST_FILES:
@@ -25,6 +25,9 @@ def main():
         m = re.search(r"(\d+) passaram, (\d+) falharam", out)
         if m:
             p, f = int(m.group(1)), int(m.group(2))
+            if result.returncode != 0 and f == 0:
+                f = 1
+                print(f"[ERRO] {tf.name}: processo terminou com código {result.returncode}.")
             total_pass += p
             total_fail += f
             status = "OK " if f == 0 else "FAIL"
@@ -47,7 +50,8 @@ def main():
     print(f"TOTAL: {total_pass} passaram, {total_fail} falharam")
     if failed_files:
         print(f"Arquivos com falha: {', '.join(failed_files)}")
+    return 1 if total_fail else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

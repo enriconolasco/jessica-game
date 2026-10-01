@@ -33,3 +33,46 @@ de testes como percentual de fidelidade.
 Verificação do lote: 402 testes Python aprovados, zero falhas; quatro scripts
 Node de interface, sintaxe JavaScript e `git diff --check` aprovados. Não foi
 realizado novo playtest manual no navegador.
+
+## Partidas mistas — 01/10/2026
+
+`python -B tests/test_mixed_matches_parity.py` executa três partidas adicionais,
+sem editar o estado depois da configuração inicial:
+
+| Seed | Participantes/heróis |
+|---|---|
+| 901 | Humanos/Miyamoto, Anões/Ori, Orcs/Vovó, Fadas/Luna |
+| 902 | Vampiros/Drácula, Lobisomens/Cigana, Gigantes/Caroço, Mortos-vivos/Cova Rasa |
+| 903 | Filhos/Guarari, Gnomos/São Tomé, Dragões/Púrpura, Demônios/Tuza |
+
+Bases iniciam com 2 de vida, 25 Ouro e 25 Magia. Todos os jogadores invocam
+heróis, coletam recursos, visitam a Loja, utilizam feitiços e habilidades quando
+permitidos. O atacante percorre as cidades; os defensores não declaram ataques.
+A política evita pactos opcionais e sacrifícios repetidos da própria força atacante;
+isso é uma escolha do roteiro de teste, não uma regra nova no motor.
+
+Cada partida termina em vitória. Após cada ação diurna e cada Noite, compara-se
+estado mecânico, logs e RNG com os caminhos de referência. Saves são restaurados
+e validados depois de cada decisão. As noites executam a orquestração terminal
+separadamente. Os três roteiros não produziram solicitações de pagamento de
+Armadura; esse cruzamento é comprovado separadamente por
+`test_armor_reaction_in_real_terminal_night_matches_web`, com pagamento zero.
+Os testes específicos de reações também validam pagamentos positivos.
+
+| Seed | Vitória | Decisões | Feitiços usados |
+|---|---|---|---|
+| 901 | Turno 10 | 153 | 12 |
+| 902 | Turno 10 | 154 | 18 |
+| 903 | Turno 10 | 149 | 6 |
+
+O lote não inclui novo teste manual no navegador nem resolução de pactos de
+Belial: `PENDENCIAS_PARIDADE.md` registra a diferença de timing conhecida.
+Não cobre todas as combinações de heróis, todas as cartas nem todas as decisões.
+
+`tests/run_all.py` agora retorna código 1 quando houver falhas, crash de processo
+ou nenhuma suíte encontrada. O comportamento é protegido por cinco testes de
+contrato; uma contagem aparentemente verde não encobre um subprocesso quebrado.
+
+Verificação deste lote: **430 testes Python e cinco scripts Node aprovados**;
+replay independente com 125 ações diurnas e sete cenários noturnos aprovado;
+`git diff --check` limpo. Regras do motor e instalação terminal não foram alteradas.

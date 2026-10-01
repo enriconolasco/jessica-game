@@ -4,6 +4,12 @@ Referência: implementação terminal e testes do repositório, não conversas.
 Marco anterior desta revisão: web 25584df. Atualizado em 2026-09-29.
 Não há evidência suficiente para declarar paridade total ou estimar um percentual.
 
+Revisão de 01/10/2026: três partidas mistas completas aprovadas, com feitiços,
+habilidades, artefatos e apostas, mais comparação noturna dirigida de Armadura; ver
+`VALIDACAO_PARTIDAS_COMPLETAS.md`. Divergência identificada no timing dos pactos
+de Belial: **WEB-001**, em `PENDENCIAS_PARIDADE.md`, aguarda decisão de regra.
+Portanto, "todos os fluxos têm adaptador" não significa "paridade total".
+
 Revisão de 2026-09-30: ver `AUDITORIA_PARIDADE_2026_09_30.md` para o mapeamento
 de todos os menus, novos pagamentos de Armadura, consultas, histórico e refazer/Mola.
 Não foi identificado outro fluxo mecânico selecionável sem adaptador; a validação

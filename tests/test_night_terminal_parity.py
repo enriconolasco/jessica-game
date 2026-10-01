@@ -24,7 +24,7 @@ def mechanics(state):
 
 
 def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=(), artifact_choices=None,
-            window_trace=None):
+            window_trace=None, decision_trace=None):
     direct = state_from_dict(state_to_dict(state))
     terminal_trace = []
     remaining = deepcopy(plan)
@@ -42,6 +42,7 @@ def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=()
         return attack
 
     with ExitStack() as patches:
+        patches.enter_context(patch.object(combat, "_armor_choice_fn", lambda player, damage: 0))
         patches.enter_context(patch.object(terminal, "console", Mock()))
         for name in ("show_hud", "show_map", "_ask_vovo_position", "_try_luna_return",
                      "_ainai_prompt_all", "_try_besouro_mandinga", "_night_info_prompt",
@@ -82,6 +83,8 @@ def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=()
         if scripted:
             action = scripted
             web_windows.pop(0)
+        elif choices[0]["type"] == "armor_payment":
+            action = next(a for a in choices if a["params"]["gold"] == 0)
         elif choices[0]["type"] == "night_setup":
             action = next(a for a in choices if a["params"].get("position") ==
                           state.players[a["player_id"] - 1].vovo_position
@@ -107,6 +110,8 @@ def compare(state, plan, terminal_picker=None, web_windows=None, real_windows=()
             window_trace.append(len(state.web_night.get("processed", [])))
         result = apply_action(state, action)
         assert result["success"] and result == apply_action(restored, action)
+        if decision_trace is not None:
+            decision_trace.append(action["type"])
         assert state_to_dict(state) == state_to_dict(restored)
         state = restored
     else:
@@ -120,6 +125,18 @@ def troop(state, pid, uid, house="center", life=8):
     unit = Troop(id=uid, owner_id=pid, house=house, life=life, life_max=life)
     state.players[pid - 1].units.append(unit)
     return unit
+
+
+def test_armor_reaction_in_real_terminal_night_matches_web():
+    state = night()
+    troop(state, 1, "attacker")
+    troop(state, 2, "defender")
+    state.players[1].armor_active_until_turn = state.turn
+    state.players[1].city.gold = 8
+    decisions = []
+    result, trace = compare(state, {"attacker": [("unit", "defender")]}, decision_trace=decisions)
+    assert "armor_payment" in decisions and len(trace) == 1
+    assert result.players[1].city.gold == 8
 
 
 def test_occupation_arrival_and_reentry_priority():

@@ -29,6 +29,9 @@ def worker(reference):
                 return None
 
             with ExitStack() as patches:
+                if "armor_gold" in args:
+                    patches.enter_context(patch.object(combat, "_armor_choice_fn",
+                                                       lambda player, damage: args["armor_gold"]))
                 patches.enter_context(patch.object(terminal, "console", Mock()))
                 for name in ("show_hud", "show_map", "_ask_vovo_position", "_try_luna_return",
                              "_ainai_prompt_all", "_try_besouro_mandinga", "_night_info_prompt",
@@ -61,7 +64,8 @@ def run(reference):
     from jessica.core.serialize import state_to_dict
     from test_interaction_actions import ready
     from test_web_mechanics_combinations import ability_scenarios, mixed_night_case
-    from test_night_terminal_parity import compare
+    from test_night_terminal_parity import compare, troop
+    from test_night_web import night
 
     records, expected = [], []
 
@@ -117,6 +121,17 @@ def run(reference):
                             "label": f"Noite T{turn}: {','.join(p for p, _ in group)}"})
             web, _ = compare(state, plan)
             expected.append(state_to_dict(web))
+
+    state = night()
+    troop(state, 1, "attacker")
+    troop(state, 2, "defender")
+    state.players[1].armor_active_until_turn = state.turn
+    state.players[1].city.gold = 8
+    plan = {"attacker": [("unit", "defender")]}
+    records.append({"state": state_to_dict(state), "module": "terminal", "args": {"plan": plan, "armor_gold": 0},
+                    "label": "Noite com Armadura, pagamento zero"})
+    web, _ = compare(state, plan)
+    expected.append(state_to_dict(web))
 
     completed = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve()),
                                 "--reference", str(reference), "--worker"],
