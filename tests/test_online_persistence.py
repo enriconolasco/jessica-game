@@ -223,8 +223,8 @@ def free_port_pair():
 
 
 @contextmanager
-def process_server(path, port, host="127.0.0.1"):
-    process = subprocess.Popen([sys.executable, "-u", "-B", "-m", "jessica.web.online_server", "--port", str(port), "--storage", str(path), "--host", host],
+def process_server(path, port, host="127.0.0.1", extra_args=()):
+    process = subprocess.Popen([sys.executable, "-u", "-B", "-m", "jessica.web.online_server", "--port", str(port), "--storage", str(path), "--host", host, *extra_args],
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8")
     ready, lines = threading.Event(), []
 

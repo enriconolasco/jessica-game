@@ -177,7 +177,10 @@ window.JessicaOnline = (() => {
   function connectUpdates() {
     if (!session || session.rotation || stopped || socket || typeof WebSocket === "undefined") return;
     const url = new URL(location.href); url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    url.port = String(Number(url.port || (url.protocol === "wss:" ? 443 : 80)) + 1); url.pathname = "/updates"; url.search = ""; url.hash = "";
+    if (document.getElementById("onlineTransport")?.content !== "same-origin") {
+      url.port = String(Number(url.port || (url.protocol === "wss:" ? 443 : 80)) + 1);
+    }
+    url.pathname = "/updates"; url.search = ""; url.hash = "";
     const connection = new WebSocket(url.href); socket = connection;
     connection.onopen = () => { if (session && !stopped) connection.send(JSON.stringify({version:1, code:session.code, credential:session.credential})); else connection.close(); };
     connection.onmessage = event => {

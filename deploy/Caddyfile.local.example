@@ -1,0 +1,15 @@
+{
+    auto_https disable_redirects
+}
+
+https://localhost:9443 {
+    bind 127.0.0.1
+    tls internal
+
+    handle /updates {
+        reverse_proxy 127.0.0.1:8768
+    }
+    handle {
+        reverse_proxy 127.0.0.1:8767
+    }
+}

@@ -99,10 +99,16 @@ limites: 4 KB por mensagem, cinco segundos para autenticar, 16 canais por sala.
 Ping detecta interrupções; desconexão não modifica jogadores ou regras.
 Base do transporte: [documentação oficial websockets](https://websockets.readthedocs.io/en/stable/reference/asyncio/server.html).
 
+Modo proxy opcional: `--external-origin https://dominio[:porta]`, com backend
+exclusivamente loopback e Host/Origin explícitos; cliente usa WSS `/updates` na
+mesma origem. Cabeçalhos encaminhados não alteram confiança. Referência Caddy
+somente local preparada, não instalada/executada; TLS real e implantação pendentes.
+Detalhes: [ONLINE_HTTPS.md](ONLINE_HTTPS.md).
+
 ## Ainda não concluído
 
-1. Validar reconexão após queda de rede em aparelhos físicos e revisar a topologia
-   de duas portas para hospedagem HTTPS/reverse proxy.
+1. Validar reconexão após queda de rede em aparelhos físicos e executar/verificar
+   proxy/TLS real; topologia de mesma origem já preparada, não publicada.
 2. Recuperação sem token/perda de aparelho, expiração e vagas abandonadas.
 3. Backups externos/retenção/migrações, quotas de disco/histórico e limites de produção,
    política de abandono/pausa
@@ -168,4 +174,8 @@ Revogação: seis testes HTTP/WS/SQLite, incluindo concorrência, fechamento do 
 antigo e recuperação de resposta/gravação; cliente também cobre esses fluxos.
 Operação: nove testes adicionais de limites/rate limit, salas preservadas,
 framing/JSON, slots liberados e WS não autenticado; cliente preserva ID após 429/503.
-Suíte completa: **509 testes Python aprovados, zero falhas**, e sete testes Node aprovados.
+HTTPS/proxy: oito testes adicionais de origem explícita, loopback obrigatório,
+Host/Origin e cabeçalhos falsos, marca pública de transporte, WS autenticado e
+processo CLI real. Cliente preserva LAN e usa WSS na mesma origem em HTTPS.
+Proxy/certificado real não foram executados; exemplo local é preparação somente.
+Suíte completa: **517 testes Python aprovados, zero falhas**, e sete testes Node aprovados.

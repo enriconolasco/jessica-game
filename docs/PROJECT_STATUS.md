@@ -8,7 +8,7 @@
   sem handoff, identidade fixa e retorno após recarregar. WebSocket/reconexão
   implementados com fallback HTTP. Persistência SQLite implementada no servidor;
   dez testes de recuperação/durabilidade aprovados, incluindo reinício real.
-  Suíte completa: 509 testes Python e sete testes Node aprovados.
+  Suíte completa: 517 testes Python e sete testes Node aprovados.
   WebSocket verificado no navegador em duas abas,
   com escolha sincronizada e identidade/reconexão preservadas após recarregar.
   Nenhuma regra alterada; terminal/hotseat de referência permanecem na `main`.
@@ -23,6 +23,9 @@
 - Limites HTTP/WS/API/criação/salas implementados, sem excluir partidas;
   nove testes próprios aprovados. JSON ambíguo/incompleto é recusado; 429/503
   preservam o comando pendente para reenvio sem duplicação.
+- Transporte preparado para proxy HTTPS explícito, backend loopback e WSS na mesma
+  origem; oito testes próprios aprovados. Exemplo Caddy local gratuito documentado,
+  não instalado/executado. Nenhum certificado, serviço pago ou hospedagem criado.
 - Próxima integração: partida completa e interrupções em aparelhos físicos na mesma rede.
   Recuperação sem token válido, expiração, pausa/abandono, backups externos/retenção
   e hospedagem pendentes.
@@ -32,3 +35,4 @@ Atualização comum: [FLUXO_ATUALIZACAO.md](FLUXO_ATUALIZACAO.md).
 Roteiro de rede: [ONLINE_REDE_LOCAL.md](ONLINE_REDE_LOCAL.md).
 Retomada/privacidade: [ONLINE_ACESSO.md](ONLINE_ACESSO.md).
 Operação/limites: [ONLINE_OPERACAO.md](ONLINE_OPERACAO.md).
+Preparação HTTPS: [ONLINE_HTTPS.md](ONLINE_HTTPS.md).

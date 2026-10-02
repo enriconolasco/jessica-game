@@ -16,9 +16,10 @@ let releaseLobby, lobbyPosts=0;
 const room={code:'ABCDEFG2',you:1,host_id:1,revision:10,status:'playing',players:[{player_id:1,name:'Ana',people:'humanos',hero_id:'miyamoto',ready:true},{player_id:2,name:'Beto',people:'orcs',hero_id:'arken',ready:true}]};
 const catalog={peoples:[{id:'humanos',label:'Humanos',heroes:[{id:'miyamoto',name:'Miyamoto',description:'habilidade'}],passive:'passiva'},{id:'orcs',label:'Orcs',heroes:[{id:'arken',name:'Arken'}]}],heroes:[{id:'miyamoto',name:'Miyamoto'},{id:'arken',name:'Arken'}]};
 const action={type:'end_turn',version:1,player_id:1,params:{}};
-function client(withSocket=false, href='http://localhost:8767/?room=ABCDEFG2'){
+function client(withSocket=false, href='http://localhost:8767/?room=ABCDEFG2', sameOrigin=false){
   const nodes=new Map();
   const node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);};
+  if(sameOrigin)node('onlineTransport').content='same-origin';
   let timer, cleared=false, reconnect, dialog=false, httpCalls=0;
   const sockets=[], listeners={};
   class FakeSocket {
@@ -96,5 +97,12 @@ function client(withSocket=false, href='http://localhost:8767/?room=ABCDEFG2'){
   const lan=client(true,'http://192.168.1.10:8767/?room=ABCDEFG2');await lan.context.ONLINE.boot(catalog);
   assert.equal(lan.sockets[0].url,'ws://192.168.1.10:8768/updates');
   assert.equal(lan.node('onlineLink').value,'http://192.168.1.10:8767/?room=ABCDEFG2');
+  for(const origin of ['https://jessica.example','https://jessica.example:8443']){
+    const secure=client(true,origin+'/?room=ABCDEFG2',true);await secure.context.ONLINE.boot(catalog);
+    assert.equal(secure.sockets[0].url,origin.replace('https:','wss:')+'/updates');
+    assert.equal(secure.node('onlineLink').value,origin+'/?room=ABCDEFG2');
+    assert.ok(!secure.sockets[0].url.includes('own-token'));
+    secure.sockets[0].onopen();assert.deepEqual(secure.sockets[0].sent,ws.sent);
+  }
   console.log('Online UI: identidade fixa, sem handoff, convite sem credencial, retorno após reload, reenvio do mesmo comando e isolamento de rotas locais verificados.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

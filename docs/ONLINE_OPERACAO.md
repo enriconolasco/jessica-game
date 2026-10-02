@@ -31,7 +31,9 @@ python -m jessica.web.online_server --max-connections 64 --max-rooms 256
 ```
 
 HTTP aceita 1–1024 conexões; salas, 1–10000. Os launchers usam os padrões.
-`--host`, `--lan`, `--port` e `--storage` continuam disponíveis. Aumentar esses
+`--host`, `--lan`, `--port` e `--storage` continuam disponíveis. `--external-origin`
+prepara um proxy HTTPS explícito com backend loopback; ver [ONLINE_HTTPS.md](ONLINE_HTTPS.md).
+Aumentar esses
 limites aumenta consumo potencial de memória/disco; não torna o serviço público
 nem autoriza abrir firewall/roteador. Rate limits e limite WS estão no código,
 não são parâmetros enviados pelos jogadores.
@@ -55,7 +57,7 @@ continua no servidor e sobrevive ao reinício. Recusas não alteram RNG/revisão
 ## O que ainda falta para internet
 
 Não é proteção completa contra DDoS. Handshakes WS, timeouts absolutos, proxy
-HTTPS/origens confiáveis, quotas de histórico/disco, logs operacionais, backups
+HTTPS real (origem explícita já preparada), quotas de histórico/disco, logs operacionais, backups
 externos, manutenção/arquivamento e testes de carga precisam de preparação.
 HTTP não é um servidor de produção. Os testes não equivalem a auditoria externa
 ou partida completa em celulares. Nenhum serviço pago foi criado/publicado.

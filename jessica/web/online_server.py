@@ -2,7 +2,7 @@
 from urllib.parse import urlparse
 from . import server
 from .rooms import Registry, RoomError
-from .network import allowed_hosts, allowed_origins
+from .network import allowed_hosts, configure_transport, external_origin
 from .online_limits import RequestLimits
 import json
 import re
@@ -98,7 +98,8 @@ class Handler(server.Handler):
             self._json(403, {"error": "Endereço do servidor não permitido."})
             return False
         origins = self.headers.get_all("Origin", [])
-        if len(origins) > 1 or origins and origins[0] != f"http://{hosts[0].lower()}":
+        origin = getattr(self.server, "external_origin", None) or f"http://{hosts[0].lower()}"
+        if len(origins) > 1 or origins and origins[0] != origin:
             self._json(403, {"error": "Origem da requisição não permitida."})
             return False
         return True
@@ -118,6 +119,8 @@ class Handler(server.Handler):
             page = page.replace("<main>", "<main>" + lobby).replace("<span>Partida local</span>", "<span>Sala online · experimental</span>")
             page = page.replace('<section id="start" class="card">', '<section id="start" class="card" hidden>')
             page = page.replace('<script src="/static/presentation.js">', '<script src="/static/online.js"></script><script src="/static/presentation.js">')
+            if getattr(self.server, "external_origin", None):
+                page = page.replace("<head>", '<head><meta id="onlineTransport" content="same-origin">', 1)
             payload = page.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -213,6 +216,7 @@ def main():
                         help="Banco privado do servidor; não é um save enviado pelo jogador.")
     parser.add_argument("--max-connections", type=int, default=64, help="Máximo de conexões HTTP simultâneas.")
     parser.add_argument("--max-rooms", type=int, default=256, help="Máximo de salas guardadas; não apaga salas existentes.")
+    parser.add_argument("--external-origin", help="Origem HTTPS explícita de proxy; exige backend loopback.")
     args = parser.parse_args()
     port = args.port
     if not 1 <= port <= 65534:
@@ -221,6 +225,9 @@ def main():
         parser.error("Use 1–1024 conexões e 1–10000 salas.")
     try:
         host = choose_local_address() if args.lan else valid_host(args.host)
+        origin = external_origin(args.external_origin) if args.external_origin is not None else None
+        if origin and (args.lan or not host.startswith("127.")):
+            raise ValueError("Modo proxy HTTPS exige backend em loopback; não combine com LAN.")
     except (ValueError, OSError, EOFError) as exc:
         parser.error(str(exc))
     address = (host, port)
@@ -235,13 +242,13 @@ def main():
         parser.error(str(exc))
     try:
         httpd = OnlineHTTPServer(address, Handler, args.max_connections)
-        httpd.allowed_hosts = allowed_hosts(host, port)
+        configure_transport(httpd, origin)
     except OSError:
         store.close()
         parser.error("IP/porta HTTP indisponíveis. Confira o IP local, mantenha o servidor atual ou escolha outra porta com --port.")
 
     async def run():
-        async with serve_notifications(ROOMS, host, port + 1, allowed_origins(host, port)):
+        async with serve_notifications(ROOMS, host, port + 1, httpd.notification_origins):
             backups = OnlineBackups(store)
             await asyncio.to_thread(backups.checkpoint)
             async def backup_loop():
@@ -250,6 +257,8 @@ def main():
                     await asyncio.to_thread(backups.checkpoint)
             backup_task = asyncio.create_task(backup_loop())
             print(f"Jéssica online (protótipo): http://{address[0]}:{address[1]} · WebSocket {port + 1}", flush=True)
+            if origin:
+                print(f"Origem configurada: {origin} · /updates na mesma origem. Proxy/certificado não são iniciados por este comando.", flush=True)
             print(f"Backups automáticos privados: {store.path.parent / 'backups'} (a cada hora com mudanças).", flush=True)
             thread = threading.Thread(target=httpd.serve_forever, daemon=True)
             thread.start()
