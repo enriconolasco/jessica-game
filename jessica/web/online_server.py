@@ -2,6 +2,7 @@
 from urllib.parse import urlparse
 from . import server
 from .rooms import Registry, RoomError
+from .network import allowed_hosts, allowed_origins
 
 ROOMS = Registry()
 
@@ -16,7 +17,23 @@ class Handler(server.Handler):
         authorization = self.headers.get("Authorization", "")
         return authorization[7:] if authorization.startswith("Bearer ") else None
 
+    def _check_address(self):
+        hosts = self.headers.get_all("Host", [])
+        accepted = getattr(self.server, "allowed_hosts", None)
+        if accepted is None:
+            accepted = allowed_hosts(*self.server.server_address[:2])
+        if len(hosts) != 1 or hosts[0].lower() not in accepted:
+            self._json(403, {"error": "Endereço do servidor não permitido."})
+            return False
+        origins = self.headers.get_all("Origin", [])
+        if len(origins) > 1 or origins and origins[0] != f"http://{hosts[0].lower()}":
+            self._json(403, {"error": "Origem da requisição não permitida."})
+            return False
+        return True
+
     def do_GET(self):
+        if not self._check_address():
+            return
         parts = self._parts()
         if not parts:
             page = server.STATIC.joinpath("index.html").read_text(encoding="utf-8")
@@ -53,14 +70,13 @@ class Handler(server.Handler):
 
     def do_POST(self):
         try:
-            origin = self.headers.get("Origin")
-            if origin and origin not in (f"http://{self.headers.get('Host')}", f"https://{self.headers.get('Host')}"):
-                raise RoomError(403, "Origem da requisição não permitida.")
             if urlparse(self.path).query:
                 raise RoomError(422, "Parâmetros não são aceitos na URL.")
             if not 0 <= int(self.headers.get("Content-Length", "0")) <= 65536:
                 raise RoomError(413, "Comando excede o limite de 64 KB.")
             parts, body = self._parts(), self._body()
+            if not self._check_address():
+                return
             if parts == ["rooms"]:
                 if set(body) != {"name"}:
                     raise RoomError(422, "Informe apenas o nome.")
@@ -109,16 +125,24 @@ def main():
     from .notifications import serve_notifications
     from .room_store import RoomStore, StorageError
     from pathlib import Path
+    from .network import choose_local_address, valid_host
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8767, help="Porta HTTP; WebSocket usa a próxima porta.")
+    binding = parser.add_mutually_exclusive_group()
+    binding.add_argument("--host", default="127.0.0.1", help="IPv4 específico de loopback ou rede privada.")
+    binding.add_argument("--lan", action="store_true", help="Escolher interativamente o IPv4 privado do PC.")
     parser.add_argument("--storage", type=Path, default=server.ASSETS.parent / "saves" / "online" / "rooms.sqlite3",
                         help="Banco privado do servidor; não é um save enviado pelo jogador.")
     args = parser.parse_args()
     port = args.port
     if not 1 <= port <= 65534:
         parser.error("Use uma porta entre 1 e 65534.")
-    address = ("127.0.0.1", port)
+    try:
+        host = choose_local_address() if args.lan else valid_host(args.host)
+    except (ValueError, OSError, EOFError) as exc:
+        parser.error(str(exc))
+    address = (host, port)
 
     class OnlineHTTPServer(server.ThreadingHTTPServer):
         allow_reuse_address = False
@@ -133,13 +157,13 @@ def main():
         parser.error(str(exc))
     try:
         httpd = OnlineHTTPServer(address, Handler)
+        httpd.allowed_hosts = allowed_hosts(host, port)
     except OSError:
         store.close()
-        parser.error("Porta HTTP indisponível. Mantenha o servidor atual ou escolha outra com --port.")
+        parser.error("IP/porta HTTP indisponíveis. Confira o IP local, mantenha o servidor atual ou escolha outra porta com --port.")
 
     async def run():
-        async with serve_notifications(ROOMS, "127.0.0.1", port + 1,
-                                       [f"http://127.0.0.1:{port}", f"http://localhost:{port}"]):
+        async with serve_notifications(ROOMS, host, port + 1, allowed_origins(host, port)):
             print(f"Jéssica online (protótipo): http://{address[0]}:{address[1]} · WebSocket {port + 1}", flush=True)
             thread = threading.Thread(target=httpd.serve_forever, daemon=True)
             thread.start()

@@ -223,8 +223,8 @@ def free_port_pair():
 
 
 @contextmanager
-def process_server(path, port):
-    process = subprocess.Popen([sys.executable, "-u", "-B", "-m", "jessica.web.online_server", "--port", str(port), "--storage", str(path)],
+def process_server(path, port, host="127.0.0.1"):
+    process = subprocess.Popen([sys.executable, "-u", "-B", "-m", "jessica.web.online_server", "--port", str(port), "--storage", str(path), "--host", host],
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8")
     ready, lines = threading.Event(), []
 
@@ -238,7 +238,7 @@ def process_server(path, port):
     reader.start()
     try:
         assert ready.wait(10) and process.poll() is None, "Servidor de teste não iniciou"
-        yield f"http://127.0.0.1:{port}"
+        yield f"http://{host}:{port}"
     finally:
         if process.poll() is None:
             process.kill()

@@ -16,7 +16,7 @@ let releaseLobby, lobbyPosts=0;
 const room={code:'ABCDEFG2',you:1,host_id:1,revision:10,status:'playing',players:[{player_id:1,name:'Ana',people:'humanos',hero_id:'miyamoto',ready:true},{player_id:2,name:'Beto',people:'orcs',hero_id:'arken',ready:true}]};
 const catalog={peoples:[{id:'humanos',label:'Humanos',heroes:[{id:'miyamoto',name:'Miyamoto',description:'habilidade'}],passive:'passiva'},{id:'orcs',label:'Orcs',heroes:[{id:'arken',name:'Arken'}]}],heroes:[{id:'miyamoto',name:'Miyamoto'},{id:'arken',name:'Arken'}]};
 const action={type:'end_turn',version:1,player_id:1,params:{}};
-function client(withSocket=false){
+function client(withSocket=false, href='http://localhost:8767/?room=ABCDEFG2'){
   const nodes=new Map();
   const node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);};
   let timer, cleared=false, reconnect, dialog=false, httpCalls=0;
@@ -29,7 +29,7 @@ function client(withSocket=false){
   const context=vm.createContext({window:{addEventListener(){}}, URL, Uint8Array, crypto:webcrypto,
     sessionStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)},
     document:{getElementById:node,createElement:()=>new Element(),querySelector:()=>dialog?{}:null,hidden:false,addEventListener:(name,fn)=>{listeners[name]=fn;}},
-    location:{href:'http://localhost:8767/?room=ABCDEFG2'},Option:function(text,value){this.textContent=text;this.value=value;},
+    location:{href},Option:function(text,value){this.textContent=text;this.value=value;},
     setInterval:fn=>{timer=fn;return 1;},clearInterval:()=>{cleared=true;},setTimeout:fn=>{reconnect=fn;return 2;},clearTimeout(){},confirm:()=>false,
     matchId:null,playerId:9,currentView:null,pendingPlayerId:null,$:node,
     api:async()=>{throw new Error('Local endpoint must not be used');},showHelp(){},
@@ -93,5 +93,8 @@ function client(withSocket=false){
   assert.ok(live.calls()>calls);
   ws.onclose({code:1006});live.reconnect();
   assert.equal(live.sockets.length,2);live.sockets[1].onopen();assert.deepEqual(live.sockets[1].sent,ws.sent);
+  const lan=client(true,'http://192.168.1.10:8767/?room=ABCDEFG2');await lan.context.ONLINE.boot(catalog);
+  assert.equal(lan.sockets[0].url,'ws://192.168.1.10:8768/updates');
+  assert.equal(lan.node('onlineLink').value,'http://192.168.1.10:8767/?room=ABCDEFG2');
   console.log('Online UI: identidade fixa, sem handoff, convite sem credencial, retorno após reload, reenvio do mesmo comando e isolamento de rotas locais verificados.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

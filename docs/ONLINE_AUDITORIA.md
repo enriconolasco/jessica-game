@@ -51,12 +51,15 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   Um único processo pode usar cada banco; dados nunca são servidos ou importados
   por jogadores. Detalhes e backup: [ONLINE_PERSISTENCIA.md](ONLINE_PERSISTENCIA.md).
 - Hotseat continua em `python -m jessica.web.server`, porta 8765. API experimental:
-  `python -m jessica.web.online_server`, somente localhost, porta 8767.
+  `python -m jessica.web.online_server`, por padrão localhost, porta 8767.
   Na branch online, `JOGAR_ONLINE.cmd` inicia esse servidor; abra quatro abas
   independentes em `http://127.0.0.1:8767` e entre pelo mesmo código.
-  Isso ainda não permite acesso por outros aparelhos ou pela internet.
+  Modo opcional de rede privada: `JOGAR_REDE_LOCAL.cmd` / `--lan`, ou
+  `--host IP_PRIVADO`. Bind no IPv4 escolhido, não em todas as interfaces;
+  IP público/domínio arbitrário recusados. Não altera firewall nem publica na
+  internet. Guia e roteiro físico: [ONLINE_REDE_LOCAL.md](ONLINE_REDE_LOCAL.md).
   A dependência opcional `requirements-online.txt` é instalada pelo launcher
-  somente no modo online. HTTP usa 8767; WebSocket usa 8768, ambos em localhost.
+  somente no modo online. HTTP usa 8767; WebSocket usa 8768, no endereço escolhido.
   Para testar sem interromper um servidor existente:
   `python -m jessica.web.online_server --port 8877` (WebSocket 8878).
   Porta ocupada é rejeitada; não iniciar outro servidor sobre uma partida ativa.
@@ -72,7 +75,8 @@ de Sonho Lúcido do motor, sem alterar estado ou RNG.
 
 Transporte de notificações v1: `ws://127.0.0.1:8768/updates`. Autenticação na
 primeira mensagem: `{version: 1, code, credential}`; nunca na URL. Origem HTTP
-deve ser `http://127.0.0.1:8767` ou `http://localhost:8767`. Após autenticar,
+é limitada ao endereço HTTP configurado (loopback ou IPv4 privado). Host HTTP
+desconhecido, duplicado ou origem divergente é rejeitado antes de servir dados. Após autenticar,
 envia a revisão atual e posteriores: `{type: "room_changed", version: 1, revision}`.
 Ações continuam exclusivamente via HTTP. Filas retêm só a revisão mais recente;
 limites: 4 KB por mensagem, cinco segundos para autenticar, 16 canais por sala.
@@ -133,4 +137,9 @@ auditoria de segurança externa ou validação de hospedagem.
 Persistência: dez testes adicionais, incluindo queda/reinício do processo real,
 deduplicação durável, equivalência de RNG/turnos, Armadura pendente, privacidade,
 falha de disco simulada, dono exclusivo e recusa de banco inválido sem descartá-lo.
-Suíte completa: **478 testes Python aprovados, zero falhas**, e seis testes Node aprovados.
+Rede: oito testes adicionais; testes usam somente loopback e mocks de endereços
+privados. Nenhum servidor LAN foi iniciado e nenhuma permissão de firewall alterada.
+POSTs com host/origem inválidos têm o corpo limitado consumido antes da rejeição:
+evita interrupção de conexão no Windows sem executar o comando. Regressão cobre
+vinte POSTs rejeitados consecutivos, sem alteração de estado.
+Suíte completa: **486 testes Python aprovados, zero falhas**, e seis testes Node aprovados.
