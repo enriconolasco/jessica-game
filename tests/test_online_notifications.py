@@ -15,12 +15,12 @@ from test_online_rooms import http, started, request, envelope
 
 
 @contextmanager
-def websocket_server(base):
+def websocket_server(base, max_connections=64):
     ready = Queue()
     loop = asyncio.new_event_loop()
 
     async def run():
-        async with serve_notifications(online_server.ROOMS, "127.0.0.1", 0, [base]) as listener:
+        async with serve_notifications(online_server.ROOMS, "127.0.0.1", 0, [base], max_connections=max_connections) as listener:
             ready.put((listener.sockets[0].getsockname()[1], asyncio.current_task()))
             await asyncio.Future()
 

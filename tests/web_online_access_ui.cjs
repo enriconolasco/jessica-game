@@ -77,11 +77,13 @@ const reply = result => ({ok:true,status:200,json:async()=>result});
   await invitation.node('onlineResume').onclick();assert.equal(invitation.context.lastView.player_id,2);
 
   let accepted=0, loseReply=true, revision=10;
+  const overload=[];
   const results=new Map(), ids=[];
   const pendingStorage=new Map([[REMEMBER,JSON.stringify(access)]]);
   const backend=async(path,options)=>{
     if(path.endsWith('/actions')) {
       const command=JSON.parse(options.body);ids.push(command.command_id);
+      if(overload.length){const status=overload.shift();return {ok:false,status,json:async()=>({error:'Servidor ocupado'})};}
       if(!results.has(command.command_id)){accepted++;revision++;results.set(command.command_id,{success:true,revision,events:[]});}
       if(loseReply){loseReply=false;throw new Error('lost response');}
       return reply(results.get(command.command_id));
@@ -97,6 +99,12 @@ const reply = result => ({ok:true,status:200,json:async()=>result});
   const resumedPending=client({remembered:pendingStorage,backend});await resumedPending.boot();
   assert.equal(resumedPending.node('onlineRetry').hidden,false);
   await assert.rejects(resumedPending.context.window.JessicaOnline.requestMatch('/matches/ABCDEFG2/actions',{method:'POST',body:JSON.stringify(action)}),/pendente/);
+  overload.push(429,503);
+  for(let index=0;index<2;index++) {
+    await resumedPending.node('onlineRetry').onclick();
+    assert.equal(JSON.parse(pendingStorage.get(REMEMBER)).pending.command_id,ids[0]);
+    assert.equal(resumedPending.node('onlineRetry').hidden,false);
+  }
   await resumedPending.node('onlineRetry').onclick();
   assert.equal(accepted,1);assert.equal(ids[0],ids[1]);assert.equal(JSON.parse(pendingStorage.get(REMEMBER)).pending,undefined);
 

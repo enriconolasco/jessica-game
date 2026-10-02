@@ -41,6 +41,10 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   antes de enviar, persiste somente novo hash, rejeita token antigo em HTTP e
   revalida/fecha canais WS antigos. Resposta perdida é recuperável; identidade,
   RNG e regras permanecem iguais. Ainda faltam expiração/recuperação sem token.
+- Limites locais de HTTP/WS, pedidos por IP, criação de salas e salas guardadas;
+  recusas não apagam partidas e 429/503 preservam comando pendente no cliente.
+  JSON/enquadramento ambíguo ou incompleto é recusado. Configuração e limites
+  restantes: [ONLINE_OPERACAO.md](ONLINE_OPERACAO.md).
 - WebSocket autenticado notifica novas revisões; o cliente busca o snapshot
   privado via HTTP. Nenhum estado, mão, evento privado ou credencial é difundido.
   Reconexão com espera progressiva de 1 a 15 segundos; consultas HTTP a cada dois
@@ -100,7 +104,8 @@ Base do transporte: [documentação oficial websockets](https://websockets.readt
 1. Validar reconexão após queda de rede em aparelhos físicos e revisar a topologia
    de duas portas para hospedagem HTTPS/reverse proxy.
 2. Recuperação sem token/perda de aparelho, expiração e vagas abandonadas.
-3. Backups externos/retenção/migrações, limites de recursos, política de abandono/pausa
+3. Backups externos/retenção/migrações, quotas de disco/histórico e limites de produção,
+   política de abandono/pausa
    e tratamento de refazer/Mola online. Não há derrota nem expiração por inatividade;
    a partida espera a decisão do participante ausente.
 4. Partida completa em Wi-Fi e aparelhos físicos, depois hospedagem privada,
@@ -161,4 +166,6 @@ Retomada de acesso: teste Node adicional cobre fechamento/consentimento,
 validação remota, privacidade, pendência sem duplicação e limpeza/substituição.
 Revogação: seis testes HTTP/WS/SQLite, incluindo concorrência, fechamento do canal
 antigo e recuperação de resposta/gravação; cliente também cobre esses fluxos.
-Suíte completa: **500 testes Python aprovados, zero falhas**, e sete testes Node aprovados.
+Operação: nove testes adicionais de limites/rate limit, salas preservadas,
+framing/JSON, slots liberados e WS não autenticado; cliente preserva ID após 429/503.
+Suíte completa: **509 testes Python aprovados, zero falhas**, e sete testes Node aprovados.

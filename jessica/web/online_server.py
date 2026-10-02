@@ -3,8 +3,39 @@ from urllib.parse import urlparse
 from . import server
 from .rooms import Registry, RoomError
 from .network import allowed_hosts, allowed_origins
+from .online_limits import RequestLimits
+import json
+import re
+import threading
 
 ROOMS = Registry()
+
+
+class OnlineHTTPServer(server.ThreadingHTTPServer):
+    allow_reuse_address = False
+    daemon_threads = False
+    request_queue_size = 32
+
+    def __init__(self, address, handler, max_connections=64):
+        self.slots = threading.BoundedSemaphore(max_connections)
+        self.limits = RequestLimits()
+        super().__init__(address, handler)
+
+    def process_request(self, request, address):
+        if not self.slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, address)
+        except BaseException:
+            self.slots.release()
+            raise
+
+    def process_request_thread(self, request, address):
+        try:
+            super().process_request_thread(request, address)
+        finally:
+            self.slots.release()
 
 
 class Handler(server.Handler):
@@ -17,6 +48,46 @@ class Handler(server.Handler):
     def _credential(self):
         authorization = self.headers.get("Authorization", "")
         return authorization[7:] if authorization.startswith("Bearer ") else None
+
+    def _limited(self, category="api"):
+        wait = self.server.limits.delay(self.client_address[0], category)
+        if not wait:
+            return False
+        self.send_response(429)
+        self.send_header("Retry-After", str(wait))
+        payload = json.dumps({"error": "Servidor ocupado. Aguarde e reenvie o mesmo comando pendente."}).encode()
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+        return True
+
+    def _body(self):
+        lengths = self.headers.get_all("Content-Length", [])
+        if self.headers.get_all("Transfer-Encoding") or len(lengths) > 1:
+            raise RoomError(400, "Enquadramento da requisição inválido.")
+        raw_length = lengths[0] if lengths else "0"
+        if not re.fullmatch(r"[0-9]{1,8}", raw_length):
+            raise RoomError(400, "Tamanho da requisição inválido.")
+        length = int(raw_length)
+        if length > 65536:
+            raise RoomError(413, "Comando excede o limite de 64 KB.")
+        def unique(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("Campo JSON duplicado")
+                result[key] = value
+            return result
+        def invalid_number(_):
+            raise ValueError("Número JSON inválido")
+        raw = self.rfile.read(length)
+        if len(raw) != length:
+            raise RoomError(400, "Corpo da requisição incompleto.")
+        body = json.loads(raw or b"{}", object_pairs_hook=unique, parse_constant=invalid_number)
+        if not isinstance(body, dict):
+            raise ValueError("Comando precisa ser um objeto")
+        return body
 
     def _check_address(self):
         hosts = self.headers.get_all("Host", [])
@@ -36,6 +107,8 @@ class Handler(server.Handler):
         if not self._check_address():
             return
         parts = self._parts()
+        if parts and parts[0] not in ("assets", "static") and self._limited():
+            return
         if not parts:
             page = server.STATIC.joinpath("index.html").read_text(encoding="utf-8")
             lobby = server.STATIC.joinpath("online_lobby.html").read_text(encoding="utf-8")
@@ -73,10 +146,10 @@ class Handler(server.Handler):
         try:
             if urlparse(self.path).query:
                 raise RoomError(422, "Parâmetros não são aceitos na URL.")
-            if not 0 <= int(self.headers.get("Content-Length", "0")) <= 65536:
-                raise RoomError(413, "Comando excede o limite de 64 KB.")
             parts, body = self._parts(), self._body()
             if not self._check_address():
+                return
+            if self._limited() or parts == ["rooms"] and self._limited("create"):
                 return
             if parts == ["rooms"]:
                 if set(body) != {"name"}:
@@ -116,7 +189,7 @@ class Handler(server.Handler):
                 return self._json(200, result)
         except RoomError as exc:
             return self._json(exc.status, {"error": str(exc)})
-        except (UnicodeError, ValueError, TypeError):
+        except (UnicodeError, ValueError, TypeError, RecursionError):
             return self._json(422, {"error": "Conteúdo da requisição inválido."})
 
 
@@ -138,30 +211,30 @@ def main():
     binding.add_argument("--lan", action="store_true", help="Escolher interativamente o IPv4 privado do PC.")
     parser.add_argument("--storage", type=Path, default=server.ASSETS.parent / "saves" / "online" / "rooms.sqlite3",
                         help="Banco privado do servidor; não é um save enviado pelo jogador.")
+    parser.add_argument("--max-connections", type=int, default=64, help="Máximo de conexões HTTP simultâneas.")
+    parser.add_argument("--max-rooms", type=int, default=256, help="Máximo de salas guardadas; não apaga salas existentes.")
     args = parser.parse_args()
     port = args.port
     if not 1 <= port <= 65534:
         parser.error("Use uma porta entre 1 e 65534.")
+    if not 1 <= args.max_connections <= 1024 or not 1 <= args.max_rooms <= 10000:
+        parser.error("Use 1–1024 conexões e 1–10000 salas.")
     try:
         host = choose_local_address() if args.lan else valid_host(args.host)
     except (ValueError, OSError, EOFError) as exc:
         parser.error(str(exc))
     address = (host, port)
 
-    class OnlineHTTPServer(server.ThreadingHTTPServer):
-        allow_reuse_address = False
-        daemon_threads = False
-
     store = None
     try:
         store = RoomStore(args.storage)
-        ROOMS = Registry(store)
+        ROOMS = Registry(store, max_rooms=args.max_rooms)
     except StorageError as exc:
         if store:
             store.close()
         parser.error(str(exc))
     try:
-        httpd = OnlineHTTPServer(address, Handler)
+        httpd = OnlineHTTPServer(address, Handler, args.max_connections)
         httpd.allowed_hosts = allowed_hosts(host, port)
     except OSError:
         store.close()

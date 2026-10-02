@@ -76,7 +76,18 @@ async def subscribe(connection, registry):
             await asyncio.gather(*tasks, return_exceptions=True)
 
 
-def serve_notifications(registry, host, port, origins):
-    return serve(lambda connection: subscribe(connection, registry), host, port,
+def serve_notifications(registry, host, port, origins, max_connections=64):
+    active = 0
+    async def limited(connection):
+        nonlocal active
+        if active >= max_connections:
+            await connection.close(1013, "Servidor ocupado. Tente novamente.")
+            return
+        active += 1
+        try:
+            await subscribe(connection, registry)
+        finally:
+            active -= 1
+    return serve(limited, host, port,
                  origins=origins, max_size=4096, max_queue=4, compression=None,
                  open_timeout=5, close_timeout=2, ping_interval=20, ping_timeout=20)

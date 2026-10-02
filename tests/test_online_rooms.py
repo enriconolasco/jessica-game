@@ -18,7 +18,7 @@ from jessica.core.serialize import state_to_dict
 def http(registry=None):
     old = online_server.ROOMS
     online_server.ROOMS = registry if registry is not None else Registry()
-    httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), online_server.Handler)
+    httpd = online_server.OnlineHTTPServer(("127.0.0.1", 0), online_server.Handler)
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
     try:

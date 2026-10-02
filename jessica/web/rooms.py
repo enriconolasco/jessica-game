@@ -248,8 +248,9 @@ class Room:
 
 
 class Registry:
-    def __init__(self, store=None):
+    def __init__(self, store=None, max_rooms=256):
         self.store = store
+        self.max_rooms = max_rooms
         self.rooms = {}
         if store:
             for record in store.load():
@@ -260,6 +261,8 @@ class Registry:
     def create(self, player_name):
         player_name = name(player_name)
         with self.lock:
+            if len(self.rooms) >= self.max_rooms:
+                raise RoomError(503, "Limite de salas atingido. O operador precisa revisar a capacidade; nenhuma sala foi apagada.")
             while (code := "".join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(8))) in self.rooms:
                 pass
             room = Room(code, secrets.randbits(64), store=self.store)

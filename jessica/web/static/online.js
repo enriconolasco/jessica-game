@@ -70,8 +70,8 @@ window.JessicaOnline = (() => {
       const result = await request(path("actions"), session.pending);
       delete session.pending; store(pendingId); return result;
     } catch (error) {
-      if (error.status) { delete session.pending; store(pendingId); }
-      else node("onlineMessage").textContent = "Resultado não confirmado. Reenvie o comando pendente; ele não será executado duas vezes.";
+      if (error.status && error.status !== 429 && error.status !== 503) { delete session.pending; store(pendingId); }
+      else node("onlineMessage").textContent = error.status ? "Servidor ocupado ou armazenamento indisponível. Aguarde e reenvie o mesmo comando pendente." : "Resultado não confirmado. Reenvie o comando pendente; ele não será executado duas vezes.";
       throw error;
     } finally { busy = false; syncIfNeeded(); }
   }

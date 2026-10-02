@@ -8,7 +8,7 @@
   sem handoff, identidade fixa e retorno após recarregar. WebSocket/reconexão
   implementados com fallback HTTP. Persistência SQLite implementada no servidor;
   dez testes de recuperação/durabilidade aprovados, incluindo reinício real.
-  Suíte completa: 500 testes Python e sete testes Node aprovados.
+  Suíte completa: 509 testes Python e sete testes Node aprovados.
   WebSocket verificado no navegador em duas abas,
   com escolha sincronizada e identidade/reconexão preservadas após recarregar.
   Nenhuma regra alterada; terminal/hotseat de referência permanecem na `main`.
@@ -20,6 +20,9 @@
   validado no servidor, com pendência deduplicada e um teste Node próprio aprovado.
 - Revogação/troca de credencial implementada para o próprio participante, com
   recuperação de resposta perdida e invalidação HTTP/WS; seis testes próprios aprovados.
+- Limites HTTP/WS/API/criação/salas implementados, sem excluir partidas;
+  nove testes próprios aprovados. JSON ambíguo/incompleto é recusado; 429/503
+  preservam o comando pendente para reenvio sem duplicação.
 - Próxima integração: partida completa e interrupções em aparelhos físicos na mesma rede.
   Recuperação sem token válido, expiração, pausa/abandono, backups externos/retenção
   e hospedagem pendentes.
@@ -28,3 +31,4 @@ Contratos/limites: [ONLINE_AUDITORIA.md](ONLINE_AUDITORIA.md).
 Atualização comum: [FLUXO_ATUALIZACAO.md](FLUXO_ATUALIZACAO.md).
 Roteiro de rede: [ONLINE_REDE_LOCAL.md](ONLINE_REDE_LOCAL.md).
 Retomada/privacidade: [ONLINE_ACESSO.md](ONLINE_ACESSO.md).
+Operação/limites: [ONLINE_OPERACAO.md](ONLINE_OPERACAO.md).
