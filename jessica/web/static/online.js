@@ -12,7 +12,8 @@ window.JessicaOnline = (() => {
       const saved = JSON.parse(raw);
       if (!saved || typeof saved.code !== "string" || !/^[A-Z2-9]{8}$/.test(saved.code) || typeof saved.credential !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(saved.credential)) return null;
       if (saved.pending && (typeof saved.pending.command_id !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(saved.pending.command_id) || !Number.isSafeInteger(saved.pending.revision) || saved.pending.revision < 0 || !saved.pending.action || typeof saved.pending.action !== "object" || Array.isArray(saved.pending.action))) return null;
-      return {code:saved.code, credential:saved.credential, ...(saved.pending ? {pending:saved.pending} : {})};
+      if (saved.rotation && (typeof saved.rotation.credential !== "string" || !/^[a-f0-9]{64}$/.test(saved.rotation.credential))) return null;
+      return {code:saved.code, credential:saved.credential, ...(saved.pending ? {pending:saved.pending} : {}), ...(saved.rotation ? {rotation:saved.rotation} : {})};
     } catch (_) { return null; }
   }
   function remembered() {
@@ -24,21 +25,26 @@ window.JessicaOnline = (() => {
     node("onlineRemember").checked = sameAccess(saved, session);
     node("onlineRemembered").hidden = !!session || !saved;
     node("onlineRememberedLabel").textContent = saved ? `Acesso lembrado neste navegador: sala ${saved.code}.` : "";
+    node("onlineRotate").textContent = session?.rotation ? "Confirmar troca de acesso pendente" : "Revogar outros acessos ao meu jogador";
   }
   try { session = readAccess(sessionStorage, KEY); } catch (_) {}
-  function store(settledCommandId = null) {
+  function store(settledCommandId = null, settledRotation = null) {
     const saved = remembered();
     if (sameAccess(saved, session) && saved.pending && !session.pending && saved.pending.command_id !== settledCommandId) session.pending = saved.pending;
+    if (sameAccess(saved, session) && saved.rotation && !session.rotation && saved.rotation.credential !== settledRotation) session.rotation = saved.rotation;
+    let tabSaved = false, copySaved = !sameAccess(saved, session);
     try {
       if (session) sessionStorage.setItem(KEY, JSON.stringify(session));
       else sessionStorage.removeItem(KEY);
+      tabSaved = true;
     } catch (_) { node("onlineMessage").textContent = "Armazenamento indisponível: esta sessão não poderá voltar após recarregar."; }
     if (sameAccess(remembered(), session)) {
-      try { localStorage.setItem(REMEMBER_KEY, JSON.stringify(session)); }
+      try { localStorage.setItem(REMEMBER_KEY, JSON.stringify(session)); copySaved = true; }
       catch (_) { node("onlineMessage").textContent = "Não foi possível atualizar o acesso lembrado. Não feche a aba enquanto houver comando pendente."; }
     }
     renderRemembered();
     node("onlineRetry").hidden = !session?.pending;
+    return tabSaved && copySaved;
   }
   async function request(path, body, credential = session?.credential) {
     const response = await fetch(path, {method: body === undefined ? "GET" : "POST", cache:"no-store",
@@ -56,6 +62,7 @@ window.JessicaOnline = (() => {
     return Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2,"0")).join("");
   }
   async function sendPending() {
+    if (session?.rotation) throw new Error("Confirme a troca de acesso pendente antes de reenviar ações.");
     if (!session?.pending) throw new Error("Não há comando pendente.");
     busy = true;
     const pendingId = session.pending.command_id;
@@ -70,11 +77,13 @@ window.JessicaOnline = (() => {
   }
   async function requestMatch(url, options) {
     if (!session) throw new Error("Entre em uma sala primeiro.");
+    if (session.rotation) throw new Error("Confirme a troca de acesso pendente antes de enviar ações.");
     const match = /^\/matches\/([^/]+)\/(actions|dream-preview)$/.exec(url);
     if (!match || match[1] !== session.code || options.method !== "POST") throw new Error("Operação local indisponível no online.");
     const body = JSON.parse(options.body);
     if (match[2] === "dream-preview") return request(path("dream-preview"), body);
     store();
+    if (session.rotation) throw new Error("Confirme a troca de acesso pendente antes de enviar ações.");
     if (session.pending) throw new Error("Verifique o comando pendente antes de enviar outra ação.");
     session.pending = {command_id:commandId(), revision, action:body};
     store(); return sendPending();
@@ -125,6 +134,7 @@ window.JessicaOnline = (() => {
     node("onlinePeople").disabled = own.ready;
     node("onlineHero").disabled = own.ready || node("onlinePeople").value === "mortos_vivos";
     node("onlineSelect").disabled = own.ready || operationBusy;
+    node("onlineRotate").disabled = operationBusy;
     node("onlineReady").disabled = !own.people || operationBusy;
     node("onlineReady").textContent = own.ready ? "Ainda não estou pronto" : "Estou pronto";
     node("onlineStart").hidden = room.you !== room.host_id;
@@ -132,7 +142,7 @@ window.JessicaOnline = (() => {
     node("onlineChoice").hidden = room.status === "playing";
   }
   async function poll() {
-    if (!session || busy) return;
+    if (!session || busy || session.rotation) return;
     needsSync = false;
     busy = true;
     try {
@@ -165,7 +175,7 @@ window.JessicaOnline = (() => {
     socket = null;
   }
   function connectUpdates() {
-    if (!session || stopped || socket || typeof WebSocket === "undefined") return;
+    if (!session || session.rotation || stopped || socket || typeof WebSocket === "undefined") return;
     const url = new URL(location.href); url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     url.port = String(Number(url.port || (url.protocol === "wss:" ? 443 : 80)) + 1); url.pathname = "/updates"; url.search = ""; url.hash = "";
     const connection = new WebSocket(url.href); socket = connection;
@@ -192,6 +202,7 @@ window.JessicaOnline = (() => {
   }
   async function operation(resource, body) {
     if (operationBusy) return;
+    if (session?.rotation) { node("onlineMessage").textContent = "Confirme a troca de acesso pendente primeiro."; return; }
     operationBusy = true;
     ["onlineCreate", "onlineJoin", "onlineSelect", "onlineReady", "onlineStart"].forEach(id => { node(id).disabled = true; });
     node("onlineMessage").textContent = "";
@@ -214,6 +225,48 @@ window.JessicaOnline = (() => {
     try { localStorage.removeItem(REMEMBER_KEY); renderRemembered(); return true; }
     catch (_) { node("onlineMessage").textContent = "Não foi possível esquecer o acesso. Confira as permissões de armazenamento do navegador."; renderRemembered(); return false; }
   }
+  async function verifyAccess(saved) {
+    if (!saved.rotation) return {access:saved, room:await request(`/rooms/${saved.code}`, undefined, saved.credential)};
+    let next;
+    try { next = await request(`/rooms/${saved.code}/credential`, {credential:saved.rotation.credential}, saved.credential); }
+    catch (_) { next = await request(`/rooms/${saved.code}`, undefined, saved.rotation.credential); }
+    const access = {...saved, credential:saved.rotation.credential}; delete access.rotation;
+    return {access, room:next};
+  }
+  function adoptAccess(previous, access) {
+    const keepCopy = sameAccess(remembered(), previous);
+    session = access;
+    if (keepCopy) {
+      try { localStorage.setItem(REMEMBER_KEY, JSON.stringify(session)); }
+      catch (_) { node("onlineMessage").textContent = "Acesso trocado; a cópia antiga contém a troca pendente. Preserve esta aba e confira o armazenamento."; }
+    }
+    store();
+  }
+  async function rotateAccess() {
+    if (!session || operationBusy || busy) return;
+    if (!store()) { node("onlineMessage").textContent = "Acesso não trocado: não foi possível guardar a nova credencial com segurança."; return; }
+    if (session.pending && !session.rotation) { node("onlineMessage").textContent = "Verifique o comando pendente antes de trocar o acesso."; return; }
+    if (!session.rotation && !confirm("Trocar sua credencial e revogar os outros acessos ao seu jogador? Esta aba mantém seu lugar na partida.")) return;
+    const saved = session;
+    const candidate = saved.rotation?.credential || Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2,"0")).join("");
+    saved.rotation = {credential:candidate};
+    if (!store()) {
+      delete saved.rotation; store(null, candidate);
+      node("onlineMessage").textContent = "Acesso não trocado: não foi possível guardar a nova credencial com segurança.";
+      return;
+    }
+    operationBusy = busy = true; node("onlineRotate").disabled = true; stopUpdates();
+    try {
+      const result = await verifyAccess(saved);
+      adoptAccess(saved, result.access); renderRoom(result.room);
+      node("onlineMessage").textContent = "Acesso atualizado. Credenciais antigas foram revogadas; você mantém o mesmo jogador.";
+    } catch (_) { node("onlineMessage").textContent = "Troca não confirmada. Não limpe seu acesso; use Confirmar troca de acesso pendente. A nova credencial foi preservada."; }
+    finally {
+      operationBusy = busy = false; stopped = false;
+      if (!session.rotation) { disconnected = true; await poll(); connectUpdates(); }
+      if (room) renderRoom(room); renderRemembered();
+    }
+  }
   async function resumeRemembered() {
     const saved = remembered();
     if (session || !saved || operationBusy) return;
@@ -221,8 +274,8 @@ window.JessicaOnline = (() => {
     node("onlineResume").disabled = true;
     node("onlineCreate").disabled = node("onlineJoin").disabled = true;
     try {
-      const next = await request(`/rooms/${saved.code}`, undefined, saved.credential);
-      session = saved; store(); renderRoom(next);
+      const result = await verifyAccess(saved);
+      adoptAccess(saved, result.access); renderRoom(result.room);
       await poll(); stopped = false; connectUpdates();
       node("onlineMessage").textContent = saved.pending ? "Acesso retomado. Verifique o comando pendente antes de enviar outra ação." : "Acesso retomado ao mesmo jogador.";
     } catch (error) { node("onlineMessage").textContent = `Não foi possível retomar: ${error.message} Confira o endereço e o banco do servidor; o acesso lembrado foi preservado.`; }
@@ -246,6 +299,7 @@ window.JessicaOnline = (() => {
     node("onlineSelect").onclick = () => operation("select", {people:node("onlinePeople").value, hero_id:node("onlineHero").value});
     node("onlineReady").onclick = () => operation("ready", {ready:!room.players.find(p => p.player_id === room.you).ready});
     node("onlineStart").onclick = () => operation("start", {});
+    node("onlineRotate").onclick = rotateAccess;
     node("onlineResume").onclick = resumeRemembered;
     node("onlineForget").onclick = () => {
       if (confirm("Esquecer o acesso lembrado? Isso não libera sua vaga nem revoga outras abas.")) forgetRemembered();
@@ -275,7 +329,8 @@ window.JessicaOnline = (() => {
     store();
     const saved = remembered();
     if (!session && saved && (!invitation || invitation === saved.code)) await resumeRemembered();
-    await poll(); connectUpdates();
+    if (session?.rotation) await rotateAccess();
+    if (!session?.rotation) { await poll(); connectUpdates(); }
     const startTimer = () => { timer = setInterval(() => { if (!document.hidden && !document.querySelector("dialog[open]") && (!socketReady || needsSync || disconnected)) void poll(); }, 2000); };
     startTimer();
     document.addEventListener("visibilitychange", () => { if (!document.hidden) { needsSync = true; syncIfNeeded(); connectUpdates(); } });

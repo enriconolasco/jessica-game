@@ -98,6 +98,8 @@ class Handler(server.Handler):
                     result = room.mark_ready(member, body["ready"])
                 elif operation == "start" and not body:
                     result = room.start(member)
+                elif operation == "credential" and set(body) == {"credential"}:
+                    result = room.rotate_credential(member, body["credential"])
                 elif operation == "actions":
                     result = room.apply(member, body)
                     return self._json(200 if result["success"] else 422, result)

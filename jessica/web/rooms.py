@@ -155,6 +155,18 @@ class Room:
         self._commit(members=[*self.members, member])
         return {"room": self.public(member), "credential": token}
 
+    def rotate_credential(self, member, credential):
+        if not isinstance(credential, str) or not re.fullmatch(r"[a-f0-9]{64}", credential):
+            raise RoomError(422, "Nova credencial precisa conter 256 bits em hexadecimal.")
+        digest = hashlib.sha256(credential.encode()).hexdigest()
+        if any(m is not member and secrets.compare_digest(m.credential_hash, digest) for m in self.members):
+            raise RoomError(422, "Credencial indisponível.")
+        if not secrets.compare_digest(member.credential_hash, digest):
+            members = deepcopy(self.members)
+            members[member.player_id - 1].credential_hash = digest
+            self._commit(members=members)
+        return self.public(member)
+
     def select(self, member, people, hero_id):
         if self.match or member.ready:
             raise RoomError(409, "Desmarque pronto antes de mudar sua escolha.")

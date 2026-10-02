@@ -11,7 +11,7 @@ const storage = (map, blocked=false) => ({
   setItem:(key,value)=>{if(blocked)throw new Error('blocked');map.set(key,value);},
   removeItem:key=>{if(blocked)throw new Error('blocked');map.delete(key);}
 });
-function client({tab=new Map(), remembered=new Map(), href='http://localhost:8767/', blocked=false, backend}={}) {
+function client({tab=new Map(), remembered=new Map(), href='http://localhost:8767/', blocked=false, tabBlocked=false, backend}={}) {
   const nodes=new Map(), events={}, calls=[];
   let permission=true, reloaded=false;
   const node=id=>{
@@ -22,13 +22,13 @@ function client({tab=new Map(), remembered=new Map(), href='http://localhost:876
   };
   const context=vm.createContext({
     window:{addEventListener:(name,fn)=>{events[name]=fn;}},URL,Uint8Array,crypto:webcrypto,
-    sessionStorage:storage(tab),localStorage:storage(remembered,blocked),
+    sessionStorage:storage(tab,tabBlocked),localStorage:storage(remembered,blocked),
     document:{getElementById:node,createElement:()=>({}),querySelector:()=>null,hidden:false,addEventListener(){}},
     location:{href,reload:()=>{reloaded=true;}},Option:function(text,value){this.textContent=text;this.value=value;},
     setInterval:()=>1,clearInterval(){},setTimeout:()=>2,clearTimeout(){},confirm:()=>permission,
     matchId:null,showHelp(){},fetch:async(path,options)=>{
       calls.push({path,options});
-      assert.ok(!path.includes(access.credential)&&!path.includes('credential')&&!path.includes('player_id'));
+      assert.ok(!path.includes(access.credential)&&!path.includes('credential=')&&!path.includes('player_id'));
       if(backend)return backend(path,options);
       assert.equal(options.headers.Authorization,`Bearer ${access.credential}`);
       const result=path.endsWith('/snapshot')?{revision:10,player_id:2,view:{active_player_id:1},actions:[],events:[]}:room;
@@ -57,7 +57,7 @@ const reply = result => ({ok:true,status:200,json:async()=>result});
   restored.node('onlineRemember').checked=false;restored.node('onlineRemember').onchange();
   assert.equal(persistent.size,0);assert.ok(restored.tab.has(KEY));
 
-  for(const raw of ('bad json', JSON.stringify({code:'<script>',credential:access.credential}), JSON.stringify({code:22222222,credential:access.credential}), JSON.stringify({...access,pending:{command_id:'x',revision:-1,action}}))) {
+  for(const raw of ('bad json', JSON.stringify({code:'<script>',credential:access.credential}), JSON.stringify({code:22222222,credential:access.credential}), JSON.stringify({...access,pending:{command_id:'x',revision:-1,action}}), JSON.stringify({...access,rotation:{credential:'invalid'}}))) {
     const bad=new Map([[REMEMBER,raw]]), view=client({remembered:bad});await view.boot();
     assert.equal(view.calls.length,0);assert.equal(view.tab.size,0);assert.equal(bad.get(REMEMBER),raw);
   }
@@ -123,5 +123,71 @@ const reply = result => ({ok:true,status:200,json:async()=>result});
   reset.node('onlineReset').onclick();assert.equal(reset.tab.size,0);assert.equal(reset.remembered.size,0);assert.equal(reset.reloaded(),true);
   const resetOther=client({tab:new Map([[KEY,JSON.stringify(access)]]),remembered:new Map([[REMEMBER,JSON.stringify(other)]])});await resetOther.boot();
   resetOther.node('onlineReset').onclick();assert.deepEqual(JSON.parse(resetOther.remembered.get(REMEMBER)),other);
+  function rotatingBackend(tab, lose=false, offlineAfterCommit=false) {
+    let token=access.credential, mutations=0, revision=10, offline=false;
+    return {get token(){return token;},get mutations(){return mutations;},restore(){offline=false;},request:async(path,options)=>{
+      if(offline)throw new Error('offline');
+      if(options.headers.Authorization!==`Bearer ${token}`)return {ok:false,status:403,json:async()=>({error:'Revogado'})};
+      if(path.endsWith('/credential')) {
+        const candidate=JSON.parse(options.body).credential;
+        assert.match(candidate,/^[a-f0-9]{64}$/);
+        assert.equal(JSON.parse(tab.get(KEY)).rotation.credential,candidate,'candidate must be saved before POST');
+        if(candidate!==token){token=candidate;mutations++;revision++;}
+        if(lose){lose=false;offline=offlineAfterCommit;throw new Error('lost rotation reply');}
+      }
+      return reply(path.endsWith('/snapshot')?{revision,player_id:2,view:{},actions:[],events:[]}:{...room,revision});
+    }};
+  }
+  const rotationTab=new Map([[KEY,JSON.stringify(access)]]), rotationCopy=new Map([[REMEMBER,JSON.stringify(access)]]);
+  const rotationServer=rotatingBackend(rotationTab,true);
+  const rotating=client({tab:rotationTab,remembered:rotationCopy,backend:rotationServer.request});
+  const sockets=[];
+  rotating.context.WebSocket=class {
+    constructor(url){this.url=url;sockets.push(this);}
+    send(packet){this.packet=JSON.parse(packet);}
+    close(){this.onclose?.({code:1000});}
+  };
+  await rotating.boot();sockets[0].onopen();
+  rotating.setPermission(false);await rotating.node('onlineRotate').onclick();assert.equal(rotationServer.mutations,0);
+  rotating.setPermission(true);await rotating.node('onlineRotate').onclick();
+  assert.equal(rotationServer.mutations,1,rotating.node('onlineMessage').textContent + JSON.stringify(rotating.calls.map(call=>call.path)));assert.equal(rotating.context.lastView.player_id,2);
+  assert.equal(JSON.parse(rotationTab.get(KEY)).credential,rotationServer.token);
+  assert.equal(JSON.parse(rotationCopy.get(REMEMBER)).credential,rotationServer.token);
+  assert.equal(JSON.parse(rotationTab.get(KEY)).rotation,undefined);
+  assert.equal(sockets.length,2);sockets[1].onopen();assert.equal(sockets[1].packet.credential,rotationServer.token);
+  assert.ok(!rotating.node('onlineLink').value.includes(rotationServer.token));
+
+  const stagedTab=new Map([[KEY,JSON.stringify(access)]]), stagedCopy=new Map([[REMEMBER,JSON.stringify(access)]]);
+  const stagedServer=rotatingBackend(stagedTab,true,true);
+  const staged=client({tab:stagedTab,remembered:stagedCopy,backend:stagedServer.request});await staged.boot();
+  await staged.node('onlineRotate').onclick();
+  assert.equal(stagedServer.mutations,1);assert.ok(JSON.parse(stagedCopy.get(REMEMBER)).rotation);
+  assert.equal(staged.node('onlineRotate').textContent,'Confirmar troca de acesso pendente');
+  await assert.rejects(staged.context.window.JessicaOnline.requestMatch('/matches/ABCDEFG2/actions',{method:'POST',body:JSON.stringify(action)}),/troca de acesso/);
+  stagedServer.restore();
+  const stageRecovered=client({remembered:stagedCopy,backend:stagedServer.request});await stageRecovered.boot();
+  assert.equal(stageRecovered.context.lastView.player_id,2);assert.equal(stagedServer.mutations,1);
+  assert.equal(JSON.parse(stagedCopy.get(REMEMBER)).credential,stagedServer.token);
+
+  const retryTab=new Map([[KEY,JSON.stringify(access)]]), retryServer=rotatingBackend(retryTab);
+  let failWrite=true;
+  const retryRotation=client({tab:retryTab,backend:(path,options)=>{
+    if(path.endsWith('/credential')&&failWrite){failWrite=false;return {ok:false,status:503,json:async()=>({error:'Falha de disco'})};}
+    return retryServer.request(path,options);
+  }});
+  await retryRotation.boot();await retryRotation.node('onlineRotate').onclick();
+  assert.equal(retryServer.mutations,0);const preservedCandidate=JSON.parse(retryTab.get(KEY)).rotation.credential;
+  await retryRotation.node('onlineRotate').onclick();
+  assert.equal(retryServer.mutations,1);assert.equal(retryServer.token,preservedCandidate);
+
+  const refusedRotation=client({tab:new Map([[KEY,JSON.stringify(access)]]),tabBlocked:true});await refusedRotation.boot();
+  await refusedRotation.node('onlineRotate').onclick();assert.equal(refusedRotation.calls.filter(call=>call.path.endsWith('/credential')).length,0);
+  assert.ok(refusedRotation.node('onlineMessage').textContent.includes('Acesso não trocado'));
+  const refusedCopyRotation=client({tab:new Map([[KEY,JSON.stringify(access)]]),remembered:new Map([[REMEMBER,JSON.stringify(access)]]),blocked:true});await refusedCopyRotation.boot();
+  await refusedCopyRotation.node('onlineRotate').onclick();assert.equal(refusedCopyRotation.calls.filter(call=>call.path.endsWith('/credential')).length,0);
+  const pendingRotation=client({tab:new Map([[KEY,JSON.stringify({...access,pending:{command_id:'existing',revision:10,action}})]])});await pendingRotation.boot();
+  await pendingRotation.node('onlineRotate').onclick();assert.equal(pendingRotation.calls.filter(call=>call.path.endsWith('/credential')).length,0);
+  assert.ok(pendingRotation.node('onlineMessage').textContent.includes('comando pendente'));
+  console.log('Online revogação: cancelamento, gravação prévia, identidade fixa, resposta perdida, recuperação após fechar, bloqueio de ações/armazenamento e reconexão WS verificados.');
   console.log('Online acesso: opt-in, retorno após fechar aba, validação remota, convites sem credencial, pendência deduplicada, substituição/limpeza e armazenamento bloqueado verificados.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -43,6 +43,12 @@ async def subscribe(connection, registry):
         async def updates():
             while True:
                 revision = await queue.get()
+                try:
+                    with room.lock:
+                        room.authenticate(auth["credential"])
+                except RoomError:
+                    await connection.close(1008, "Credencial revogada. Use o acesso atualizado.")
+                    return
                 await connection.send(json.dumps({"type": "room_changed", "version": 1, "revision": revision}))
 
         async def receive():

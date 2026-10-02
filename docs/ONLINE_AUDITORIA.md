@@ -37,6 +37,10 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   opção **Lembrar meu acesso neste navegador**, desmarcada por padrão, guarda
   uma cópia local para retomar após fechar, sempre validada no servidor. Convite
   não contém credenciais. Limites/privacidade: [ONLINE_ACESSO.md](ONLINE_ACESSO.md).
+- Troca de credencial pelo próprio participante: grava candidata no navegador
+  antes de enviar, persiste somente novo hash, rejeita token antigo em HTTP e
+  revalida/fecha canais WS antigos. Resposta perdida é recuperável; identidade,
+  RNG e regras permanecem iguais. Ainda faltam expiração/recuperação sem token.
 - WebSocket autenticado notifica novas revisões; o cliente busca o snapshot
   privado via HTTP. Nenhum estado, mão, evento privado ou credencial é difundido.
   Reconexão com espera progressiva de 1 a 15 segundos; consultas HTTP a cada dois
@@ -76,6 +80,8 @@ Contrato de transporte v1: `POST /rooms` (`name`),
 (`ready`), `POST .../start` (`{}`), `GET .../snapshot`, `POST .../actions`
 (`command_id`, `revision`, `action`). Versões de ações/eventos/saves permanecem
 as do core; revisão de sala é um contador independente.
+`POST .../credential` (`credential`: 64 caracteres hexadecimais) troca apenas o
+acesso autenticado e retorna a sala, nunca a credencial. Sem `player_id` no corpo.
 `POST .../dream-preview` valida a identidade/ação legal e reutiliza a prévia
 de Sonho Lúcido do motor, sem alterar estado ou RNG.
 
@@ -93,7 +99,7 @@ Base do transporte: [documentação oficial websockets](https://websockets.readt
 
 1. Validar reconexão após queda de rede em aparelhos físicos e revisar a topologia
    de duas portas para hospedagem HTTPS/reverse proxy.
-2. Recuperação sem cópia local/perda de aparelho, expiração/revogação e vagas abandonadas.
+2. Recuperação sem token/perda de aparelho, expiração e vagas abandonadas.
 3. Backups externos/retenção/migrações, limites de recursos, política de abandono/pausa
    e tratamento de refazer/Mola online. Não há derrota nem expiração por inatividade;
    a partida espera a decisão do participante ausente.
@@ -153,4 +159,6 @@ evita interrupção de conexão no Windows sem executar o comando. Regressão co
 vinte POSTs rejeitados consecutivos, sem alteração de estado.
 Retomada de acesso: teste Node adicional cobre fechamento/consentimento,
 validação remota, privacidade, pendência sem duplicação e limpeza/substituição.
-Suíte completa: **494 testes Python aprovados, zero falhas**, e sete testes Node aprovados.
+Revogação: seis testes HTTP/WS/SQLite, incluindo concorrência, fechamento do canal
+antigo e recuperação de resposta/gravação; cliente também cobre esses fluxos.
+Suíte completa: **500 testes Python aprovados, zero falhas**, e sete testes Node aprovados.

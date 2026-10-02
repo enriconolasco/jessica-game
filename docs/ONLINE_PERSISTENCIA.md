@@ -30,7 +30,8 @@ mesmo banco entre instâncias. Para testes paralelos, use outro `--storage`.
 
 Não existe derrota, expiração de sala ou liberação de vaga por desconexão.
 Se falta o jogador que deve decidir, a partida espera por ele. Pausa explícita,
-abandono, recuperação sem cópia local e revogação ainda exigem implementação.
+abandono e recuperação sem token válido ainda exigem implementação. A troca de
+credencial pelo participante está em [ONLINE_ACESSO.md](ONLINE_ACESSO.md).
 O servidor não consegue recuperar um token original a partir do hash.
 
 **Primeira atualização:** salas abertas por versões anteriores em memória não
@@ -78,6 +79,9 @@ guarde cópias externas privadas antes de hospedagem real.
 O arquivo restaurado precisa ser compatível; a validação existente recusa dados
 incompatíveis sem descartá-los. Restaurar volta ao instante da cópia: ações
 posteriores ao backup não são recuperadas. Não continue uma partida em dois bancos.
+Isso também reverte credenciais: uma cópia anterior à revogação pode restaurar
+acessos antigos e invalidar os novos. Prefira backup posterior à troca; não há
+recuperação administrativa por nome/código de sala.
 
 Versões independentes: schema SQLite 1, registro de sala 1 e versões existentes
 de save/ação/evento. Banco incompatível, danificado ou com sala inválida impede

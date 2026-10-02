@@ -221,6 +221,7 @@ def test_online_page_uses_shared_client_but_not_local_setup():
         assert html.index('/static/online.js') < html.index('/static/app.js')
         assert '/static/presentation.js' in html
         assert 'id="onlineResume"' in html and 'id="onlineForget"' in html
+        assert 'id="onlineRotate"' in html
         assert 'id="onlineRemember" type="checkbox" aria-describedby="onlineRememberHint"' in html
         assert 'id="onlineRemember" type="checkbox" checked' not in html
         with urlopen(base + "/static/online.js") as response:
