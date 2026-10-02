@@ -198,6 +198,10 @@ class Handler(server.Handler):
 
 def main():
     global ROOMS
+    import signal
+    signal.signal(signal.SIGTERM, signal.default_int_handler)
+    if hasattr(signal, "SIGBREAK"):
+        signal.signal(signal.SIGBREAK, signal.default_int_handler)
     import argparse
     import asyncio
     import threading

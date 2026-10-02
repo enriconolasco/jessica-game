@@ -57,10 +57,12 @@ continua no servidor e sobrevive ao reinício. Recusas não alteram RNG/revisão
 ## O que ainda falta para internet
 
 Não é proteção completa contra DDoS. Handshakes WS, timeouts absolutos, proxy
-HTTPS real (origem explícita já preparada), quotas de histórico/disco, logs operacionais, backups
+limites de produção do proxy, quotas de histórico/disco, logs operacionais, backups
 externos, manutenção/arquivamento e testes de carga precisam de preparação.
 HTTP não é um servidor de produção. Os testes não equivalem a auditoria externa
 ou partida completa em celulares. Nenhum serviço pago foi criado/publicado.
+Piloto gratuito HTTPS/WSS já validado com túnel temporário encerrado;
+ver [ONLINE_AMIGOS.md](ONLINE_AMIGOS.md), incluindo pendência de retomada por novo link.
 
 ## Verificações
 

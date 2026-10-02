@@ -13,6 +13,7 @@ if errorlevel 1 (
 if /i "%~1"=="web" goto web
 if /i "%~1"=="online" goto online
 if /i "%~1"=="rede" goto online
+if /i "%~1"=="amigos" goto online
 ".venv\Scripts\python.exe" -m jessica.main
 if errorlevel 1 goto erro
 exit /b 0
@@ -34,10 +35,16 @@ if errorlevel 1 (
   if errorlevel 1 goto erro
 )
 if /i "%~1"=="rede" goto rede
+if /i "%~1"=="amigos" goto amigos
 echo Online experimental: abra http://127.0.0.1:8767 em quatro abas.
 echo Salas sao salvas no servidor. Mantenha suas abas para retomar apos reiniciar.
 echo Para encerrar, pressione Ctrl+C.
 ".venv\Scripts\python.exe" -m jessica.web.online_server
+if errorlevel 1 goto erro
+exit /b 0
+
+:amigos
+".venv\Scripts\python.exe" -m jessica.web.quick_tunnel
 if errorlevel 1 goto erro
 exit /b 0
 

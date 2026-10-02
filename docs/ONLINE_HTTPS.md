@@ -6,6 +6,8 @@ O acesso HTTP local/LAN continua usando duas portas como antes.
 
 Isto prepara o transporte: **não inicia TLS, proxy, hospedagem ou domínio**.
 Nenhum serviço pago foi contratado e nenhum certificado foi instalado.
+Piloto gratuito com HTTPS/WSS externo já validado por túnel temporário:
+[ONLINE_AMIGOS.md](ONLINE_AMIGOS.md). O exemplo TLS local abaixo é separado.
 
 ## Contrato do proxy
 
@@ -54,9 +56,9 @@ caddy run --config deploy/Caddyfile.local.example --adapter caddyfile
 Abrir `https://localhost:9443/`. Não abrir o backend HTTP como se fosse a página
 de jogo neste modo: seu Host local é intencionalmente rejeitado.
 
-**Caddy não foi encontrado no ambiente verificado.** A configuração foi revista
-contra documentação oficial, mas `caddy validate` e TLS real ainda não foram
-executados. Seu certificado local exige confiança explícita no navegador/sistema;
+Na etapa inicial, Caddy não estava instalado. Agora há uma cópia portátil validada
+no fluxo de túnel gratuito, sem TLS local. **Este exemplo `tls internal` não foi
+executado.** Seu certificado local exige confiança explícita no navegador/sistema;
 Caddy pode tentar instalar sua autoridade local ao executar. Avaliar isso antes
 de iniciar: não instalar certificados automaticamente como parte do jogo e não
 desativar validação TLS. Não serve como certificado público para convidados.
@@ -70,9 +72,10 @@ deduplicação continuam pelo protocolo existente.
 
 ## Antes de acesso pela internet
 
-Ainda faltam validação TLS/proxy real, partida completa em aparelhos, limites do
-proxy, revisão de segurança, armazenamento/backup externo e um destino de
-hospedagem explicitamente escolhido. Não publicar esta API apenas trocando um
+Proxy real e HTTPS/WSS externo foram validados no piloto gratuito. Ainda faltam
+partida completa em aparelhos, limites de produção, revisão de segurança,
+armazenamento/backup externo e retomada após mudar o link. Não há hospedagem
+contratada em vista. Não publicar esta API como serviço amplo apenas trocando um
 domínio no exemplo. Em modo proxy, os limites por IP veem o proxy loopback:
 **todos compartilham o orçamento**; cabeçalhos de IP não são confiáveis e não são
 usados. Um rate limit por cliente precisa ser configurado na borda antes de

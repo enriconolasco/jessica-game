@@ -13,5 +13,9 @@ o multiplayer remoto ainda está em desenvolvimento separado.
 Requer Python e Rich; os atalhos locais preparam o ambiente na primeira execução.
 Sem Git, o atualizador informa a alternativa ZIP, sem modificar a pasta.
 
+Piloto com amigos pela internet, no branch `codex/online-rooms`: abrir
+`JOGAR_AMIGOS.cmd`. PC permanece ligado; túnel gratuito temporário, sem hospedagem
+contratada. Preparação, ferramentas e limites: [docs/ONLINE_AMIGOS.md](docs/ONLINE_AMIGOS.md).
+
 Fluxo de desenvolvimento: [docs/FLUXO_ATUALIZACAO.md](docs/FLUXO_ATUALIZACAO.md).
 Escopo e playtest web: [docs/FECHAMENTO_WEB_LOCAL.md](docs/FECHAMENTO_WEB_LOCAL.md).

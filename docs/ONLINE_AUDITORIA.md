@@ -107,15 +107,16 @@ Detalhes: [ONLINE_HTTPS.md](ONLINE_HTTPS.md).
 
 ## Ainda não concluído
 
-1. Validar reconexão após queda de rede em aparelhos físicos e executar/verificar
-   proxy/TLS real; topologia de mesma origem já preparada, não publicada.
+1. Validar reconexão após queda de rede em aparelhos físicos e partida completa.
+   Proxy real e HTTPS/WSS externo já passaram em túnel temporário isolado,
+   encerrado após o teste. Novo link exige solução de retomada de credenciais.
 2. Recuperação sem token/perda de aparelho, expiração e vagas abandonadas.
 3. Backups externos/retenção/migrações, quotas de disco/histórico e limites de produção,
    política de abandono/pausa
    e tratamento de refazer/Mola online. Não há derrota nem expiração por inatividade;
    a partida espera a decisão do participante ausente.
-4. Partida completa em Wi-Fi e aparelhos físicos, depois hospedagem privada,
-   HTTPS, backups e testes entre redes distintas. Não publicar esta API ainda.
+4. Partida completa entre redes distintas, pelo PC/túnel gratuito; sem hospedagem
+   contratada em vista. Backups externos e revisão antes de acesso amplo pendentes.
 
 Não há contas, chat, matchmaking, derrota por desconexão ou mudança de regras.
 Escolhas do lobby são concorrentes, com povos exclusivos; a preferência/ordem de
@@ -177,5 +178,11 @@ framing/JSON, slots liberados e WS não autenticado; cliente preserva ID após 4
 HTTPS/proxy: oito testes adicionais de origem explícita, loopback obrigatório,
 Host/Origin e cabeçalhos falsos, marca pública de transporte, WS autenticado e
 processo CLI real. Cliente preserva LAN e usa WSS na mesma origem em HTTPS.
-Proxy/certificado real não foram executados; exemplo local é preparação somente.
-Suíte completa: **517 testes Python aprovados, zero falhas**, e sete testes Node aprovados.
+O exemplo antigo `tls internal` não foi executado. No piloto com amigos, Caddy
+real passou em loopback com quatro sessões e HTTPS/WSS público passou no túnel
+gratuito, sem instalar certificados. Túneis de validação encerrados.
+Iniciador: nove testes adicionais e probes opt-in; interromper fecha somente seus
+filhos, inclusive após sinal de encerramento no Windows. Binários portáteis
+oficiais foram conferidos por SHA256 e não são versionados. Detalhes/limites:
+[ONLINE_AMIGOS.md](ONLINE_AMIGOS.md).
+Suíte completa: **526 testes Python aprovados, zero falhas**, e sete testes Node aprovados.
