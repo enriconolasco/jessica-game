@@ -120,7 +120,7 @@ window.JessicaOnline = (() => {
       node("onlineConnection").textContent = "Conexão interrompida — tentando retornar, sem trocar de jogador.";
       if (error.status === 401 || error.status === 403 || error.status === 404) {
         node("game").hidden = true;
-        node("onlineMessage").textContent = "Sessão indisponível. Este protótipo ainda perde salas ao reiniciar o servidor.";
+        node("onlineMessage").textContent = "Sessão indisponível. Confira se este servidor usa o armazenamento correto e se a credencial foi preservada nesta aba.";
         clearInterval(timer);
         stopUpdates();
       }

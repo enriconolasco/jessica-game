@@ -21,6 +21,9 @@ class Handler(server.Handler):
         if not parts:
             page = server.STATIC.joinpath("index.html").read_text(encoding="utf-8")
             lobby = server.STATIC.joinpath("online_lobby.html").read_text(encoding="utf-8")
+            if ROOMS.store:
+                lobby = lobby.replace("Persistência não confirmada nesta instância. Não reinicie durante a partida.",
+                                      "Salas e ações aceitas são salvas no servidor e retomadas após reiniciar.")
             page = page.replace("<main>", "<main>" + lobby).replace("<span>Partida local</span>", "<span>Sala online · experimental</span>")
             page = page.replace('<section id="start" class="card">', '<section id="start" class="card" hidden>')
             page = page.replace('<script src="/static/presentation.js">', '<script src="/static/online.js"></script><script src="/static/presentation.js">')
@@ -99,14 +102,20 @@ class Handler(server.Handler):
 
 
 def main():
+    global ROOMS
     import argparse
     import asyncio
     import threading
     from .notifications import serve_notifications
+    from .room_store import RoomStore, StorageError
+    from pathlib import Path
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8767, help="Porta HTTP; WebSocket usa a próxima porta.")
-    port = parser.parse_args().port
+    parser.add_argument("--storage", type=Path, default=server.ASSETS.parent / "saves" / "online" / "rooms.sqlite3",
+                        help="Banco privado do servidor; não é um save enviado pelo jogador.")
+    args = parser.parse_args()
+    port = args.port
     if not 1 <= port <= 65534:
         parser.error("Use uma porta entre 1 e 65534.")
     address = ("127.0.0.1", port)
@@ -114,9 +123,18 @@ def main():
     class OnlineHTTPServer(server.ThreadingHTTPServer):
         allow_reuse_address = False
 
+    store = None
+    try:
+        store = RoomStore(args.storage)
+        ROOMS = Registry(store)
+    except StorageError as exc:
+        if store:
+            store.close()
+        parser.error(str(exc))
     try:
         httpd = OnlineHTTPServer(address, Handler)
     except OSError:
+        store.close()
         parser.error("Porta HTTP indisponível. Mantenha o servidor atual ou escolha outra com --port.")
 
     async def run():
@@ -139,6 +157,7 @@ def main():
         parser.error("Porta WebSocket indisponível. Escolha outro par de portas com --port.")
     finally:
         httpd.server_close()
+        store.close()
 
 
 if __name__ == "__main__":

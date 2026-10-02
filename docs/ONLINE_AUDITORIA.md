@@ -45,6 +45,11 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
 - Execução em cópia transacional do estado: erro não altera estado, RNG ou revisão.
   Reações noturnas continuam sendo validadas pela porta do motor, não pela fase
   simplificada do lobby. Jogadores fora da vez recebem somente suas ações legais.
+- Persistência SQLite no servidor: salas, hashes de credenciais, estado/RNG,
+  revisões, comandos/resultados e eventos são recuperados ao iniciar. Confirmação
+  e notificações só ocorrem após gravar; falha de gravação não aplica a operação.
+  Um único processo pode usar cada banco; dados nunca são servidos ou importados
+  por jogadores. Detalhes e backup: [ONLINE_PERSISTENCIA.md](ONLINE_PERSISTENCIA.md).
 - Hotseat continua em `python -m jessica.web.server`, porta 8765. API experimental:
   `python -m jessica.web.online_server`, somente localhost, porta 8767.
   Na branch online, `JOGAR_ONLINE.cmd` inicia esse servidor; abra quatro abas
@@ -79,8 +84,9 @@ Base do transporte: [documentação oficial websockets](https://websockets.readt
 1. Validar reconexão após queda de rede em aparelhos físicos e revisar a topologia
    de duas portas para hospedagem HTTPS/reverse proxy.
 2. Recuperação de credencial após fechar a aba, expiração/revogação e vagas abandonadas.
-3. Persistência transacional e recuperação após reiniciar, limites de recursos,
-   política de abandono/pausa e tratamento de refazer/Mola online.
+3. Backups automáticos/migrações, limites de recursos, política de abandono/pausa
+   e tratamento de refazer/Mola online. Não há derrota nem expiração por inatividade;
+   a partida espera a decisão do participante ausente.
 4. Partida completa em Wi-Fi e aparelhos físicos, depois hospedagem privada,
    HTTPS, backups e testes entre redes distintas. Não publicar esta API ainda.
 
@@ -124,4 +130,7 @@ existente foi encerrada; o fallback HTTP funcionou durante essa divergência.
 
 São testes de API/WebSocket em localhost, não playtest em quatro aparelhos,
 auditoria de segurança externa ou validação de hospedagem.
-Suíte completa após este corte: **468 testes Python aprovados, zero falhas**.
+Persistência: dez testes adicionais, incluindo queda/reinício do processo real,
+deduplicação durável, equivalência de RNG/turnos, Armadura pendente, privacidade,
+falha de disco simulada, dono exclusivo e recusa de banco inválido sem descartá-lo.
+Suíte completa: **478 testes Python aprovados, zero falhas**, e seis testes Node aprovados.
