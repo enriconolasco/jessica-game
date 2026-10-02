@@ -50,6 +50,10 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   e notificações só ocorrem após gravar; falha de gravação não aplica a operação.
   Um único processo pode usar cada banco; dados nunca são servidos ou importados
   por jogadores. Detalhes e backup: [ONLINE_PERSISTENCIA.md](ONLINE_PERSISTENCIA.md).
+- Backups SQLite privados e consistentes ao iniciar, de hora em hora com mudanças
+  e ao encerrar normalmente; cópias antigas preservadas. Falhas são avisadas,
+  sem desfazer ações aceitas. Restauração manual usa novo arquivo, não sobrescreve
+  silenciosamente o banco original. Ainda faltam cópias externas e retenção.
 - Hotseat continua em `python -m jessica.web.server`, porta 8765. API experimental:
   `python -m jessica.web.online_server`, por padrão localhost, porta 8767.
   Na branch online, `JOGAR_ONLINE.cmd` inicia esse servidor; abra quatro abas
@@ -88,7 +92,7 @@ Base do transporte: [documentação oficial websockets](https://websockets.readt
 1. Validar reconexão após queda de rede em aparelhos físicos e revisar a topologia
    de duas portas para hospedagem HTTPS/reverse proxy.
 2. Recuperação de credencial após fechar a aba, expiração/revogação e vagas abandonadas.
-3. Backups automáticos/migrações, limites de recursos, política de abandono/pausa
+3. Backups externos/retenção/migrações, limites de recursos, política de abandono/pausa
    e tratamento de refazer/Mola online. Não há derrota nem expiração por inatividade;
    a partida espera a decisão do participante ausente.
 4. Partida completa em Wi-Fi e aparelhos físicos, depois hospedagem privada,
@@ -139,7 +143,10 @@ deduplicação durável, equivalência de RNG/turnos, Armadura pendente, privaci
 falha de disco simulada, dono exclusivo e recusa de banco inválido sem descartá-lo.
 Rede: oito testes adicionais; testes usam somente loopback e mocks de endereços
 privados. Nenhum servidor LAN foi iniciado e nenhuma permissão de firewall alterada.
+Backups: oito testes adicionais, incluindo snapshots concorrentes/restauráveis,
+privacidade, falhas sem desfazer ações e cópia final no encerramento normal
+de processo real. Cópias antigas preservadas; backup externo e retenção pendentes.
 POSTs com host/origem inválidos têm o corpo limitado consumido antes da rejeição:
 evita interrupção de conexão no Windows sem executar o comando. Regressão cobre
 vinte POSTs rejeitados consecutivos, sem alteração de estado.
-Suíte completa: **486 testes Python aprovados, zero falhas**, e seis testes Node aprovados.
+Suíte completa: **494 testes Python aprovados, zero falhas**, e seis testes Node aprovados.

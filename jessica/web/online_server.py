@@ -8,6 +8,7 @@ ROOMS = Registry()
 
 
 class Handler(server.Handler):
+    timeout = 15
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -126,6 +127,7 @@ def main():
     from .room_store import RoomStore, StorageError
     from pathlib import Path
     from .network import choose_local_address, valid_host
+    from .online_backups import OnlineBackups
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8767, help="Porta HTTP; WebSocket usa a próxima porta.")
@@ -146,6 +148,7 @@ def main():
 
     class OnlineHTTPServer(server.ThreadingHTTPServer):
         allow_reuse_address = False
+        daemon_threads = False
 
     store = None
     try:
@@ -164,7 +167,15 @@ def main():
 
     async def run():
         async with serve_notifications(ROOMS, host, port + 1, allowed_origins(host, port)):
+            backups = OnlineBackups(store)
+            await asyncio.to_thread(backups.checkpoint)
+            async def backup_loop():
+                while True:
+                    await asyncio.sleep(60)
+                    await asyncio.to_thread(backups.checkpoint)
+            backup_task = asyncio.create_task(backup_loop())
             print(f"Jéssica online (protótipo): http://{address[0]}:{address[1]} · WebSocket {port + 1}", flush=True)
+            print(f"Backups automáticos privados: {store.path.parent / 'backups'} (a cada hora com mudanças).", flush=True)
             thread = threading.Thread(target=httpd.serve_forever, daemon=True)
             thread.start()
             try:
@@ -172,6 +183,13 @@ def main():
             finally:
                 httpd.shutdown()
                 thread.join()
+                httpd.server_close()
+                backup_task.cancel()
+                try:
+                    await backup_task
+                except asyncio.CancelledError:
+                    pass
+                await asyncio.to_thread(backups.checkpoint, force=True)
 
     try:
         asyncio.run(run())

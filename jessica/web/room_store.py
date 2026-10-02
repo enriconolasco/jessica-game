@@ -4,6 +4,9 @@ import os
 from pathlib import Path
 import sqlite3
 import threading
+import tempfile
+from datetime import datetime, timezone
+from contextlib import closing
 
 
 class StorageError(OSError):
@@ -16,6 +19,7 @@ class RoomStore:
         self.connection = None
         self.owner = None
         self.lock = threading.RLock()
+        self.generation = 0
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self.owner = self.path.with_suffix(self.path.suffix + ".lock").open("a+b")
@@ -61,16 +65,47 @@ class RoomStore:
     def save(self, payload, previous_revision):
         try:
             raw = json.dumps(payload, ensure_ascii=False, allow_nan=False)
-            with self.lock, self.connection:
-                if previous_revision == 0:
-                    self.connection.execute("INSERT INTO rooms VALUES (?, ?, ?)", (payload["code"], payload["revision"], raw))
-                else:
-                    changed = self.connection.execute("UPDATE rooms SET revision=?, payload=? WHERE code=? AND revision=?",
-                        (payload["revision"], raw, payload["code"], previous_revision)).rowcount
-                    if changed != 1:
-                        raise StorageError("Revisão persistida divergente; atualização não gravada.")
+            with self.lock:
+                with self.connection:
+                    if previous_revision == 0:
+                        self.connection.execute("INSERT INTO rooms VALUES (?, ?, ?)", (payload["code"], payload["revision"], raw))
+                    else:
+                        changed = self.connection.execute("UPDATE rooms SET revision=?, payload=? WHERE code=? AND revision=?",
+                            (payload["revision"], raw, payload["code"], previous_revision)).rowcount
+                        if changed != 1:
+                            raise StorageError("Revisão persistida divergente; atualização não gravada.")
+                self.generation += 1
         except (sqlite3.Error, ValueError, TypeError) as exc:
             raise StorageError("Não foi possível gravar a sala.") from exc
+
+    def backup(self):
+        temporary = None
+        try:
+            folder = self.path.parent / "backups"
+            folder.mkdir(parents=True, exist_ok=True)
+            descriptor, filename = tempfile.mkstemp(prefix=f".{self.path.name}-", suffix=".tmp", dir=folder)
+            os.close(descriptor)
+            temporary = Path(filename)
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            target = folder / f"{self.path.name}-{stamp}-{temporary.stem.rsplit('-', 1)[-1]}.sqlite3"
+            with self.lock:
+                generation = self.generation
+                with closing(sqlite3.connect(temporary)) as destination:
+                    self.connection.backup(destination)
+                    if destination.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+                        raise StorageError("Verificação do backup falhou.")
+                with temporary.open("r+b") as snapshot:
+                    os.fsync(snapshot.fileno())
+                os.replace(temporary, target)
+            return target, generation
+        except (OSError, sqlite3.Error) as exc:
+            raise StorageError("Backup online não gravado; banco principal preservado.") from exc
+        finally:
+            if temporary is not None and temporary.exists():
+                try:
+                    temporary.unlink()
+                except OSError:
+                    pass
 
     def close(self):
         if self.connection:
