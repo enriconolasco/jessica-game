@@ -220,6 +220,9 @@ def test_online_page_uses_shared_client_but_not_local_setup():
         assert 'id="start" class="card" hidden' in html
         assert html.index('/static/online.js') < html.index('/static/app.js')
         assert '/static/presentation.js' in html
+        assert 'id="onlineResume"' in html and 'id="onlineForget"' in html
+        assert 'id="onlineRemember" type="checkbox" aria-describedby="onlineRememberHint"' in html
+        assert 'id="onlineRemember" type="checkbox" checked' not in html
         with urlopen(base + "/static/online.js") as response:
             assert response.headers.get_content_type() == "text/javascript"
         local_html = server.STATIC.joinpath("index.html").read_text(encoding="utf-8")

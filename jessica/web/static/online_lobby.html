@@ -1,11 +1,16 @@
 <section id="onlineLobby" class="card" aria-labelledby="onlineTitle">
   <h2 id="onlineTitle">Sala online — teste local</h2>
-  <p class="hint">Cada aba/aparelho controla apenas seu jogador. Mantenha esta aba para conservar sua credencial.</p>
+  <p class="hint">Cada aba/aparelho controla apenas seu jogador. Você pode optar por lembrar seu acesso em um aparelho pessoal.</p>
   <p id="onlinePersistenceHint" class="hint">Persistência não confirmada nesta instância. Não reinicie durante a partida.</p>
   <p id="onlineConnection" role="status" aria-live="polite">Conectando…</p>
   <div id="onlineMessage" role="alert"></div>
   <button id="onlineRules">Consultar povos, heróis e regras</button>
   <div id="onlineEntry">
+    <div id="onlineRemembered" hidden>
+      <p id="onlineRememberedLabel"></p>
+      <button id="onlineResume">Retomar meu acesso</button>
+      <button id="onlineForget">Esquecer acesso lembrado</button>
+    </div>
     <label>Seu nome <input id="onlineName" maxlength="40" autocomplete="nickname"></label>
     <button id="onlineCreate">Criar sala</button>
     <label>Código da sala <input id="onlineCode" maxlength="8" autocapitalize="characters" autocomplete="off"></label>
@@ -13,6 +18,8 @@
   </div>
   <div id="onlineRoom" hidden>
     <p id="onlineIdentity"></p>
+    <label><input id="onlineRemember" type="checkbox" aria-describedby="onlineRememberHint"> Lembrar meu acesso neste navegador</label>
+    <p id="onlineRememberHint" class="hint">Somente em aparelho pessoal. Guarda um único acesso neste endereço. Quem usa este navegador poderá controlar seu jogador. Desmarcar não encerra esta aba nem libera sua vaga.</p>
     <label>Link de convite (não contém sua credencial) <input id="onlineLink" readonly aria-label="Link de convite"></label>
     <ul id="onlinePlayers" aria-label="Participantes da sala"></ul>
     <div id="onlineChoice">

@@ -34,7 +34,9 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   herói, confirmar presença e iniciar. Botões aguardam a resposta do servidor.
 - Cliente completo reutilizado sem handoff: cada aba mantém sua identidade,
   mesmo fora da vez. Credencial em `sessionStorage` permite recarregar a aba;
-  fechar a aba perde essa credencial. Link de convite não contém credenciais.
+  opção **Lembrar meu acesso neste navegador**, desmarcada por padrão, guarda
+  uma cópia local para retomar após fechar, sempre validada no servidor. Convite
+  não contém credenciais. Limites/privacidade: [ONLINE_ACESSO.md](ONLINE_ACESSO.md).
 - WebSocket autenticado notifica novas revisões; o cliente busca o snapshot
   privado via HTTP. Nenhum estado, mão, evento privado ou credencial é difundido.
   Reconexão com espera progressiva de 1 a 15 segundos; consultas HTTP a cada dois
@@ -91,7 +93,7 @@ Base do transporte: [documentação oficial websockets](https://websockets.readt
 
 1. Validar reconexão após queda de rede em aparelhos físicos e revisar a topologia
    de duas portas para hospedagem HTTPS/reverse proxy.
-2. Recuperação de credencial após fechar a aba, expiração/revogação e vagas abandonadas.
+2. Recuperação sem cópia local/perda de aparelho, expiração/revogação e vagas abandonadas.
 3. Backups externos/retenção/migrações, limites de recursos, política de abandono/pausa
    e tratamento de refazer/Mola online. Não há derrota nem expiração por inatividade;
    a partida espera a decisão do participante ausente.
@@ -149,4 +151,6 @@ de processo real. Cópias antigas preservadas; backup externo e retenção pende
 POSTs com host/origem inválidos têm o corpo limitado consumido antes da rejeição:
 evita interrupção de conexão no Windows sem executar o comando. Regressão cobre
 vinte POSTs rejeitados consecutivos, sem alteração de estado.
-Suíte completa: **494 testes Python aprovados, zero falhas**, e seis testes Node aprovados.
+Retomada de acesso: teste Node adicional cobre fechamento/consentimento,
+validação remota, privacidade, pendência sem duplicação e limpeza/substituição.
+Suíte completa: **494 testes Python aprovados, zero falhas**, e sete testes Node aprovados.

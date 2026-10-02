@@ -18,8 +18,10 @@ TLS; não use Wi-Fi público, não abra portas no roteador e não publique este 
    marcam pronto; o anfitrião inicia quando os quatro estiverem prontos.
 
 O link contém só o código da sala. Cada aparelho recebe sua própria credencial,
-mantida na aba. Não compartilhe credenciais nem mude a origem/IP durante a partida:
-`sessionStorage` é isolado por endereço e ainda não há recuperação após fechar aba.
+mantida na aba e, opcionalmente, lembrada no navegador pessoal. Não compartilhe
+credenciais nem mude a origem/IP durante a partida: armazenamento é isolado por
+endereço. Marque **Lembrar meu acesso neste navegador** antes de fechar a aba se
+quiser retomar nesse mesmo perfil/endereço; detalhes: [ONLINE_ACESSO.md](ONLINE_ACESSO.md).
 Salas persistidas não são apagadas ao trocar de modo, mas a credencial não migra
 automaticamente entre `localhost` e o IP da rede.
 

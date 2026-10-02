@@ -23,13 +23,14 @@ mesmo banco entre instâncias. Para testes paralelos, use outro `--storage`.
 
 ## Reiniciar e retomar
 
-1. Mantenha as abas abertas: a identidade continua em `sessionStorage`.
+1. Mantenha as abas abertas ou, em aparelho pessoal, habilite **Lembrar meu acesso
+   neste navegador** antes de fechá-las. Consulte [ONLINE_ACESSO.md](ONLINE_ACESSO.md).
 2. Reinicie o servidor atual usando o mesmo banco/porta.
 3. Os clientes reconectam; recarregar a aba também recupera o jogador e sua visão.
 
 Não existe derrota, expiração de sala ou liberação de vaga por desconexão.
 Se falta o jogador que deve decidir, a partida espera por ele. Pausa explícita,
-abandono e recuperação de credencial após fechar a aba ainda exigem implementação.
+abandono, recuperação sem cópia local e revogação ainda exigem implementação.
 O servidor não consegue recuperar um token original a partir do hash.
 
 **Primeira atualização:** salas abertas por versões anteriores em memória não
@@ -72,7 +73,7 @@ guarde cópias externas privadas antes de hospedagem real.
    `saves/online/rooms-restaurado.sqlite3`.
 3. Inicie com `python -m jessica.web.online_server --storage saves/online/rooms-restaurado.sqlite3`
    e o mesmo endereço/porta usados pelos clientes (inclua `--host IP_PRIVADO` se necessário).
-4. Mantenha as abas/credenciais originais. Verifique sala, jogadores e revisão.
+4. Use as abas ou acessos lembrados originais. Verifique sala, jogadores e revisão.
 
 O arquivo restaurado precisa ser compatível; a validação existente recusa dados
 incompatíveis sem descartá-los. Restaurar volta ao instante da cópia: ações
