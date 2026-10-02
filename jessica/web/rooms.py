@@ -47,6 +47,12 @@ class Room:
     match: dict | None = field(default=None, repr=False)
     commands: dict = field(default_factory=dict, repr=False)
     lock: object = field(default_factory=threading.RLock, repr=False)
+    listeners: set = field(default_factory=set, repr=False)
+
+    def _changed(self):
+        self.revision += 1
+        for notify in tuple(self.listeners):
+            notify(self.revision)
 
     def public(self, member):
         return {"version": 1, "code": self.code, "revision": self.revision,
@@ -68,7 +74,7 @@ class Room:
         token = secrets.token_urlsafe(32)
         member = Member(len(self.members) + 1, name(player_name), hashlib.sha256(token.encode()).hexdigest())
         self.members.append(member)
-        self.revision += 1
+        self._changed()
         return {"room": self.public(member), "credential": token}
 
     def select(self, member, people, hero_id):
@@ -82,7 +88,7 @@ class Room:
         if any(m is not member and m.people == people for m in self.members):
             raise RoomError(409, "Povo já escolhido nesta sala.")
         member.people, member.hero_id = people, hero_id
-        self.revision += 1
+        self._changed()
         return self.public(member)
 
     def mark_ready(self, member, ready):
@@ -90,7 +96,7 @@ class Room:
             raise RoomError(422, "Escolha povo/herói antes de marcar pronto.")
         if member.ready != ready:
             member.ready = ready
-            self.revision += 1
+            self._changed()
         return self.public(member)
 
     def start(self, member):
@@ -101,7 +107,7 @@ class Room:
         rows = [{"name": m.name, "people": m.people, "hero_id": m.hero_id} for m in self.members]
         state = server._new_state(self.seed, rows)
         self.match = {"state": state, "events": session.public_events(state)}
-        self.revision += 1
+        self._changed()
         return self.public(member)
 
     def snapshot(self, member):
@@ -145,7 +151,7 @@ class Room:
             result["events"] = session.changes(before, state, action) + result["events"]
         self.match["state"] = state
         self.match["events"].extend(result["events"])
-        self.revision += 1
+        self._changed()
         response = {**result, "revision": self.revision, "pending": bool(state.web_reaction),
                     "events": server._visible_events(result["events"], member.player_id)}
         self.commands[key] = {"fingerprint": fingerprint, "action": action, "response": deepcopy(response)}

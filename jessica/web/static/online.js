@@ -3,6 +3,7 @@ window.JessicaOnline = (() => {
   const node = id => document.getElementById(id);
   let session = null, catalog = null, room = null, revision = -1, busy = false, timer = null, disconnected = false;
   let cachedSnapshot = null, operationBusy = false;
+  let socket = null, socketReady = false, reconnectTimer = null, reconnectDelay = 1000, stopped = false, needsSync = false;
   try { session = JSON.parse(sessionStorage.getItem(KEY)); } catch (_) {}
   if (!session || !/^[A-Z2-9]{8}$/.test(session.code) || typeof session.credential !== "string") session = null;
   function store() {
@@ -37,7 +38,7 @@ window.JessicaOnline = (() => {
       if (error.status) { delete session.pending; store(); }
       else node("onlineMessage").textContent = "Resultado não confirmado. Reenvie o comando pendente; ele não será executado duas vezes.";
       throw error;
-    } finally { busy = false; }
+    } finally { busy = false; syncIfNeeded(); }
   }
   async function requestMatch(url, options) {
     if (!session) throw new Error("Entre em uma sala primeiro.");
@@ -54,7 +55,7 @@ window.JessicaOnline = (() => {
     if (result.revision < revision && cachedSnapshot) return cachedSnapshot;
     revision = result.revision;
     cachedSnapshot = result;
-    node("onlineConnection").textContent = `Conectado · revisão ${revision} · você controla J${result.player_id}`;
+    node("onlineConnection").textContent = `Conectado · ${socketReady ? "tempo real" : "HTTP"} · revisão ${revision} · você controla J${result.player_id}`;
     return result;
   }
   function heroOptions(selected = "") {
@@ -103,6 +104,7 @@ window.JessicaOnline = (() => {
   }
   async function poll() {
     if (!session || busy) return;
+    needsSync = false;
     busy = true;
     try {
       const next = await request(path());
@@ -112,7 +114,7 @@ window.JessicaOnline = (() => {
         await refresh();
       }
       disconnected = false;
-      if (next.status === "lobby") node("onlineConnection").textContent = `Conectado · ${next.players.length}/4 participantes`;
+      if (next.status === "lobby") node("onlineConnection").textContent = `Conectado · ${socketReady ? "tempo real" : "HTTP"} · ${next.players.length}/4 participantes`;
     } catch (error) {
       disconnected = true;
       node("onlineConnection").textContent = "Conexão interrompida — tentando retornar, sem trocar de jogador.";
@@ -120,8 +122,44 @@ window.JessicaOnline = (() => {
         node("game").hidden = true;
         node("onlineMessage").textContent = "Sessão indisponível. Este protótipo ainda perde salas ao reiniciar o servidor.";
         clearInterval(timer);
+        stopUpdates();
       }
-    } finally { busy = false; }
+    } finally { busy = false; syncIfNeeded(); }
+  }
+  function syncIfNeeded() {
+    if (needsSync && !busy && !document.hidden && !document.querySelector("dialog[open]")) void poll();
+  }
+  function stopUpdates() {
+    stopped = true; socketReady = false;
+    clearTimeout(reconnectTimer);
+    if (socket) socket.close();
+    socket = null;
+  }
+  function connectUpdates() {
+    if (!session || stopped || socket || typeof WebSocket === "undefined") return;
+    const url = new URL(location.href); url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    url.port = String(Number(url.port || (url.protocol === "wss:" ? 443 : 80)) + 1); url.pathname = "/updates"; url.search = ""; url.hash = "";
+    const connection = new WebSocket(url.href); socket = connection;
+    connection.onopen = () => { if (session && !stopped) connection.send(JSON.stringify({version:1, code:session.code, credential:session.credential})); else connection.close(); };
+    connection.onmessage = event => {
+      if (socket !== connection || stopped) return;
+      let message; try { message = JSON.parse(event.data); } catch (_) { connection.close(); return; }
+      if (message.type !== "room_changed" || message.version !== 1 || !Number.isSafeInteger(message.revision) || message.revision < 0) {
+        connection.close(); return;
+      }
+      const wasReady = socketReady; socketReady = true; reconnectDelay = 1000;
+      if (!wasReady) disconnected = true;
+      if (!wasReady || message.revision > (room?.revision ?? -1)) { needsSync = true; syncIfNeeded(); }
+    };
+    connection.onclose = event => {
+      if (socket !== connection) return;
+      socket = null; socketReady = false;
+      node("onlineConnection").textContent = event.code === 1008 ? `Canal em tempo real recusado: ${event.reason || "protocolo inválido"}. HTTP continua ativo.` : "Tempo real interrompido — HTTP continua ativo; reconectando sem trocar de jogador.";
+      if (!stopped && session && event.code !== 1008) {
+        reconnectTimer = setTimeout(connectUpdates, reconnectDelay);
+        reconnectDelay = Math.min(15000, reconnectDelay * 2);
+      }
+    };
   }
   async function operation(resource, body) {
     if (operationBusy) return;
@@ -135,6 +173,7 @@ window.JessicaOnline = (() => {
         session = {code:result.room.code, credential:result.credential}; store(); renderRoom(result.room);
       } else renderRoom(await request(path(resource), body));
       await poll();
+      connectUpdates();
     } catch (error) { node("onlineMessage").textContent = error.message; }
     finally {
       operationBusy = false;
@@ -167,9 +206,12 @@ window.JessicaOnline = (() => {
     const invitation = new URL(location.href).searchParams.get("room");
     if (invitation && /^[A-Z2-9]{8}$/.test(invitation)) node("onlineCode").value = invitation;
     node("onlineConnection").textContent = "Crie uma sala ou entre pelo código de convite.";
-    store(); await poll();
-    timer = setInterval(() => { if (!document.hidden && !document.querySelector("dialog[open]")) void poll(); }, 2000);
-    window.addEventListener("pagehide", () => clearInterval(timer));
+    store(); await poll(); connectUpdates();
+    const startTimer = () => { timer = setInterval(() => { if (!document.hidden && !document.querySelector("dialog[open]") && (!socketReady || needsSync || disconnected)) void poll(); }, 2000); };
+    startTimer();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) { needsSync = true; syncIfNeeded(); connectUpdates(); } });
+    window.addEventListener("pagehide", () => { clearInterval(timer); stopUpdates(); });
+    window.addEventListener("pageshow", event => { if (event.persisted) { stopped = false; needsSync = true; startTimer(); syncIfNeeded(); connectUpdates(); } });
   }
   return {boot, snapshot, requestMatch};
 })();

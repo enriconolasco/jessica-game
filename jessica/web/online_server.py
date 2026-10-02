@@ -99,9 +99,46 @@ class Handler(server.Handler):
 
 
 def main():
-    address = ("127.0.0.1", 8767)
-    print(f"Jéssica online API (protótipo): http://{address[0]}:{address[1]}")
-    server.ThreadingHTTPServer(address, Handler).serve_forever()
+    import argparse
+    import asyncio
+    import threading
+    from .notifications import serve_notifications
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=8767, help="Porta HTTP; WebSocket usa a próxima porta.")
+    port = parser.parse_args().port
+    if not 1 <= port <= 65534:
+        parser.error("Use uma porta entre 1 e 65534.")
+    address = ("127.0.0.1", port)
+
+    class OnlineHTTPServer(server.ThreadingHTTPServer):
+        allow_reuse_address = False
+
+    try:
+        httpd = OnlineHTTPServer(address, Handler)
+    except OSError:
+        parser.error("Porta HTTP indisponível. Mantenha o servidor atual ou escolha outra com --port.")
+
+    async def run():
+        async with serve_notifications(ROOMS, "127.0.0.1", port + 1,
+                                       [f"http://127.0.0.1:{port}", f"http://localhost:{port}"]):
+            print(f"Jéssica online (protótipo): http://{address[0]}:{address[1]} · WebSocket {port + 1}", flush=True)
+            thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+            thread.start()
+            try:
+                await asyncio.Future()
+            finally:
+                httpd.shutdown()
+                thread.join()
+
+    try:
+        asyncio.run(run())
+    except KeyboardInterrupt:
+        pass
+    except OSError:
+        parser.error("Porta WebSocket indisponível. Escolha outro par de portas com --port.")
+    finally:
+        httpd.server_close()
 
 
 if __name__ == "__main__":

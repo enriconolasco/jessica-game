@@ -16,18 +16,25 @@ let releaseLobby, lobbyPosts=0;
 const room={code:'ABCDEFG2',you:1,host_id:1,revision:10,status:'playing',players:[{player_id:1,name:'Ana',people:'humanos',hero_id:'miyamoto',ready:true},{player_id:2,name:'Beto',people:'orcs',hero_id:'arken',ready:true}]};
 const catalog={peoples:[{id:'humanos',label:'Humanos',heroes:[{id:'miyamoto',name:'Miyamoto',description:'habilidade'}],passive:'passiva'},{id:'orcs',label:'Orcs',heroes:[{id:'arken',name:'Arken'}]}],heroes:[{id:'miyamoto',name:'Miyamoto'},{id:'arken',name:'Arken'}]};
 const action={type:'end_turn',version:1,player_id:1,params:{}};
-function client(){
+function client(withSocket=false){
   const nodes=new Map();
   const node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);};
-  let timer, cleared=false;
+  let timer, cleared=false, reconnect, dialog=false, httpCalls=0;
+  const sockets=[], listeners={};
+  class FakeSocket {
+    constructor(url){this.url=url;sockets.push(this);}
+    send(text){this.sent=JSON.parse(text);}
+    close(){this.onclose?.({code:1000});}
+  }
   const context=vm.createContext({window:{addEventListener(){}}, URL, Uint8Array, crypto:webcrypto,
     sessionStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)},
-    document:{getElementById:node,createElement:()=>new Element(),querySelector:()=>null,hidden:false},
+    document:{getElementById:node,createElement:()=>new Element(),querySelector:()=>dialog?{}:null,hidden:false,addEventListener:(name,fn)=>{listeners[name]=fn;}},
     location:{href:'http://localhost:8767/?room=ABCDEFG2'},Option:function(text,value){this.textContent=text;this.value=value;},
-    setInterval:fn=>{timer=fn;return 1;},clearInterval:()=>{cleared=true;},confirm:()=>false,
+    setInterval:fn=>{timer=fn;return 1;},clearInterval:()=>{cleared=true;},setTimeout:fn=>{reconnect=fn;return 2;},clearTimeout(){},confirm:()=>false,
     matchId:null,playerId:9,currentView:null,pendingPlayerId:null,$:node,
     api:async()=>{throw new Error('Local endpoint must not be used');},showHelp(){},
     fetch:async(path,options)=>{
+      httpCalls++;
       assert.equal(options.headers.Authorization,'Bearer own-token');
       assert.ok(!path.includes('player_id')&&!path.includes('own-token'));
       let result;
@@ -43,11 +50,13 @@ function client(){
       return {ok:true,status:200,json:async()=>JSON.parse(JSON.stringify(result))};
     }
   });
+  if(withSocket)context.WebSocket=FakeSocket;
   vm.runInContext(source,context);
   context.ONLINE=context.window.JessicaOnline;
   const begin=app.indexOf('async function refresh('),end=app.indexOf('  rememberPublicUnitNames(view, events);',begin);
   vm.runInContext(app.slice(begin,end)+'return {view,actions,events,playerId};\n}',context);
-  return {context,node,poll:()=>timer(),cleared:()=>cleared};
+  return {context,node,poll:()=>timer(),cleared:()=>cleared,sockets, reconnect:()=>reconnect(), calls:()=>httpCalls,
+    setDialog:value=>{dialog=value;},visible:()=>listeners.visibilitychange()};
 }
 (async()=>{
   const first=client();await first.context.ONLINE.boot(catalog);
@@ -72,5 +81,17 @@ function client(){
   assert.equal(reloaded.node('onlineSelect').disabled,true);
   await reloaded.node('onlineReady').onclick();assert.equal(lobbyPosts,1);
   releaseLobby();await updating;assert.equal(reloaded.node('onlineReady').disabled,false);
+  const live=client(true);await live.context.ONLINE.boot(catalog);
+  const ws=live.sockets[0];assert.equal(ws.url,'ws://localhost:8768/updates');ws.onopen();
+  assert.deepEqual(ws.sent,{version:1,code:'ABCDEFG2',credential:'own-token'});
+  ws.onmessage({data:JSON.stringify({type:'room_changed',version:1,revision:gameRevision})});
+  await new Promise(setImmediate);
+  const calls=live.calls();live.poll();assert.equal(live.calls(),calls);
+  live.setDialog(true);gameRevision++;
+  ws.onmessage({data:JSON.stringify({type:'room_changed',version:1,revision:gameRevision})});
+  assert.equal(live.calls(),calls);live.setDialog(false);live.poll();await new Promise(setImmediate);
+  assert.ok(live.calls()>calls);
+  ws.onclose({code:1006});live.reconnect();
+  assert.equal(live.sockets.length,2);live.sockets[1].onopen();assert.deepEqual(live.sockets[1].sent,ws.sent);
   console.log('Online UI: identidade fixa, sem handoff, convite sem credencial, retorno após reload, reenvio do mesmo comando e isolamento de rotas locais verificados.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -35,8 +35,11 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
 - Cliente completo reutilizado sem handoff: cada aba mantém sua identidade,
   mesmo fora da vez. Credencial em `sessionStorage` permite recarregar a aba;
   fechar a aba perde essa credencial. Link de convite não contém credenciais.
-- Atualização provisória por HTTP a cada dois segundos. Comando sem resposta
-  permanece pendente e pode ser reenviado com o mesmo ID, sem duplicação.
+- WebSocket autenticado notifica novas revisões; o cliente busca o snapshot
+  privado via HTTP. Nenhum estado, mão, evento privado ou credencial é difundido.
+  Reconexão com espera progressiva de 1 a 15 segundos; consultas HTTP a cada dois
+  segundos ficam como fallback enquanto o canal estiver indisponível.
+  Comando sem resposta permanece pendente e é reenviado com o mesmo ID, sem duplicação.
 - Ação com revisão esperada e ID de comando. Lock por sala; repetição idêntica
   retorna o mesmo resultado; reutilização do ID para outra ação é rejeitada.
 - Execução em cópia transacional do estado: erro não altera estado, RNG ou revisão.
@@ -47,6 +50,11 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   Na branch online, `JOGAR_ONLINE.cmd` inicia esse servidor; abra quatro abas
   independentes em `http://127.0.0.1:8767` e entre pelo mesmo código.
   Isso ainda não permite acesso por outros aparelhos ou pela internet.
+  A dependência opcional `requirements-online.txt` é instalada pelo launcher
+  somente no modo online. HTTP usa 8767; WebSocket usa 8768, ambos em localhost.
+  Para testar sem interromper um servidor existente:
+  `python -m jessica.web.online_server --port 8877` (WebSocket 8878).
+  Porta ocupada é rejeitada; não iniciar outro servidor sobre uma partida ativa.
 
 Contrato de transporte v1: `POST /rooms` (`name`),
 `POST /rooms/{code}/join` (`name`), demais rotas com `Authorization: Bearer ...`:
@@ -57,9 +65,19 @@ as do core; revisão de sala é um contador independente.
 `POST .../dream-preview` valida a identidade/ação legal e reutiliza a prévia
 de Sonho Lúcido do motor, sem alterar estado ou RNG.
 
+Transporte de notificações v1: `ws://127.0.0.1:8768/updates`. Autenticação na
+primeira mensagem: `{version: 1, code, credential}`; nunca na URL. Origem HTTP
+deve ser `http://127.0.0.1:8767` ou `http://localhost:8767`. Após autenticar,
+envia a revisão atual e posteriores: `{type: "room_changed", version: 1, revision}`.
+Ações continuam exclusivamente via HTTP. Filas retêm só a revisão mais recente;
+limites: 4 KB por mensagem, cinco segundos para autenticar, 16 canais por sala.
+Ping detecta interrupções; desconexão não modifica jogadores ou regras.
+Base do transporte: [documentação oficial websockets](https://websockets.readthedocs.io/en/stable/reference/asyncio/server.html).
+
 ## Ainda não concluído
 
-1. WebSocket e reconexão do transporte; HTTP periódico é apenas provisório.
+1. Validar reconexão após queda de rede em aparelhos físicos e revisar a topologia
+   de duas portas para hospedagem HTTPS/reverse proxy.
 2. Recuperação de credencial após fechar a aba, expiração/revogação e vagas abandonadas.
 3. Persistência transacional e recuperação após reiniciar, limites de recursos,
    política de abandono/pausa e tratamento de refazer/Mola online.
@@ -84,13 +102,26 @@ Inclui raiz online com scripts compartilhados e prévia privada de Sonho Lúcido
 
 `node tests/web_online_ui.cjs`: identidade fixa, isolamento do transporte,
 retorno após recarregar, reenvio após perda de resposta e bloqueio de cliques
-concorrentes no lobby. Os cinco testes Node anteriores também passam.
+concorrentes no lobby. Também cobre notificação WebSocket, ausência de consultas
+periódicas com canal ativo, atualização adiada durante escolhas e reconexão
+mantendo a credencial. Os cinco testes Node anteriores também passam.
+
+`python -B tests/test_online_notifications.py`: cinco testes com sockets reais:
+quatro sessões notificadas, isolamento entre salas, ações rejeitadas/repetidas
+sem nova revisão, reconexão, fechamento/liberação de assinaturas, rejeição de
+credenciais/protocolo/origem inválidos e proibição de ações no canal.
 
 Teste no navegador com quatro abas: convite, escolhas/pronto, início, coleta,
 troca de turno, ações apenas na aba autorizada e recarregamento mantendo J2.
 Sem erros de console na aba verificada. A emulação de largura não foi aplicada
 pelo navegador disponível; validação móvel permanece pendente.
 
-São testes de API em localhost, não playtest em quatro aparelhos, WebSocket,
+WebSocket também validado no navegador, em servidor isolado nas portas 8877/8878:
+duas sessões, escolha pública sincronizada entre abas, indicador de tempo real,
+recarregamento mantendo identidade e restabelecendo o canal; sem erros de console.
+O teste inicial em 8767 alcançava um servidor antigo ainda aberto. Nenhuma sessão
+existente foi encerrada; o fallback HTTP funcionou durante essa divergência.
+
+São testes de API/WebSocket em localhost, não playtest em quatro aparelhos,
 auditoria de segurança externa ou validação de hospedagem.
-Suíte completa após este corte: **463 testes Python aprovados, zero falhas**.
+Suíte completa após este corte: **468 testes Python aprovados, zero falhas**.

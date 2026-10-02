@@ -27,6 +27,11 @@ pause
 exit /b 1
 
 :online
+".venv\Scripts\python.exe" -c "import websockets; assert websockets.__version__.split('.')[0] == '17'" >nul 2>&1
+if errorlevel 1 (
+  ".venv\Scripts\python.exe" -m pip install -r requirements-online.txt
+  if errorlevel 1 goto erro
+)
 echo Online experimental: abra http://127.0.0.1:8767 em quatro abas.
 echo Salas ainda ficam em memoria. Nao reinicie o servidor durante a partida.
 echo Para encerrar, pressione Ctrl+C.
