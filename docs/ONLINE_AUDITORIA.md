@@ -30,6 +30,13 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   nem enviada aos participantes. Estado/RNG determinísticos continuam no motor;
   previsibilidade a partir dos resultados públicos requer auditoria antes da internet.
 - Snapshot atômico com a PlayerView, ações legais e eventos da sessão autenticada.
+- Lobby no navegador: criar/entrar por convite, consultar regras, escolher povo e
+  herói, confirmar presença e iniciar. Botões aguardam a resposta do servidor.
+- Cliente completo reutilizado sem handoff: cada aba mantém sua identidade,
+  mesmo fora da vez. Credencial em `sessionStorage` permite recarregar a aba;
+  fechar a aba perde essa credencial. Link de convite não contém credenciais.
+- Atualização provisória por HTTP a cada dois segundos. Comando sem resposta
+  permanece pendente e pode ser reenviado com o mesmo ID, sem duplicação.
 - Ação com revisão esperada e ID de comando. Lock por sala; repetição idêntica
   retorna o mesmo resultado; reutilização do ID para outra ação é rejeitada.
 - Execução em cópia transacional do estado: erro não altera estado, RNG ou revisão.
@@ -37,6 +44,9 @@ Compartilha catálogo, assets, inicialização e a porta do mesmo motor.
   simplificada do lobby. Jogadores fora da vez recebem somente suas ações legais.
 - Hotseat continua em `python -m jessica.web.server`, porta 8765. API experimental:
   `python -m jessica.web.online_server`, somente localhost, porta 8767.
+  Na branch online, `JOGAR_ONLINE.cmd` inicia esse servidor; abra quatro abas
+  independentes em `http://127.0.0.1:8767` e entre pelo mesmo código.
+  Isso ainda não permite acesso por outros aparelhos ou pela internet.
 
 Contrato de transporte v1: `POST /rooms` (`name`),
 `POST /rooms/{code}/join` (`name`), demais rotas com `Authorization: Bearer ...`:
@@ -44,12 +54,13 @@ Contrato de transporte v1: `POST /rooms` (`name`),
 (`ready`), `POST .../start` (`{}`), `GET .../snapshot`, `POST .../actions`
 (`command_id`, `revision`, `action`). Versões de ações/eventos/saves permanecem
 as do core; revisão de sala é um contador independente.
+`POST .../dream-preview` valida a identidade/ação legal e reutiliza a prévia
+de Sonho Lúcido do motor, sem alterar estado ou RNG.
 
 ## Ainda não concluído
 
-1. Interface de lobby e associação da sessão ao cliente web completo, sem handoff.
-   O protótipo atual é de API; quatro clientes HTTP não substituem quatro aparelhos.
-2. WebSocket, retomada da credencial após recarregar e política de expiração/revogação.
+1. WebSocket e reconexão do transporte; HTTP periódico é apenas provisório.
+2. Recuperação de credencial após fechar a aba, expiração/revogação e vagas abandonadas.
 3. Persistência transacional e recuperação após reiniciar, limites de recursos,
    política de abandono/pausa e tratamento de refazer/Mola online.
 4. Partida completa em Wi-Fi e aparelhos físicos, depois hospedagem privada,
@@ -61,7 +72,7 @@ seleção do setup presencial não foi transportada como janela online neste cor
 
 ## Verificações executadas
 
-`python -B tests/test_online_rooms.py`: sete cenários HTTP aprovados, cobrindo
+`python -B tests/test_online_rooms.py`: nove cenários HTTP aprovados, cobrindo
 quatro credenciais, exclusividade de povo, Ent desabilitado, início pelo anfitrião,
 visões/eventos privados, credencial de outra sala, personificação, fora da vez,
 parâmetros inválidos, revisão antiga, duas requisições simultâneas iguais,
@@ -69,7 +80,17 @@ isolamento das rotas administrativas, reconexão por credencial e ciclo Dia/Noit
 Inclui Armadura: somente a sessão do defensor resolve a interrupção; mão e eventos
 privados do defensor não chegam ao atacante. O teste usa seed controlada somente
 via fixture do servidor; a API rejeita seed enviada pelo cliente.
+Inclui raiz online com scripts compartilhados e prévia privada de Sonho Lúcido.
+
+`node tests/web_online_ui.cjs`: identidade fixa, isolamento do transporte,
+retorno após recarregar, reenvio após perda de resposta e bloqueio de cliques
+concorrentes no lobby. Os cinco testes Node anteriores também passam.
+
+Teste no navegador com quatro abas: convite, escolhas/pronto, início, coleta,
+troca de turno, ações apenas na aba autorizada e recarregamento mantendo J2.
+Sem erros de console na aba verificada. A emulação de largura não foi aplicada
+pelo navegador disponível; validação móvel permanece pendente.
 
 São testes de API em localhost, não playtest em quatro aparelhos, WebSocket,
 auditoria de segurança externa ou validação de hospedagem.
-Suíte completa após este corte: **461 testes Python aprovados, zero falhas**.
+Suíte completa após este corte: **463 testes Python aprovados, zero falhas**.

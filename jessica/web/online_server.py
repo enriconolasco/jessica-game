@@ -19,8 +19,17 @@ class Handler(server.Handler):
     def do_GET(self):
         parts = self._parts()
         if not parts:
-            return self._json(200, {"mode": "online-api-prototype", "version": 1,
-                "message": "API de salas em teste; interface online ainda não disponível."})
+            page = server.STATIC.joinpath("index.html").read_text(encoding="utf-8")
+            lobby = server.STATIC.joinpath("online_lobby.html").read_text(encoding="utf-8")
+            page = page.replace("<main>", "<main>" + lobby).replace("<span>Partida local</span>", "<span>Sala online · experimental</span>")
+            page = page.replace('<section id="start" class="card">', '<section id="start" class="card" hidden>')
+            page = page.replace('<script src="/static/presentation.js">', '<script src="/static/online.js"></script><script src="/static/presentation.js">')
+            payload = page.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            return self.wfile.write(payload)
         if parts == ["catalog"] or (parts and parts[0] in ("assets", "static")):
             return super().do_GET()
         try:
@@ -72,6 +81,14 @@ class Handler(server.Handler):
                 elif operation == "actions":
                     result = room.apply(member, body)
                     return self._json(200 if result["success"] else 422, result)
+                elif operation == "dream-preview" and set(body) == {"player_id", "choice"}:
+                    from ..core.headless import legal_actions
+                    from ..core.interaction_actions import dream_preview
+                    if type(body["player_id"]) is not int or body["player_id"] != member.player_id:
+                        raise RoomError(403, "Não é permitido consultar escolhas de outro jogador.")
+                    if not room.match or not any(a["type"] == "dream_multi" for a in legal_actions(room.match["state"], member.player_id)):
+                        raise RoomError(422, "Sonho Lúcido indisponível.")
+                    result = dream_preview(room.match["state"], member.player_id, body["choice"])
                 else:
                     raise RoomError(422, "Operação ou parâmetros inválidos.")
                 return self._json(200, result)

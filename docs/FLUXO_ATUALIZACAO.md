@@ -19,7 +19,7 @@ cliente web local.
 
 1. Partir da `main` atual; alterar regras no core e apresentação no adaptador correto.
 2. Adicionar regressão do bug e executar os testes afetados.
-3. Antes de integrar/publicar: `python -B tests/run_all.py`, os cinco
+3. Antes de integrar/publicar: `python -B tests/run_all.py`, todos os
    `node tests/web_*_ui.cjs` e `git diff --check`.
 4. Para regras ou fluxo, executar também os testes diferenciais terminal/headless.
    Se houver uma instalação de referência congelada, usar

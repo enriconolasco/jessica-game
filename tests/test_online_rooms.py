@@ -212,6 +212,38 @@ def test_armor_interrupt_belongs_to_defender_session():
         assert request(base, f"/rooms/{code}/actions", defense, tokens[1])[0] == 200
 
 
+def test_online_page_uses_shared_client_but_not_local_setup():
+    with http() as base:
+        with urlopen(base + "/?room=ABCDEFG2") as response:
+            html = response.read().decode("utf-8")
+        assert 'id="onlineLobby"' in html and '/static/online.js' in html
+        assert 'id="start" class="card" hidden' in html
+        assert html.index('/static/online.js') < html.index('/static/app.js')
+        assert '/static/presentation.js' in html
+        with urlopen(base + "/static/online.js") as response:
+            assert response.headers.get_content_type() == "text/javascript"
+        local_html = server.STATIC.joinpath("index.html").read_text(encoding="utf-8")
+        assert '/static/online.js' not in local_html
+
+
+def test_dream_preview_authentication_turn_and_read_only_state():
+    from jessica.core.models import Hero
+    with http() as base:
+        code, tokens, room = started(base)
+        state = room.match["state"]
+        player = state.players[0]
+        player.people = "fadas"
+        player.units = [Hero(id="luna", owner_id=1, hero_id="luna", house="city_1", life=2, life_max=2)]
+        player.hand = ["Q_H"]
+        before = state_to_dict(state)
+        body = {"player_id":1, "choice":{"flip_cards":[], "artifact_choices":[]}}
+        route = f"/rooms/{code}/dream-preview"
+        assert request(base, route, body, tokens[1])[0] == 403
+        status, result = request(base, route, body, tokens[0])
+        assert status == 200 and result["options"]
+        assert state_to_dict(state) == before
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

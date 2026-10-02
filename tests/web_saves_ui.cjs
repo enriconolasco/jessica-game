@@ -14,7 +14,7 @@ const entries = [{save_id:'aaaaaaaaaaaa',name:'Cópia',kind:'manual',turn:2,phas
   {save_id:'cccccccccccc',name:'Anterior',kind:'recovery',turn:2,phase:'night',updated_at:'2026-09-30T12:30:00Z'},
   {save_id:'dddddddddddd',name:'Save inválido',invalid:true}];
 let entered=null, imported=null;
-const context = vm.createContext({$:id=>roots.get(id), Date, JSON,
+const context = vm.createContext({ONLINE:null, $:id=>roots.get(id), Date, JSON,
   Option:function(text,value){this.textContent=text;this.value=value;},
   document:{createElement:tag=>new Element(tag)},
   api:async(route,options)=> { if(route==='/saves') return entries; imported=JSON.parse(options.body); return {match_id:'imported',warnings:['Estado preservado.','Histórico começa aqui.']}; },

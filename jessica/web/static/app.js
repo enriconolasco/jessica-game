@@ -2,6 +2,7 @@ let matchId = null;
 let playerId = 1;
 let catalog = null;
 let pendingPlayerId = null;
+const ONLINE = typeof window !== "undefined" ? window.JessicaOnline : null;
 const $ = id => document.getElementById(id);
 const ICON_ROOT = "/assets/visual-direction-v0.2/icons/";
 const HERO_PORTRAIT_ROOT = "/assets/visual-direction-v0.2/hero-portraits/";
@@ -29,6 +30,7 @@ let currentView = null;
 const publicUnitNames = new Map();
 
 async function api(path, options = {}) {
+  if (ONLINE && path.startsWith("/matches")) return ONLINE.requestMatch(path, options);
   const response = await fetch(path, {headers:{"Content-Type":"application/json"}, ...options});
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || data.error || "Falha");
@@ -536,22 +538,32 @@ function renderEvents(events) {
   if (!visible.length) root.textContent = "Nenhum acontecimento.";
 }
 async function refresh(allowPlayerSwitch = false) {
-  const view = await api(`/matches/${matchId}/view?player_id=${playerId}`);
-  if (!allowPlayerSwitch && view.active_player_id && view.active_player_id !== playerId) {
-    pendingPlayerId = view.active_player_id;
-    const next = view.players.find(player => player.id === pendingPlayerId);
-    $("handoffText").textContent = `Entregue o aparelho a ${next?.name || `Jogador ${pendingPlayerId}`}. A área privada permanece oculta.`;
-    $("handoff").hidden = false;
-    $("game").inert = true;
-    $("revealPlayer").focus();
-    return;
+  let view, actions, events;
+  if (ONLINE) {
+    const snapshot = await ONLINE.snapshot();
+    ({view, actions, events} = snapshot);
+    playerId = snapshot.player_id;
+    $("handoff").hidden = true;
+    $("game").inert = false;
+  } else {
+    view = await api(`/matches/${matchId}/view?player_id=${playerId}`);
+    if (!allowPlayerSwitch && view.active_player_id && view.active_player_id !== playerId) {
+      pendingPlayerId = view.active_player_id;
+      const next = view.players.find(player => player.id === pendingPlayerId);
+      $("handoffText").textContent = `Entregue o aparelho a ${next?.name || `Jogador ${pendingPlayerId}`}. A área privada permanece oculta.`;
+      $("handoff").hidden = false;
+      $("game").inert = true;
+      $("revealPlayer").focus();
+      return;
+    }
+    playerId = view.active_player_id || playerId;
+    [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
   }
-  playerId = view.active_player_id || playerId;
   currentView = view;
-  const [actions, events] = await Promise.all([api(`/matches/${matchId}/actions?player_id=${playerId}`), api(`/matches/${matchId}/events?player_id=${playerId}`)]);
   rememberPublicUnitNames(view, events);
   const active = view.players.find(p => p.id === view.active_player_id);
   $("status").textContent = `Turno ${view.turn} · ${view.phase === "day" ? "Dia" : "Noite"} · Jogando: ${active?.name || "—"} · ${curunaLabel(view, peopleName)}`;
+  if (ONLINE) $("status").textContent += ` · Você: J${playerId}`;
   if (view.self.armor_reaction) $("status").textContent += " · Armadura: resolução aguardando pagamento";
   if (view.game_over) {
     const winner = view.players.find(p => p.id === view.winner_id);
@@ -620,6 +632,7 @@ async function act(action) {
   } catch (error) {
     $("message").textContent = error.message;
     controls.forEach(([button, disabled]) => button.disabled = disabled);
+    if (ONLINE) await refresh().catch(() => {});
   }
 }
 async function enter(id) { publicUnitNames.clear(); matchId=id; $("start").hidden=true; $("game").hidden=false; await refresh(); }
@@ -814,6 +827,7 @@ function createGameplayControls() {
   const mapHint = document.createElement("p"); mapHint.className = "hint";
   mapHint.textContent = "Ícones: tropas 32px, heróis 64px. Toque, foque ou passe o mouse para inspecionar. Arraste o mapa nas telas estreitas; cada casa tem sua própria rolagem de unidades. Atalhos aparecem ao passar o mouse nos botões.";
   viewport.before(mapHint);
+  if (!ONLINE) {
   const order = document.createElement("label"); order.textContent = "Ordem inicial ";
   const select = document.createElement("select"); select.id = "orderMode";
   select.append(new Option("D20 — como no terminal", "d20"), new Option("Fixa J1 → J2 → J3 → J4", "fixed"));
@@ -827,11 +841,13 @@ function createGameplayControls() {
     } catch (error) { preview.textContent = error.message; }
   };
   $("seed").onchange = updateOrder; select.onchange = updateOrder; updateOrder();
+  }
   $("closeHelp").onclick = () => $("helpDialog").close();
   const saveLabel = document.createElement("label"); saveLabel.textContent = "Nome do save ";
   const saveName = document.createElement("input"); saveName.id = "saveName";
   saveName.maxLength = 60; saveName.value = "Partida local"; saveLabel.appendChild(saveName);
   toolbar.appendChild(saveLabel);
+  if (ONLINE) [$("save"), $("undo"), $("mola"), $("newGame"), saveLabel].forEach(node => { node.hidden = true; });
 }
 $("create").onclick = async () => {
   try {
@@ -876,6 +892,7 @@ async function refreshSaves() {
 }
 
 function createSaveControls() {
+  if (ONLINE) return;
   const filterLabel = document.createElement("label"); filterLabel.textContent = "Mostrar saves ";
   const filter = document.createElement("select"); filter.id = "saveFilter";
   filter.append(new Option("Partidas e cópias", "main"), new Option("Recuperações anteriores", "recovery"), new Option("Todos", "all"));
@@ -949,4 +966,8 @@ $("revealPlayer").onclick = async () => {
 createSaveControls();
 createGameplayControls();
 installShortcuts();
-Promise.all([api("/catalog"), loadHeroPortraits()]).then(async ([data]) => { catalog = data; renderSetup(); await refreshSaves(); }).catch(error => { $("setupMessage").textContent = error.message; });
+Promise.all([api("/catalog"), loadHeroPortraits()]).then(async ([data]) => {
+  catalog = data;
+  if (ONLINE) await ONLINE.boot(catalog);
+  else { renderSetup(); await refreshSaves(); }
+}).catch(error => { (ONLINE ? $("onlineMessage") : $("setupMessage")).textContent = error.message; });

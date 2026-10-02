@@ -11,6 +11,7 @@ if errorlevel 1 (
   if errorlevel 1 goto erro
 )
 if /i "%~1"=="web" goto web
+if /i "%~1"=="online" goto online
 ".venv\Scripts\python.exe" -m jessica.main
 if errorlevel 1 goto erro
 exit /b 0
@@ -24,3 +25,11 @@ exit /b 0
 echo Nao foi possivel iniciar. Confira o Python instalado e a mensagem acima.
 pause
 exit /b 1
+
+:online
+echo Online experimental: abra http://127.0.0.1:8767 em quatro abas.
+echo Salas ainda ficam em memoria. Nao reinicie o servidor durante a partida.
+echo Para encerrar, pressione Ctrl+C.
+".venv\Scripts\python.exe" -m jessica.web.online_server
+if errorlevel 1 goto erro
+exit /b 0
