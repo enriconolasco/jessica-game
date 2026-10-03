@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .state import city_houses
 
 from copy import deepcopy
 from collections import Counter
@@ -140,7 +141,7 @@ def legal_actions(state: GameState, player_id: int) -> list[dict]:
     for unit in player.units:
         if not unit.is_alive():
             continue
-        destinations = [CENTER] if unit.house.startswith("city_") else list(CITY_HOUSES)
+        destinations = [CENTER] if unit.house.startswith("city_") else list(city_houses(state))
         for destination in destinations:
             candidate = _action("move_unit", player_id, unit_id=unit.id,
                                 destination=destination)

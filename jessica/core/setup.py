@@ -54,6 +54,7 @@ def run_setup(
     city_life_max: int = DEFAULT_CITY_LIFE_MAX,
     gold_start: int = DEFAULT_STARTING_GOLD,
     magic_start: int = DEFAULT_STARTING_MAGIC,
+    initial_conditions: dict | None = None,
 ) -> tuple[GameState, SetupResult]:
     rng = make_rng(seed)
     state = create_empty_state(
@@ -138,10 +139,13 @@ def run_setup(
 
     state.curuna_id = order[0]
     # Ordem de jogo fixa: anti-horario no mapa (baixo -> direita -> cima -> esquerda)
-    state.turn_order = [1, 2, 3, 4]
+    state.turn_order = list(range(1, num_players + 1))
     log(state, f"Ordem de jogo (anti-horaria): {state.turn_order}")
     log(state, f"Curuna inicial: J{state.curuna_id}")
 
+    if initial_conditions:
+        from .initial_conditions import apply_initial_conditions
+        apply_initial_conditions(state, initial_conditions)
     return state, SetupResult(
         turn_order=order,
         banned_peoples=banned,

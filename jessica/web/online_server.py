@@ -155,9 +155,9 @@ class Handler(server.Handler):
             if self._limited() or parts == ["rooms"] and self._limited("create"):
                 return
             if parts == ["rooms"]:
-                if set(body) != {"name"}:
-                    raise RoomError(422, "Informe apenas o nome.")
-                return self._json(201, ROOMS.create(body["name"]))
+                if "name" not in body or set(body) - {"name", "num_players"}:
+                    raise RoomError(422, "Informe nome e número de jogadores.")
+                return self._json(201, ROOMS.create(body["name"], body.get("num_players", 4)))
             if len(parts) != 3 or parts[0] != "rooms":
                 raise RoomError(404, "Rota online não encontrada.")
             room = ROOMS.get(parts[1])
@@ -174,6 +174,8 @@ class Handler(server.Handler):
                     result = room.mark_ready(member, body["ready"])
                 elif operation == "start" and not body:
                     result = room.start(member)
+                elif operation == "configure" and set(body) == {"revision", "initial_conditions"}:
+                    result = room.configure(member, body["revision"], body["initial_conditions"])
                 elif operation == "credential" and set(body) == {"credential"}:
                     result = room.rotate_credential(member, body["credential"])
                 elif operation == "actions":

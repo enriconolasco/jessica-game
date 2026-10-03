@@ -11,7 +11,8 @@ domínio próprio. Não instala serviço permanente, certificados locais ou fire
 2. Abra `JOGAR_AMIGOS.cmd`, na raiz deste projeto.
 3. Aguarde **“Abra no PC e nos celulares”**. Abra o link HTTPS mostrado também no PC.
 4. Crie uma sala. Envie aos amigos o convite da sala, não sua credencial.
-5. Cada um escolhe povo/herói e marca pronto; o anfitrião inicia com quatro jogadores.
+5. O anfitrião define 2–5 vagas ao criar e pode personalizar as condições iniciais.
+   Cada um escolhe povo/herói e marca pronto; a partida começa com todas as vagas prontas.
 6. Mantenha PC, internet e janela do iniciador abertos durante a partida. Um Ctrl+C
    encerra túnel e processos deste iniciador; aguarde a janela terminar.
 

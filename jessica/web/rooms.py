@@ -11,6 +11,21 @@ from . import server, session, saves
 from .room_store import StorageError
 from ..core.headless import ACTION_VERSION, EVENT_VERSION, SAVE_VERSION, apply_action, legal_actions, view_for_player
 from ..core.serialize import state_to_dict
+from ..core.initial_conditions import validate_initial
+
+
+def validate_config(capacity, configs):
+    if type(capacity) is not int or not 2 <= capacity <= 5:
+        raise RoomError(422, "Escolha de dois a cinco jogadores.")
+    if not isinstance(configs, dict) or set(configs) - {str(pid) for pid in range(1, capacity + 1)}:
+        raise RoomError(422, "Jogador inválido na configuração.")
+    try:
+        checked = {pid: validate_initial(values) for pid, values in configs.items()}
+        if sum(values.get("artifacts", 0) for values in checked.values()) > 24:
+            raise ValueError("Artefatos iniciais excedem a loja (24 cartas).")
+        return checked
+    except ValueError as exc:
+        raise RoomError(422, str(exc)) from exc
 
 
 class RoomError(ValueError):
@@ -51,11 +66,14 @@ class Room:
     lock: object = field(default_factory=threading.RLock, repr=False)
     listeners: set = field(default_factory=set, repr=False)
     store: object = field(default=None, repr=False)
+    capacity: int = 4
+    initial_conditions: dict = field(default_factory=dict)
 
     def record(self):
         return {"version": 1, "save_version": SAVE_VERSION, "action_version": ACTION_VERSION,
                 "event_version": EVENT_VERSION, "code": self.code, "seed": self.seed,
                 "revision": self.revision, "members": [asdict(m) for m in self.members],
+                "capacity": self.capacity, "initial_conditions": self.initial_conditions,
                 "match": None if self.match is None else {
                     "state": state_to_dict(self.match["state"]), "events": self.match["events"]},
                 "commands": [{"player_id": pid, "command_id": cid, **entry}
@@ -71,7 +89,9 @@ class Room:
                     or type(record["revision"]) is not int or record["revision"] < 1):
                 raise ValueError("Formato incompatível")
             members = [Member(**item) for item in record["members"]]
-            if (not 1 <= len(members) <= 4 or any(type(m.player_id) is not int for m in members)
+            capacity = record.get("capacity", 4)
+            initial = validate_config(capacity, record.get("initial_conditions", {}))
+            if (not 1 <= len(members) <= capacity or any(type(m.player_id) is not int for m in members)
                     or [m.player_id for m in members] != list(range(1, len(members) + 1))):
                 raise ValueError("Participantes inválidos")
             for member in members:
@@ -91,10 +111,11 @@ class Room:
             chosen = [m.people for m in members if m.people]
             if len(set(chosen)) != len(chosen):
                 raise ValueError("Povos duplicados")
-            room = cls(record["code"], record["seed"], members=members, revision=record["revision"], store=store)
+            room = cls(record["code"], record["seed"], members=members, revision=record["revision"], store=store,
+                       capacity=capacity, initial_conditions=initial)
             if record["match"] is not None:
                 state, events, _ = saves.validate({"version": SAVE_VERSION, **record["match"], "name": "Sala online"})
-                if len(members) != 4 or state.seed != room.seed:
+                if len(members) != capacity or len(state.players) != capacity or state.seed != room.seed:
                     raise ValueError("Partida incompatível")
                 room.match = {"state": state, "events": events}
             for command in record["commands"]:
@@ -113,11 +134,13 @@ class Room:
         except (KeyError, TypeError, ValueError, AttributeError) as exc:
             raise StorageError("Sala persistida incompatível ou danificada; banco preservado.") from exc
 
-    def _commit(self, *, members=None, match=None, commands=None):
+    def _commit(self, *, members=None, match=None, commands=None, initial_conditions=None):
         candidate = Room(self.code, self.seed, revision=self.revision + 1,
                          members=self.members if members is None else members,
                          match=self.match if match is None else match,
-                         commands=self.commands if commands is None else commands)
+                         commands=self.commands if commands is None else commands,
+                         capacity=self.capacity,
+                         initial_conditions=self.initial_conditions if initial_conditions is None else initial_conditions)
         if self.store:
             try:
                 self.store.save(candidate.record(), self.revision)
@@ -130,13 +153,15 @@ class Room:
             stable.__dict__.update(member.__dict__)
             self.members.append(stable)
         self.match, self.commands, self.revision = candidate.match, candidate.commands, candidate.revision
+        self.initial_conditions = candidate.initial_conditions
         for notify in tuple(self.listeners):
             notify(self.revision)
 
     def public(self, member):
         return {"version": 1, "code": self.code, "revision": self.revision,
                 "status": "playing" if self.match else "lobby", "you": member.player_id,
-                "host_id": 1, "players": [m.public() for m in self.members]}
+                "host_id": 1, "players": [m.public() for m in self.members],
+                "capacity": self.capacity, "initial_conditions": deepcopy(self.initial_conditions)}
 
     def authenticate(self, credential):
         if not isinstance(credential, str) or not credential:
@@ -148,7 +173,7 @@ class Room:
         return member
 
     def join(self, player_name):
-        if self.match or len(self.members) >= 4:
+        if self.match or len(self.members) >= self.capacity:
             raise RoomError(409, "Sala cheia ou partida já iniciada.")
         token = secrets.token_urlsafe(32)
         member = Member(len(self.members) + 1, name(player_name), hashlib.sha256(token.encode()).hexdigest())
@@ -194,11 +219,25 @@ class Room:
     def start(self, member):
         if member.player_id != 1:
             raise RoomError(403, "Somente o anfitrião inicia a partida.")
-        if self.match or len(self.members) != 4 or not all(m.ready for m in self.members):
-            raise RoomError(409, "São necessários quatro jogadores prontos.")
-        rows = [{"name": m.name, "people": m.people, "hero_id": m.hero_id} for m in self.members]
+        if self.match or len(self.members) != self.capacity or not all(m.ready for m in self.members):
+            raise RoomError(409, f"São necessários {self.capacity} jogadores prontos.")
+        rows = [{"name": m.name, "people": m.people, "hero_id": m.hero_id,
+                 "initial": self.initial_conditions.get(str(m.player_id), {})} for m in self.members]
         state = server._new_state(self.seed, rows)
         self._commit(match={"state": state, "events": session.public_events(state)})
+        return self.public(member)
+
+    def configure(self, member, revision, configs):
+        if member.player_id != 1:
+            raise RoomError(403, "Somente o anfitrião configura a partida.")
+        if self.match or type(revision) is not int or revision != self.revision:
+            raise RoomError(409, "Sala atualizada ou partida já iniciada.")
+        checked = validate_config(self.capacity, configs)
+        if checked != self.initial_conditions:
+            members = deepcopy(self.members)
+            for participant in members:
+                participant.ready = False
+            self._commit(members=members, initial_conditions=checked)
         return self.public(member)
 
     def snapshot(self, member):
@@ -258,14 +297,15 @@ class Registry:
                 self.rooms[room.code] = room
         self.lock = threading.RLock()
 
-    def create(self, player_name):
+    def create(self, player_name, capacity=4):
         player_name = name(player_name)
+        validate_config(capacity, {})
         with self.lock:
             if len(self.rooms) >= self.max_rooms:
                 raise RoomError(503, "Limite de salas atingido. O operador precisa revisar a capacidade; nenhuma sala foi apagada.")
             while (code := "".join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(8))) in self.rooms:
                 pass
-            room = Room(code, secrets.randbits(64), store=self.store)
+            room = Room(code, secrets.randbits(64), store=self.store, capacity=capacity)
             result = room.join(player_name)
             self.rooms[code] = room
             return result

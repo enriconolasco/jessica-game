@@ -15,6 +15,7 @@ from ..core.serialize import state_from_dict, state_to_dict
 from ..core.setup import run_setup
 from ..core.setup import roll_d20_order, horario_from
 from ..core.state import make_rng
+from ..core.initial_conditions import validate_initial
 from ..core import constants
 from ..core.turn import start_turn
 
@@ -91,12 +92,12 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
             {"name": "Jogador 3", "people": "orcs", "hero_id": "arken"},
             {"name": "Jogador 4", "people": "fadas", "hero_id": "ainai"},
         ]
-    if len(player_setup) != 4:
-        raise ValueError("A partida local requer exatamente quatro jogadores.")
+    if not isinstance(player_setup, list) or not 2 <= len(player_setup) <= 5 or not all(isinstance(row, dict) for row in player_setup):
+        raise ValueError("A partida requer de dois a cinco jogadores.")
     selected = [str(item.get("people", "")) for item in player_setup]
     if any(people not in PEOPLES for people in selected):
         raise ValueError("Há um povo desconhecido na configuração.")
-    if len(set(selected)) != 4:
+    if len(set(selected)) != len(player_setup):
         raise ValueError("Cada jogador deve escolher um povo diferente.")
     choices = {}
     names = {}
@@ -113,6 +114,11 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
         names[player_id] = name
         choices[player_id] = {"povo": people, "heroi": hero_id}
     config = config or {}
+    validate_initial({key: config[key] for key in ("city_life", "city_life_max", "gold", "magic") if key in config})
+    artifact_default = validate_initial({"artifacts": config.get("artifacts", 0)})["artifacts"]
+    initial = {pid: validate_initial({**({"artifacts": artifact_default} if artifact_default else {}),
+                                     **validate_initial(row.get("initial", {}))})
+               for pid, row in enumerate(player_setup, 1)}
     values = {
         "city_life": int(config.get("city_life", DEFAULT_CITY_LIFE_START)),
         "city_life_max": int(config.get("city_life_max", DEFAULT_CITY_LIFE_MAX)),
@@ -126,7 +132,8 @@ def _new_state(seed: int, player_setup: list[dict] | None = None,
     if order_mode not in ("fixed", "d20"):
         raise ValueError("Modo de ordem inicial inválido.")
     state, _ = run_setup(list(PEOPLES), heroes_by_people, choices, seed,
-                         turn_order=None if order_mode == "d20" else [1, 2, 3, 4], **values)
+                         num_players=len(player_setup), initial_conditions=initial,
+                         turn_order=None if order_mode == "d20" else list(range(1, len(player_setup) + 1)), **values)
     for player in state.players:
         player.name = names[player.id]
     start_turn(state)
@@ -201,10 +208,13 @@ class Handler(BaseHTTPRequestHandler):
         if parts == ["setup-order"]:
             try:
                 seed = int(parse_qs(urlparse(self.path).query).get("seed", [20260923])[0])
-                order = roll_d20_order(make_rng(seed), 4)
+                count = int(parse_qs(urlparse(self.path).query).get("num_players", ["4"])[0])
+                if not 2 <= count <= 5:
+                    raise ValueError("Número de jogadores inválido.")
+                order = roll_d20_order(make_rng(seed), count)
             except ValueError:
                 return self._json(422, {"error": "Seed inválida."})
-            fixed = [1, 2, 3, 4]
+            fixed = list(range(1, count + 1))
             index = fixed.index(order[0])
             return self._json(200, {"turn_order": fixed, "initial_curuna_id": order[0],
                                     "day_order": fixed[index:] + fixed[:index],

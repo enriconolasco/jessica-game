@@ -248,6 +248,34 @@ def test_dream_preview_authentication_turn_and_read_only_state():
         assert state_to_dict(state) == before
 
 
+def test_variable_capacity_and_initial_configuration_http():
+    from test_variable_players import ROWS
+    for count in range(2, 6):
+        with http() as base:
+            status, created = request(base, "/rooms", {"name":"J1", "num_players":count})
+            assert status == 201 and created["room"]["capacity"] == count
+            code = created["room"]["code"]
+            tokens = [created["credential"]]
+            for pid in range(2, count + 1):
+                status, joined = request(base, f"/rooms/{code}/join", {"name":f"J{pid}"})
+                assert status == 201
+                tokens.append(joined["credential"])
+            assert request(base, f"/rooms/{code}/join", {"name":"extra"})[0] == 409
+            room = online_server.ROOMS.get(code)
+            config = {"revision":room.revision, "initial_conditions":{"1":{"gold":3,"artifacts":1}}}
+            route = f"/rooms/{code}/configure"
+            assert request(base, route, config, tokens[1])[0] == 403
+            assert request(base, route, config, tokens[0])[0] == 200
+            for token, row in zip(tokens, ROWS):
+                assert request(base, f"/rooms/{code}/select", {"people":row["people"],"hero_id":row["hero_id"]}, token)[0] == 200
+                assert request(base, f"/rooms/{code}/ready", {"ready":True}, token)[0] == 200
+            assert request(base, f"/rooms/{code}/start", {}, tokens[0])[0] == 200
+            status, snapshot = request(base, f"/rooms/{code}/snapshot", token=tokens[1])
+            assert status == 200 and len(snapshot["view"]["players"]) == count
+            assert snapshot["view"]["self"]["hand"] == []
+            assert len(room.match["state"].players[0].hand) == 1
+
+
 if __name__ == "__main__":
     passed = failed = 0
     for name, test in sorted(list(globals().items())):

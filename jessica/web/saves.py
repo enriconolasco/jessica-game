@@ -9,6 +9,7 @@ from copy import deepcopy
 from ..core.constants import Phase
 from ..core.headless import SAVE_VERSION, EVENT_VERSION
 from ..core.serialize import state_from_dict
+from ..core.state import game_houses
 
 AUTOSAVE_HISTORY_LIMIT = 5
 
@@ -44,12 +45,13 @@ def validate(payload):
                 or type(data["game_over"]) is not bool):
             raise ValueError("Estado ou RNG inválido.")
         state = state_from_dict(data)
+        ids = {p.id for p in state.players}
         if not isinstance(state.web_reaction, dict):
             raise ValueError("Reação pendente inválida.")
         if state.web_reaction:
             reaction = state.web_reaction
             request = reaction.get("request", {})
-            if (not isinstance(request, dict) or request.get("player_id") not in (1, 2, 3, 4)
+            if (not isinstance(request, dict) or request.get("player_id") not in ids
                     or type(request.get("max_gold")) is not int or request["max_gold"] < 0
                     or not isinstance(reaction.get("action"), dict)
                     or not isinstance(reaction.get("payments"), list)
@@ -64,16 +66,16 @@ def validate(payload):
             if preview is not None:
                 if (not isinstance(preview, dict)
                         or set(preview) != {"players", "board", "conditions", "shop", "demon_pacts", "self"}
-                        or not isinstance(preview["players"], list) or len(preview["players"]) != 4
-                        or {p.get("id") for p in preview["players"] if isinstance(p, dict)} != {1, 2, 3, 4}
+                        or not isinstance(preview["players"], list) or len(preview["players"]) != len(state.players)
+                        or {p.get("id") for p in preview["players"] if isinstance(p, dict)} != ids
                         or not isinstance(preview["board"], dict) or not isinstance(preview["board"].get("units"), list)
                         or not isinstance(preview["self"], dict) or not isinstance(preview["self"].get("hand"), list)
                         or not isinstance(preview["conditions"], list) or not isinstance(preview["shop"], dict)
                         or not isinstance(preview["demon_pacts"], list)):
                     raise ValueError("Prévia da defesa inválida.")
         ids = {p.id for p in state.players}
-        if (len(state.players) != 4 or ids != {1, 2, 3, 4}
-                or len(state.turn_order) != 4 or set(state.turn_order) != ids
+        if (not 2 <= len(state.players) <= 5 or ids != set(range(1, len(state.players) + 1))
+                or len(state.turn_order) != len(state.players) or set(state.turn_order) != ids
                 or state.curuna_id not in ids or state.active_player_id not in ids | {None}
                 or state.phase not in (Phase.DAY, Phase.NIGHT)
                 or not isinstance(state.web_night, dict)):
@@ -85,7 +87,7 @@ def validate(payload):
                 raise ValueError("Dados do jogador inválidos.")
             for u in p.units:
                 if (u.owner_id != p.id or not isinstance(u.id, str)
-                        or u.house not in {"center", "city_1", "city_2", "city_3", "city_4"}
+                        or u.house not in game_houses(state)
                         or type(u.life) is not int or type(u.life_max) is not int):
                     raise ValueError("Dados de unidade inválidos.")
         events = payload.get("events", [])
@@ -112,7 +114,7 @@ def validate(payload):
                 or type(skip["turn"]) is not int or skip["turn"] < 1
                 or type(skip["player_id"]) is not int or skip["player_id"] not in ids)):
             raise ValueError("Origem de restauração inválida.")
-        if not isinstance(history, list) or len(history) > 4:
+        if not isinstance(history, list) or len(history) > len(state.players):
             raise ValueError("Histórico de restauração inválido.")
         seen = set()
         for checkpoint in history:
@@ -125,7 +127,8 @@ def validate(payload):
             pid = checkpoint.get("player_id")
             if (type(pid) is not int or pid in seen or restored.active_player_id != pid
                     or restored.phase != Phase.DAY or restored.web_reaction
-                    or checkpoint.get("turn") != state.turn or restored.turn != state.turn):
+                    or checkpoint.get("turn") != state.turn or restored.turn != state.turn
+                    or {p.id for p in restored.players} != ids):
                 raise ValueError("Ponto de restauração incompatível.")
             seen.add(pid)
         for key in ("queue", "setup"):
@@ -141,7 +144,7 @@ def validate(payload):
                         or (kind in (None, "house", "end_house", "luide") and "house" not in entry)
                         or (kind is None and not isinstance(entry.get("unit_id"), str))
                         or ("occupied" in entry and type(entry["occupied"]) is not bool)
-                        or ("house" in entry and entry["house"] not in {"center", "city_1", "city_2", "city_3", "city_4"})):
+                        or ("house" in entry and entry["house"] not in game_houses(state))):
                     raise ValueError("Janela noturna inválida.")
     except (KeyError, TypeError, AttributeError, ValueError) as exc:
         raise ValueError(f"Save inválido: {exc}") from exc

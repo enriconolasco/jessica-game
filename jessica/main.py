@@ -1,5 +1,6 @@
 """Jessica - Prototipo v0.4."""
 from __future__ import annotations
+from .core.state import city_houses
 import re
 
 from rich.console import Console
@@ -1520,7 +1521,7 @@ def valid_destinations(state, unit) -> list[str]:
     if unit.house.startswith("city_"):
         return [CENTER]
     if unit.house == CENTER:
-        return [h for h in CITY_HOUSES
+        return [h for h in city_houses(state)
                 if get_player(state, int(h.split("_")[1])).city.is_alive()]
     return []
 
@@ -1573,6 +1574,7 @@ def setup_ui():
                     default=default_seed, min_val=1, max_val=999999999)
     console.print(f"[dim]Seed: {seed}[/dim]\n")
     console.print("[bold]Configuracao da partida[/bold]\n")
+    num_players = _ask_int("Número de jogadores [4]", default=4, min_val=2, max_val=5)
     city_life = _ask_int(f"Vida inicial da Cidade [{DEFAULT_CITY_LIFE_START}]",
                          default=DEFAULT_CITY_LIFE_START, min_val=1, max_val=100)
     city_life_max = _ask_int(f"Vida maxima da Cidade [{DEFAULT_CITY_LIFE_MAX}]",
@@ -1581,9 +1583,10 @@ def setup_ui():
                           default=DEFAULT_STARTING_GOLD, min_val=0, max_val=999)
     magic_start = _ask_int(f"Magia inicial [{DEFAULT_STARTING_MAGIC}]",
                            default=DEFAULT_STARTING_MAGIC, min_val=0, max_val=999)
+    artifacts_start = _ask_int("Artefatos iniciais por jogador [0]", default=0, min_val=0, max_val=24 // num_players)
     console.print()
     rng = make_rng(seed)
-    order = roll_d20_order(rng, 4)
+    order = roll_d20_order(rng, num_players)
     povo_order = horario_from(order)
     table = Table(title="Ordem do D20 (anti-horario - ordem de JOGO)", box=box.SIMPLE)
     table.add_column("Posicao", justify="right")
@@ -1600,7 +1603,7 @@ def setup_ui():
     console.print()
     console.print("[bold]Nomes dos jogadores[/bold]\n")
     names: dict[int, str] = {}
-    for pid in range(1, 5):
+    for pid in range(1, num_players + 1):
         names[pid] = Prompt.ask(f"Nome do Jogador {pid}", default=f"Jogador {pid}")
     console.print()
     choices: dict[int, dict] = {}
@@ -1638,11 +1641,27 @@ def setup_ui():
             _show_hero_selection_help(povo, herois)
         choices[pid]["heroi"] = herois[idx]
         console.print(f"[green]{names[pid]} escolheu: {herois[idx]}[/green]\n")
+    initial = {pid: {"artifacts": artifacts_start} if artifacts_start else {} for pid in names}
+    if Prompt.ask("Personalizar condições por jogador?", choices=["s", "n"], default="n") == "s":
+        for pid in names:
+            console.print(f"[bold]{names[pid]}[/bold] — Enter mantém o padrão.")
+            for key, label, minimum, maximum in (("city_life", "Vida da Base", 1, 100),
+                    ("gold", "Ouro", 0, 999), ("magic", "Magia", 0, 999),
+                    ("artifacts", "Artefatos", 0, 24 - sum(v.get("artifacts", 0) for other, v in initial.items() if other != pid))):
+                while True:
+                    value = Prompt.ask(label, default="").strip()
+                    if not value:
+                        break
+                    if value.isdigit() and minimum <= int(value) <= maximum:
+                        initial[pid][key] = int(value)
+                        break
+                    console.print(f"Informe um inteiro entre {minimum} e {maximum}.")
     state, _ = run_setup(
         all_peoples=PEOPLES, heroes_by_people=HEROES_BY_PEOPLE,
         choices=choices, seed=seed, turn_order=order,
         city_life=city_life, city_life_max=city_life_max,
         gold_start=gold_start, magic_start=magic_start,
+        num_players=num_players, initial_conditions=initial,
     )
     for p in state.players:
         p.name = names[p.id]
@@ -1783,24 +1802,24 @@ def _pad_to_height(lines: list[str], height: int, width: int) -> list[str]:
 
 def show_map(state) -> None:
     w = 22
-    j1 = _city_cell_lines(state, 1, w); j2 = _city_cell_lines(state, 2, w)
-    j3 = _city_cell_lines(state, 3, w); j4 = _city_cell_lines(state, 4, w)
+    cells = {p.id: _city_cell_lines(state, p.id, w) for p in state.players}
     center = _center_cell_lines(state, w)
-    height = max(len(j1), len(j2), len(j3), len(j4), len(center), 3)
-    j1 = _pad_to_height(j1, height, w); j2 = _pad_to_height(j2, height, w)
-    j3 = _pad_to_height(j3, height, w); j4 = _pad_to_height(j4, height, w)
+    height = max(*(len(cell) for cell in cells.values()), len(center), 3)
+    cells = {pid: _pad_to_height(cell, height, w) for pid, cell in cells.items()}
     center = _pad_to_height(center, height, w)
     empty = [" " * w for _ in range(height)]
     sep = " | "
     line_sep = "-" * (w * 3 + 6)
-    for i in range(height):
-        console.print(empty[i] + sep + j3[i] + sep + empty[i], highlight=False)
-    console.print(line_sep, highlight=False)
-    for i in range(height):
-        console.print(j4[i] + sep + center[i] + sep + j2[i], highlight=False)
-    console.print(line_sep, highlight=False)
-    for i in range(height):
-        console.print(empty[i] + sep + j1[i] + sep + empty[i], highlight=False)
+    layouts = {2: [(None, 1, None), (None, "center", None), (None, 2, None)],
+               3: [(None, 1, None), (None, "center", None), (2, None, 3)],
+               4: [(None, 3, None), (4, "center", 2), (None, 1, None)],
+               5: [(None, 1, None), (2, "center", 5), (3, None, 4)]}
+    cells.update({None: empty, "center": center})
+    for row_index, row in enumerate(layouts[len(state.players)]):
+        if row_index:
+            console.print(line_sep, highlight=False)
+        for i in range(height):
+            console.print(sep.join(cells[key][i] for key in row), highlight=False)
     curuna = get_player(state, state.curuna_id)
     console.print()
     console.print(f"[bold yellow]* Curuna: {curuna.name}[/bold yellow]")
@@ -2003,7 +2022,7 @@ def _inspecionar_local(state, house: str) -> None:
 def estudar_campo(state) -> None:
     options = []
     labels = []
-    for h in CITY_HOUSES:
+    for h in city_houses(state):
         pid = int(h.split("_")[1])
         p = get_player(state, pid)
         labels.append(f"Cidade J{pid} - {p.name} ({p.people})")
@@ -2099,7 +2118,7 @@ def _ask_choice_for_artifact(state, pid: int, card_id: str) -> dict:
             raise ActionError("Todos os outros herois usados.")
         return {"hero_id": disponiveis[pick_index("Heroi", disponiveis)]}
     if ctype == "house":
-        options = [h for h in CITY_HOUSES
+        options = [h for h in city_houses(state)
                    if get_player(state, int(h.split("_")[1])).city.is_alive()]
         options.append(CENTER)
         labels = [house_short(state, h) for h in options]

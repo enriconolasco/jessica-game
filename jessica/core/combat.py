@@ -79,19 +79,21 @@ def _register_attack(unit: Unit) -> None:
         unit.attacks_made_this_night += 1
 
 
-def _award_city_destruction(state: GameState, destroyer_id: int) -> None:
+def _award_city_destruction(state: GameState, destroyer_id: int, players_before=None) -> None:
     alive_now = sum(1 for p in state.players if p.city.is_alive())
-    reward = {3: 4, 2: 3, 1: 2, 0: 0}.get(alive_now, 0)
+    reward = players_before if players_before is not None else alive_now + 1 if alive_now else 0
     if reward == 0:
         return
     destroyer = get_player(state, destroyer_id)
     peoples.on_city_destroyed_for_pacts(state, destroyer_id)
+    obtained = 0
     for _ in range(reward):
         if state.shop.is_empty():
             break
         destroyer.hand.append(state.shop.draw_random(state.rng))
         peoples.on_artifact_obtained(state, destroyer_id)
-    log(state, f"  {destroyer.name} destruiu Cidade e ganhou {reward} artefato(s).")
+        obtained += 1
+    log(state, f"  {destroyer.name} destruiu Cidade e ganhou {obtained} artefato(s).")
 
 
 def _cleanup_dead(state: GameState) -> None:
@@ -106,7 +108,11 @@ def _cleanup_dead(state: GameState) -> None:
     for u in dead_units:
         if u.statuses.get("dragon_base"):
             owner = get_player(state, u.owner_id)
+            alive_before = sum(p.city.is_alive() for p in state.players)
+            was_alive = owner.city.is_alive()
             owner.city.life = 0
+            if was_alive and u.killed_by_player_id is not None:
+                _award_city_destruction(state, u.killed_by_player_id, alive_before)
             log(state, f"  Base movel de {owner.name} foi destruida.")
         owner = get_player(state, u.owner_id)
         if owner.people == peoples.PEOPLE_FAE:
@@ -596,6 +602,7 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
         attacker.statuses.pop("invisivel_until_turn", None)
 
         dmg_to_city = _compute_attack_damage(state, attacker, 1)
+        players_before = sum(p.city.is_alive() for p in state.players)
         life_before = city.life
         city.life = max(0, city.life - dmg_to_city)
         _city_life_lost(state, target_pid, life_before - city.life)
@@ -616,7 +623,7 @@ def resolve_attack(state: GameState, attack: Attack) -> None:
                 log(state, f"  A Cidade de {target_player.name} ruiu - Monumento tambem.")
             else:
                 log(state, f"  A Cidade de {target_player.name} ruiu.")
-            _award_city_destruction(state, attacker.owner_id)
+            _award_city_destruction(state, attacker.owner_id, players_before)
 
         raw_ret = 1
         ret, notes = _apply_defense(state, attacker, raw_ret, is_city_retaliation=True)
@@ -678,7 +685,7 @@ def resolve_night(state: GameState, attacks: list[Attack]) -> None:
     if not attacks:
         log(state, "Nenhum ataque nesta Noite.")
         return
-    order = ["center", "city_4", "city_3", "city_2", "city_1"]
+    order = ["center"] + [f"city_{p.id}" for p in reversed(state.players)]
     by_house: dict[str, list[Attack]] = {}
     for a in attacks:
         unit = _find_unit(state, a.attacker_unit_id)

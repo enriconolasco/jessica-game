@@ -5,6 +5,10 @@ formato definitivo nem substitui ainda os saves e logs existentes.
 
 ## Versões
 
+Extensão compatível de 03/10/2026: partidas com 2–5 participantes e condições
+iniciais individuais. IDs de casas e opções devem vir do estado real, não de uma
+lista fixa de quatro cidades. Detalhes em [CONFIGURACAO_PARTIDA.md](CONFIGURACAO_PARTIDA.md).
+
 - `ACTION_VERSION = "action-v0.1"`
 - `EVENT_VERSION = "event-v0.1"`
 - `VIEW_VERSION = "view-v0.1"`

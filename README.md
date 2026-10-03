@@ -1,7 +1,9 @@
 # Jéssica
 
-Um motor Python, dois clientes locais: terminal e navegador (quatro jogadores
-no mesmo aparelho). `main` contém a versão compartilhada, validada para playtest;
+Um motor Python, dois clientes locais: terminal e navegador.
+Na branch `codex/online-rooms`, os três modos aceitam 2–5 participantes e condições
+iniciais individuais: [configuração pré-jogo](docs/CONFIGURACAO_PARTIDA.md).
+`main` contém a referência anterior de quatro jogadores, validada para playtest;
 o multiplayer remoto ainda está em desenvolvimento separado.
 
 - Terminal: abrir `JOGAR.cmd`.

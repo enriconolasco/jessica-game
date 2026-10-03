@@ -12,6 +12,7 @@
       <button id="onlineForget">Esquecer acesso lembrado</button>
     </div>
     <label>Seu nome <input id="onlineName" maxlength="40" autocomplete="nickname"></label>
+    <label>Jogadores na nova sala <select id="onlineCapacity"><option>2</option><option>3</option><option selected>4</option><option>5</option></select></label>
     <button id="onlineCreate">Criar sala</button>
     <label>Código da sala <input id="onlineCode" maxlength="8" autocapitalize="characters" autocomplete="off"></label>
     <button id="onlineJoin">Entrar na sala</button>
@@ -25,6 +26,7 @@
     <label>Link de convite (não contém sua credencial) <input id="onlineLink" readonly aria-label="Link de convite"></label>
     <ul id="onlinePlayers" aria-label="Participantes da sala"></ul>
     <div id="onlineChoice">
+      <details><summary>Condições iniciais por jogador</summary><p class="hint">O anfitrião configura antes de iniciar. Campos vazios mantêm o padrão do povo/herói. Artefatos são sorteados da loja e ficam na mão (24 cartas no total). Alterações desmarcam “pronto” para todos.</p><div id="onlineInitial" class="setup-players"></div><button id="onlineConfigure">Aplicar condições iniciais</button></details>
       <label>Povo <select id="onlinePeople"></select></label>
       <label>Herói <select id="onlineHero"></select></label>
       <p id="onlineChoiceHelp" class="hint"></p>

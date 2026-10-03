@@ -82,22 +82,22 @@ function drawReport(root, view, kind, metric) {
     const turns = data.series.flatMap(s => s.points.map(p => p.turn));
     const first = Math.min(...turns), last = Math.max(...turns);
     const x = turn => 50 + (turn-first)/Math.max(1,last-first)*580, y = value => 222-value/max*180;
-    const colors = ["#e0bb72", "#85cdbc", "#9aaeff", "#ffa68d"], dashes = ["none", "8 4", "2 4", "12 3 2 3"];
+    const colors = ["#e0bb72", "#85cdbc", "#9aaeff", "#ffa68d", "#ddb5f0"], dashes = ["none", "8 4", "2 4", "12 3 2 3", "5 3 1 3"];
     add("path", {d:"M50 35V222H650", fill:"none", stroke:"#aec1bc"});
     add("text", {x:8, y:42}, max); add("text", {x:24, y:226}, "0");
     [...new Set(turns)].filter((t,i,a) => i % Math.max(1,Math.ceil(a.length/10)) === 0 || i === a.length-1).forEach(t => add("text", {x:x(t), y:244, "text-anchor":"middle"}, `T${t}`));
     data.series.forEach((s,i) => {
       let segment = [];
-      const flush = () => { if (segment.length) add("polyline", {points:segment.join(" "), fill:"none", stroke:colors[i%4], "stroke-width":3, "stroke-dasharray":dashes[i%4]}); segment=[]; };
+      const flush = () => { if (segment.length) add("polyline", {points:segment.join(" "), fill:"none", stroke:colors[i%colors.length], "stroke-width":3, "stroke-dasharray":dashes[i%dashes.length]}); segment=[]; };
       s.points.forEach(p => {
         if (p.value === null) { flush(); return; }
         segment.push(`${x(p.turn)},${y(p.value)}`);
-        const point = add("circle", {cx:x(p.turn), cy:y(p.value), r:4, fill:colors[i%4]});
+        const point = add("circle", {cx:x(p.turn), cy:y(p.value), r:4, fill:colors[i%colors.length]});
         const title = document.createElementNS("http://www.w3.org/2000/svg", "title"); title.textContent = `${s.label} · T${p.turn}: ${p.value}`; point.appendChild(title);
       });
       flush();
-      add("line", {x1:10+i*180, x2:30+i*180, y1:270, y2:270, stroke:colors[i%4], "stroke-width":3, "stroke-dasharray":dashes[i%4]});
-      add("text", {x:35+i*180, y:275}, s.label.length > 17 ? s.label.slice(0,16)+"…" : s.label);
+      add("line", {x1:10+i*140, x2:30+i*140, y1:270, y2:270, stroke:colors[i%colors.length], "stroke-width":3, "stroke-dasharray":dashes[i%dashes.length]});
+      add("text", {x:35+i*140, y:275}, s.label.length > 13 ? s.label.slice(0,12)+"…" : s.label);
     });
   }
   const chartWrap = document.createElement("div"); chartWrap.className = "report-chart-scroll";
@@ -109,7 +109,7 @@ const BUTTON_KEYS = {save:"Alt+S", load:"Alt+L", create:"Alt+N", rulesButton:"Al
 function shortcutFor(node) {
   if (BUTTON_KEYS[node.id]) return BUTTON_KEYS[node.id];
   if (node.dataset.shortcut) return node.dataset.shortcut;
-  if (node.dataset.mapHouse) return `Alt+Shift+${["center","city_1","city_2","city_3","city_4"].indexOf(node.dataset.mapHouse)+1}`;
+  if (node.dataset.mapHouse) return `Alt+Shift+${["center","city_1","city_2","city_3","city_4","city_5"].indexOf(node.dataset.mapHouse)+1}`;
   const group = node.closest(".action-group");
   if (group && node.tagName === "SUMMARY") return ACTION_KEYS[group.dataset.actionType] || node.dataset.auxKey || "";
   if (group && node.tagName === "BUTTON") {

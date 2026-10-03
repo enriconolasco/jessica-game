@@ -28,14 +28,16 @@ O fundo estrutural continua sendo
 
 ## Implementação
 
-- cinco casas fixas, conforme `show_map` do terminal: centro, norte/cidade 3,
+- centro e uma cidade por participante (2–5): cima/baixo para dois; triângulo
+  para três; distribuição circular para cinco. Com quatro, mantém norte/cidade 3,
   leste/cidade 2, sul/cidade 1 e oeste/cidade 4;
 - ordenação estável por jogador, heróis antes de tropas e identificador;
-- geometria 3:2 e coordenadas percentuais do SVG, centralizadas em `map.css`;
-  o fundo não usa `cover`, e nenhuma casa muda de posição nos breakpoints;
+- com quatro, geometria 3:2 e coordenadas percentuais do SVG em `map.css`;
+  nos demais casos, geometria quadrada com posições circulares em `renderMap`,
+  sem o SVG da cruz para não sugerir casas inexistentes. Fundo discreto sem cenário;
 - ícones agrupados por jogador dentro de cada casa em todas as larguras, com rolagem;
   em telas estreitas, o mapa de largura mínima 1100 px rola horizontalmente;
-- navegação direta para as cinco casas e lista ampliada abaixo, preservando os tamanhos
+- navegação direta para todas as casas existentes e lista ampliada abaixo, preservando os tamanhos
   32×32/64×64 e acesso individual a todas as unidades, sem substituí-las por contagens;
 - foco, mouse ou toque abrem os mesmos detalhes públicos;
 - vida numérica sempre visível; imagem/ID desconhecido ou indisponível tem fallback

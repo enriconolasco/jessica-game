@@ -1,5 +1,6 @@
 """Efeitos de artefatos."""
 from __future__ import annotations
+from .state import game_houses
 from .state import get_player, log, mark_summoned, sync_house_priority
 from .models import GameState, ArtifactOnField, Unit, Hero, Troop
 from .constants import CENTER, CITY_HOUSES, TroopArchetype
@@ -134,7 +135,7 @@ def on_play(state: GameState, player_id: int, card_id: str, choice: dict) -> Non
         house = choice.get("house")
         if not house:
             raise ValueError("Js requer house.")
-        if house not in (CENTER, *CITY_HOUSES):
+        if house not in game_houses(state):
             raise ValueError(f"Casa invalida: {house}")
         existing = [u for u in player.units
                     if isinstance(u, Troop) and u.archetype == TroopArchetype.SPECIAL

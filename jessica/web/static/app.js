@@ -22,7 +22,7 @@ function unitIconPath(unit, player) {
   return PEOPLE_ICON[player?.people] ? `${ICON_ROOT}people-${PEOPLE_ICON[player.people]}-32.svg` : null;
 }
 const PEOPLE_ICON = {humanos:"humanos", anoes:"anoes", orcs:"orcs", fadas:"fadas", vampiros:"vampiros", lobisomens:"lobisomens", gigantes:"gigantes", mortos_vivos:"mortos-vivos", filhos_floresta:"filhos-floresta", gnomos_duendes:"gnomos-duendes", dragoes:"dragoes", demonios:"demonios"};
-const HOUSE_NAMES = {center:"Centro", city_1:"Cidade 1 (Sul)", city_2:"Cidade 2 (Leste)", city_3:"Cidade 3 (Norte)", city_4:"Cidade 4 (Oeste)"};
+const HOUSE_NAMES = {center:"Centro", city_1:"Cidade 1", city_2:"Cidade 2", city_3:"Cidade 3", city_4:"Cidade 4", city_5:"Cidade 5"};
 const HOUSE_POSITIONS = {center:"center", city_1:"south", city_2:"east", city_3:"north", city_4:"west"};
 let selectedHouse = "center";
 let selectedUnitId = null;
@@ -141,6 +141,21 @@ function renderUnitGroups(root, units, players) {
   });
 }
 function renderMap(view) {
+  const count = view.players.length, map = $("minimap");
+  const houses = ["center", ...view.players.map(player => `city_${player.id}`)];
+  const existing = [...map.querySelectorAll(".house")].map(house => house.dataset.house);
+  if (existing.length !== houses.length || houses.some(id => !existing.includes(id))) {
+    map.replaceChildren();
+    houses.forEach(id => {
+      const house = document.createElement("section");
+      house.className = "house"; house.dataset.house = id;
+      const title = document.createElement("h3"), units = document.createElement("div");
+      units.className = "house-units"; house.append(title, units); map.appendChild(house);
+    });
+  }
+  map.dataset.playerCount = String(count);
+  map.setAttribute("aria-label", `Minimapa: centro e ${count} cidades`);
+  if (!houses.includes(selectedHouse)) selectedHouse = "center";
   const players = new Map(view.players.map(player => [player.id, player]));
   const units = view.board.units.filter(unit => unit.life > 0).sort((a,b) => a.owner_id-b.owner_id || Number(b.kind === "hero")-Number(a.kind === "hero") || a.id.localeCompare(b.id));
   const curuna = players.get(view.curuna_id);
@@ -179,7 +194,15 @@ function renderMap(view) {
     const present = units.filter(unit => unit.house === id);
     const player = view.players.find(player => id === `city_${player.id}`);
     const isCuruna = player?.id === curuna?.id && Boolean(player);
-    house.className = `house ${HOUSE_POSITIONS[id]}${isCuruna ? " curuna-house" : ""}`;
+    house.className = `house ${HOUSE_POSITIONS[id] || ""}${isCuruna ? " curuna-house" : ""}`;
+    if (count === 4) house.setAttribute("style", "");
+    else {
+      const index = view.players.findIndex(player => id === `city_${player.id}`);
+      const angle = (-90 - index * 360 / count) * Math.PI / 180;
+      const x = id === "center" ? 50 : 50 + 36 * Math.cos(angle);
+      const y = id === "center" ? 50 : 50 + 36 * Math.sin(angle);
+      house.setAttribute("style", `left:${x-11}%;top:${y-11}%;width:22%;height:22%`);
+    }
     const button = document.createElement("button");
     button.className = "house-inspect";
     button.type = "button";
@@ -656,17 +679,30 @@ function updatePeopleAvailability() {
 }
 function renderSetup() {
   const root = $("setupPlayers");
+  const previous = [...root.querySelectorAll(".setup-player")].map(row => ({
+    name:row.querySelector(".setup-name").value, people:row.querySelector(".setup-people").value,
+    hero:row.querySelector(".setup-hero").value,
+    initial:Object.fromEntries(["city_life","gold","magic","artifacts"].map(key => [key, row.querySelector(`.setup-${key}`)?.value || ""]))
+  }));
   root.replaceChildren();
-  const defaults = ["humanos", "anoes", "orcs", "fadas"];
+  const defaults = ["humanos", "anoes", "orcs", "fadas", "vampiros"].slice(0, +$("numPlayers").value || 4);
   defaults.forEach((defaultPeople, index) => {
     const row = document.createElement("section");
     row.className = "setup-player";
     row.innerHTML = `<h3>Jogador ${index + 1}</h3><label>Nome <input class="setup-name" maxlength="40" value="Jogador ${index + 1}"></label><label>Povo <select class="setup-people"></select></label><label>Herói <select class="setup-hero"></select></label>`;
     const peopleSelect = row.querySelector(".setup-people");
     catalog.peoples.forEach(people => peopleSelect.appendChild(new Option(people.label, people.id)));
-    peopleSelect.value = defaultPeople;
+    peopleSelect.value = previous[index]?.people || defaultPeople;
+    if (previous[index]) row.querySelector(".setup-name").value = previous[index].name;
     peopleSelect.onchange = () => { updateHeroSelect(row, peopleSelect.value); updatePeopleAvailability(); };
-    updateHeroSelect(row, defaultPeople);
+    updateHeroSelect(row, peopleSelect.value);
+    if (previous[index]?.hero) row.querySelector(".setup-hero").value = previous[index].hero;
+    [["city_life","Vida da Base",1,100],["gold","Ouro",0,999],["magic","Magia",0,999],["artifacts","Artefatos na mão",0,24]].forEach(([key,title,min,max]) => {
+      const label = document.createElement("label"); label.textContent = title;
+      const input = document.createElement("input"); input.type = "number"; input.className = `setup-${key}`;
+      input.min = min; input.max = max; input.placeholder = "Padrão";
+      input.value = previous[index]?.initial[key] || ""; label.appendChild(input); row.appendChild(label);
+    });
     const help = document.createElement("button");
     help.type = "button"; help.textContent = "Consultar povo e heróis";
     help.dataset.shortcut = `Alt+${index+1}`;
@@ -683,9 +719,14 @@ function setupPayload() {
       name: row.querySelector(".setup-name").value,
       people: row.querySelector(".setup-people").value,
       hero_id: row.querySelector(".setup-hero").value,
+      initial:Object.fromEntries(["city_life","gold","magic","artifacts"].flatMap(key => {
+        const value = row.querySelector(`.setup-${key}`).value;
+        return value === "" ? [] : [[key, Number(value)]];
+      })),
     })),
     config: {city_life:+$("cityLife").value, city_life_max:+$("cityLifeMax").value,
              gold:+$("goldStart").value, magic:+$("magicStart").value,
+             artifacts:+$("artifactsStart").value,
              order_mode:$("orderMode").value},
   };
 }
@@ -816,6 +857,7 @@ function createGameplayControls() {
   $("game").appendChild(reports);
   button(toolbar, "Relatórios", () => { reports.open = !reports.open; if (reports.open) title.focus(); }, "reportsButton");
   const map = $("minimap");
+  map.parentElement.querySelector(".section-title span").textContent = "Centro e cidades distribuídas ao redor. Selecione uma casa para consultar suas unidades.";
   const viewport = document.createElement("div"); viewport.className = "map-viewport";
   viewport.tabIndex = 0; viewport.setAttribute("aria-label", "Mapa rolável; use as setas ou os botões de casas");
   map.before(viewport); viewport.appendChild(map);
@@ -830,13 +872,13 @@ function createGameplayControls() {
   if (!ONLINE) {
   const order = document.createElement("label"); order.textContent = "Ordem inicial ";
   const select = document.createElement("select"); select.id = "orderMode";
-  select.append(new Option("D20 — como no terminal", "d20"), new Option("Fixa J1 → J2 → J3 → J4", "fixed"));
+  select.append(new Option("D20 — como no terminal", "d20"), new Option("Fixa — ordem dos jogadores", "fixed"));
   order.appendChild(select); $("seed").parentElement.after(order);
   const preview = document.createElement("p"); preview.className = "hint"; order.after(preview);
   const updateOrder = async () => {
     try {
-      const data = await api(`/setup-order?seed=${encodeURIComponent($("seed").value)}`);
-      preview.textContent = select.value === "fixed" ? "Ordem de turno: J1 → J2 → J3 → J4" :
+      const data = await api(`/setup-order?seed=${encodeURIComponent($("seed").value)}&num_players=${$("numPlayers").value || 4}`);
+      preview.textContent = select.value === "fixed" ? `Ordem de turno: ${data.turn_order.map(id => `J${id}`).join(" → ")}` :
         `Curuna inicial: J${data.initial_curuna_id} · Primeiro Dia: ${data.day_order.map(id => `J${id}`).join(" → ")} · Escolha de povos: ${data.selection_order.map(id => `J${id}`).join(" → ")}`;
     } catch (error) { preview.textContent = error.message; }
   };
@@ -965,6 +1007,7 @@ $("revealPlayer").onclick = async () => {
 };
 createSaveControls();
 createGameplayControls();
+$("numPlayers").onchange = () => { renderSetup(); $("orderMode")?.onchange?.(); };
 installShortcuts();
 Promise.all([api("/catalog"), loadHeroPortraits()]).then(async ([data]) => {
   catalog = data;

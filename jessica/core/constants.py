@@ -37,7 +37,7 @@ ARTIFACT_MAX_BUYS_GOLD_PER_DAY = 1
 ARTIFACT_MAX_BUYS_MAGIC_PER_DAY = 1
 ARTIFACTS_PER_CARD_IN_SHOP = 2
 
-CITY_HOUSES = ("city_1", "city_2", "city_3", "city_4")
+CITY_HOUSES = ("city_1", "city_2", "city_3", "city_4", "city_5")
 CENTER = "center"
 ALL_HOUSES = CITY_HOUSES + (CENTER,)
 

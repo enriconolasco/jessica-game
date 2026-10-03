@@ -55,6 +55,8 @@ def create_empty_state(
     gold_start: int = DEFAULT_STARTING_GOLD,
     magic_start: int = DEFAULT_STARTING_MAGIC,
 ) -> GameState:
+    if type(num_players) is not int or not 2 <= num_players <= 5:
+        raise ValueError("A partida precisa de 2 a 5 jogadores.")
     from .constants import CITY_HOUSES
     state = GameState(seed=seed, rng=make_rng(seed))
     for i in range(num_players):
@@ -75,6 +77,14 @@ def get_player(state: GameState, player_id: int) -> Player:
         if p.id == player_id:
             return p
     raise ValueError(f"Jogador {player_id} não encontrado")
+
+
+def city_houses(state):
+    return tuple(f"city_{p.id}" for p in state.players)
+
+
+def game_houses(state):
+    return (CENTER, *city_houses(state))
 
 
 def get_city(state: GameState, player_id: int) -> City:
@@ -116,7 +126,7 @@ def snapshot_turn_start_priority(state: GameState) -> None:
     A prioridade pertence ao jogador. Trocar uma unidade por outra sem abandonar
     totalmente o local preserva a posicao do jogador.
     """
-    houses = (CENTER, *CITY_HOUSES)
+    houses = game_houses(state)
     order = curuna_order(state)
     state.night_priority_by_house = {}
     state.night_start_positions = {}
@@ -136,10 +146,10 @@ def sync_house_priority(state: GameState, *houses: str) -> None:
     """Remove quem abandonou o local e poe novos ocupantes no fim."""
     if not state.night_priority_by_house:
         state.night_priority_by_house = {
-            house: [] for house in (CENTER, *CITY_HOUSES)
+            house: [] for house in game_houses(state)
         }
     for house in houses:
-        if house not in (CENTER, *CITY_HOUSES):
+        if house not in game_houses(state):
             continue
         present = {
             p.id for p in state.players if p.city.is_alive()

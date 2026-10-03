@@ -136,4 +136,28 @@ async function checkPortraitLoading() {
   assert.equal(context.unitIconPath({kind:'hero',hero_id:'miyamoto'},{people:'humanos'}),null);
   console.log('UI: 43 retratos por hero_id, 64/32px, controlador independente, fallback/índice indisponível, Curruna, inspeção, relatórios e atalhos verificados.');
 }
+for (const count of [2,3,4,5]) {
+  const players = Array.from({length:count},(_,index)=>({...view.players[0],id:index+1,name:`Jogador ${index+1}`}));
+  context.variableView = {...view, players, curuna_id:count};
+  vm.runInContext('currentView=variableView; renderMap(variableView)',context);
+  assert.equal(map.querySelectorAll('.house').length,count+1);
+  assert.equal(map.dataset.playerCount,String(count));
+  assert.equal(map.querySelectorAll('.unit-marker').length,25);
+  assert.ok(map.children.find(h=>h.dataset.house===`city_${count}`).className.includes('curuna-house'));
+  if(count!==4) {
+    const rectangles=map.children.map(h=>{
+      const [left,top,width,height]=h.getAttribute('style').match(/-?[\d.]+(?=%)/g).map(Number);
+      assert.ok(left>=0&&top>=0&&left+width<=100&&top+height<=100);
+      return {left,top,width,height};
+    });
+    rectangles.forEach((a,i)=>rectangles.slice(i+1).forEach(b=>assert.ok(
+      a.left+a.width<=b.left||b.left+b.width<=a.left||a.top+a.height<=b.top||b.top+b.height<=a.top
+    )));
+    const first=rectangles[1]; assert.ok(Math.abs(first.left-39)<.001&&first.top===3);
+    if(count===2) assert.ok(rectangles[2].top===75);
+    if(count===3) assert.ok(rectangles[2].left<39&&rectangles[3].left>39);
+  } else assert.ok(map.children.every(h=>h.getAttribute('style')===''));
+}
+context.annotateShortcuts();
+assert.match(map.children.find(h=>h.dataset.house==='city_5').querySelector('button').title,/Alt\+Shift\+6/);
 checkPortraitLoading().catch(error => { console.error(error); process.exitCode=1; });

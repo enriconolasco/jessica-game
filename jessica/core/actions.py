@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .state import game_houses
 from .constants import (
     RESOURCES_PER_DAY, GOLD_INTEREST_DIVISOR, CITY_LIFE_COST_GOLD,
     TROOP_SUMMON_COST_MAGIC, TROOP_MAX_LIFE,
@@ -342,7 +343,7 @@ def summon_hero(state: GameState, player_id: int, force_hero_id: str | None = No
 
 
 def move_unit(state: GameState, player_id: int, unit_id: str, destination: str) -> None:
-    if destination not in (CENTER, *CITY_HOUSES):
+    if destination not in game_houses(state):
         raise ActionError(f"Destino invalido: {destination}")
     player = get_player(state, player_id)
     unit = next((u for u in player.units if u.id == unit_id and u.is_alive()), None)
@@ -1220,7 +1221,7 @@ def aiquara_mover(state: GameState, player_id: int, enemy_unit_id: str,
         raise ActionError("Inimigo nao encontrado na casa de Aiquara.")
     if isinstance(enemy, Hero) and enemy.hero_id == "valtherion":
         raise ActionError("Valtherion nao pode ser controlado.")
-    if destination not in (CENTER, *CITY_HOUSES):
+    if destination not in game_houses(state):
         raise ActionError("Destino invalido.")
     origin = enemy.house
     if origin == destination:

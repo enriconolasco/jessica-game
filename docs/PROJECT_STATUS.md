@@ -1,4 +1,19 @@
-# Estado do projeto — 02/10/2026
+# Estado do projeto — 03/10/2026
+
+## Atualização de configuração pré-jogo
+
+Na branch `codex/online-rooms`: motor compartilhado e três clientes aceitam
+2–5 jogadores; vida/Ouro/Magia/artefatos individuais; mapa com cidades distribuídas
+ao redor do centro; recompensa por eliminação conta vivos antes da morte.
+Saves e salas antigos de quatro jogadores mantêm compatibilidade.
+Especificação: [CONFIGURACAO_PARTIDA.md](CONFIGURACAO_PARTIDA.md).
+Verificação: suíte anterior executada; regressão do roteiro de ataque obrigatório
+corrigida e cenários afetados reexecutados. Total atualizado: 535 testes Python,
+sete testes Node, preparação terminal e navegador com 2–5 cidades verificados.
+Não comprova todas as combinações: partidas humanas completas por quantidade pendentes.
+Esta alteração de regras/configuração ainda não foi integrada à referência `main`.
+
+## Referência e transporte anteriores
 
 - Versão compartilhada de playtest: `main`, `bd1df00`.
 - Referência recuperável: tag `web-local-pre-online-2026-10-02`.

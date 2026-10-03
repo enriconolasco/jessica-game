@@ -314,7 +314,7 @@ def legal(state, pid):
             return options
         if setup[0]["kind"] == "vovo":
             return [offer("night_setup", {"kind": "vovo", "position": i},
-                          f"Vovó: declarar na posição {i}") for i in range(1, 5)]
+                          f"Vovó: declarar na posição {i}") for i in range(1, len(trial.players) + 1)]
         return [offer("night_setup", {"kind": "luna", "return": value},
                       "Luna: retornar à origem" if value else "Luna: permanecer aqui")
                 for value in (True, False)]

@@ -4,6 +4,7 @@ window.JessicaOnline = (() => {
   const node = id => document.getElementById(id);
   let session = null, catalog = null, room = null, revision = -1, busy = false, timer = null, disconnected = false;
   let cachedSnapshot = null, operationBusy = false;
+  let initialFingerprint = null, initialRows = [];
   let socket = null, socketReady = false, reconnectTimer = null, reconnectDelay = 1000, stopped = false, needsSync = false;
   function readAccess(storage, key) {
     try {
@@ -138,7 +139,25 @@ window.JessicaOnline = (() => {
     node("onlineReady").disabled = !own.people || operationBusy;
     node("onlineReady").textContent = own.ready ? "Ainda não estou pronto" : "Estou pronto";
     node("onlineStart").hidden = room.you !== room.host_id;
-    node("onlineStart").disabled = operationBusy || room.players.length !== 4 || !room.players.every(p => p.ready);
+    node("onlineStart").disabled = operationBusy || room.players.length !== (room.capacity || 4) || !room.players.every(p => p.ready);
+    const fingerprint = JSON.stringify([room.code, room.capacity || 4, room.initial_conditions || {}]);
+    if (room.status === "lobby" && fingerprint !== initialFingerprint) {
+      initialFingerprint = fingerprint; initialRows = []; node("onlineInitial").replaceChildren();
+      for (let pid = 1; pid <= (room.capacity || 4); pid++) {
+        const section = document.createElement("section"); section.className = "setup-player";
+        const title = document.createElement("h3"); title.textContent = `Jogador ${pid}`; section.appendChild(title);
+        const inputs = {};
+        [["city_life","Vida da Base",1,100],["gold","Ouro",0,999],["magic","Magia",0,999],["artifacts","Artefatos",0,24]].forEach(([key,text,min,max]) => {
+          const label = document.createElement("label"); label.textContent = text;
+          const input = document.createElement("input"); input.type = "number"; input.min = min; input.max = max;
+          input.placeholder = "Padrão"; input.value = room.initial_conditions?.[pid]?.[key] ?? "";
+          input.disabled = room.you !== room.host_id; inputs[key] = input; label.appendChild(input); section.appendChild(label);
+        });
+        initialRows.push({pid, inputs}); node("onlineInitial").appendChild(section);
+      }
+    }
+    node("onlineConfigure").hidden = room.you !== room.host_id;
+    node("onlineConfigure").disabled = operationBusy;
     node("onlineChoice").hidden = room.status === "playing";
   }
   async function poll() {
@@ -153,7 +172,7 @@ window.JessicaOnline = (() => {
         await refresh();
       }
       disconnected = false;
-      if (next.status === "lobby") node("onlineConnection").textContent = `Conectado · ${socketReady ? "tempo real" : "HTTP"} · ${next.players.length}/4 participantes`;
+      if (next.status === "lobby") node("onlineConnection").textContent = `Conectado · ${socketReady ? "tempo real" : "HTTP"} · ${next.players.length}/${next.capacity || 4} participantes`;
     } catch (error) {
       disconnected = true;
       node("onlineConnection").textContent = "Conexão interrompida — tentando retornar, sem trocar de jogador.";
@@ -297,11 +316,14 @@ window.JessicaOnline = (() => {
     node("onlinePeople").onchange = () => heroOptions();
     node("onlineHero").onchange = choiceHelp;
     node("onlineRules").onclick = () => showHelp();
-    node("onlineCreate").onclick = () => operation("create", {name:node("onlineName").value});
+    node("onlineCreate").onclick = () => operation("create", {name:node("onlineName").value, num_players:+node("onlineCapacity").value || 4});
     node("onlineJoin").onclick = () => operation("join", {name:node("onlineName").value});
     node("onlineSelect").onclick = () => operation("select", {people:node("onlinePeople").value, hero_id:node("onlineHero").value});
     node("onlineReady").onclick = () => operation("ready", {ready:!room.players.find(p => p.player_id === room.you).ready});
     node("onlineStart").onclick = () => operation("start", {});
+    node("onlineConfigure").onclick = () => operation("configure", {revision:room.revision,
+      initial_conditions:Object.fromEntries(initialRows.map(({pid,inputs}) => [String(pid),
+        Object.fromEntries(Object.entries(inputs).flatMap(([key,input]) => input.value === "" ? [] : [[key, Number(input.value)]]))]))});
     node("onlineRotate").onclick = rotateAccess;
     node("onlineResume").onclick = resumeRemembered;
     node("onlineForget").onclick = () => {

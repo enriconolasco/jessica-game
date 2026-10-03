@@ -3,6 +3,7 @@ from copy import deepcopy
 from collections import Counter
 from itertools import combinations
 import json
+from .state import game_houses
 
 from . import actions as core, artifacts_effects, heroes, peoples
 from . import spell_choices
@@ -187,7 +188,7 @@ def _candidates(state, player):
             for unit in owner.units:
                 if not unit.is_alive():
                     continue
-                for destination in (CENTER, *CITY_HOUSES):
+                for destination in game_houses(state):
                     name = heroes.hero_name(unit.hero_id) if isinstance(unit, Hero) else unit.id
                     label = "Centro" if destination == CENTER else destination.replace("city_", "Cidade J")
                     yield _offer("hero_ability", pid,

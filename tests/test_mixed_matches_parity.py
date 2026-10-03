@@ -107,8 +107,10 @@ def choose_night(state, choices):
                             or a["params"]["kind"] in ("aiquara", "besouro"))
             return candidates[0]
     attacks = [a for a in choices if a["type"] == "night_attack" and a["player_id"] == 1]
-    return next((a for a in attacks if a["params"]["target_type"] == "city"),
-                attacks[0] if attacks else next(a for a in choices if a["type"] == "night_pass"))
+    if attacks:
+        return next((a for a in attacks if a["params"]["target_type"] == "city"), attacks[0])
+    return next((a for a in choices if a["type"] == "night_pass"),
+                next((a for a in choices if a["type"] == "night_attack"), None))
 
 
 def finish_night(state, counts, on_step=None, night_policy=None):
