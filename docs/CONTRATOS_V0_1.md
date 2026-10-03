@@ -8,6 +8,9 @@ formato definitivo nem substitui ainda os saves e logs existentes.
 Extensão compatível de 03/10/2026: partidas com 2–5 participantes e condições
 iniciais individuais. IDs de casas e opções devem vir do estado real, não de uma
 lista fixa de quatro cidades. Detalhes em [CONFIGURACAO_PARTIDA.md](CONFIGURACAO_PARTIDA.md).
+O lobby tem duas etapas obrigatórias: povos públicos e heróis privados. Antes de
+iniciar, a projeção da sala só inclui o herói do próprio participante, nunca dos
+adversários (nem para o anfitrião). A última confirmação inicia e revela atomicamente.
 
 - `ACTION_VERSION = "action-v0.1"`
 - `EVENT_VERSION = "event-v0.1"`

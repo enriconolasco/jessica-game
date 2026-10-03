@@ -12,7 +12,8 @@ domínio próprio. Não instala serviço permanente, certificados locais ou fire
 3. Aguarde **“Abra no PC e nos celulares”**. Abra o link HTTPS mostrado também no PC.
 4. Crie uma sala. Envie aos amigos o convite da sala, não sua credencial.
 5. O anfitrião define 2–5 vagas ao criar e pode personalizar as condições iniciais.
-   Cada um escolhe povo/herói e marca pronto; a partida começa com todas as vagas prontas.
+   Todos confirmam os povos publicamente; depois escolhem os heróis em segredo.
+   A última confirmação revela os heróis e inicia automaticamente a partida.
 6. Mantenha PC, internet e janela do iniciador abertos durante a partida. Um Ctrl+C
    encerra túnel e processos deste iniciador; aguarde a janela terminar.
 

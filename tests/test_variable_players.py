@@ -113,7 +113,7 @@ def test_rooms_capacity_config_permissions_and_restore_all_counts():
                     room.join(f"J{pid}")
                 rejects(lambda: room.join("extra"), RoomError)
                 for member, row in zip(room.members, ROWS):
-                    room.select(member, row["people"], row["hero_id"])
+                    room.select(member, row["people"])
                     room.mark_ready(member, True)
                 before = room.record()
                 rejects(lambda: room.configure(room.members[1], room.revision, {}), RoomError)
@@ -121,7 +121,8 @@ def test_rooms_capacity_config_permissions_and_restore_all_counts():
                 assert room.record() == before
                 room.configure(room.members[0], room.revision, {"1":{"magic":8,"artifacts":2}})
                 assert not any(m.ready for m in room.members)
-                for member in room.members:
+                for member, row in zip(room.members, ROWS):
+                    room.select(member, hero_id=row["hero_id"])
                     room.mark_ready(member, True)
                 room.start(room.members[0])
                 assert len(room.match["state"].players) == count
@@ -152,7 +153,7 @@ def test_terminal_pregame_and_map_all_counts():
         with patch.object(main, "console", Console(file=output, width=100)), \
                 patch.object(main, "_ask_int", side_effect=[42,count,2,6,0,0,1]), \
                 patch.object(main, "pick_index", return_value=0), \
-                patch.object(main.Prompt, "ask", side_effect=[*(f"Pessoa{i}" for i in range(1,count+1)),"n"]):
+                patch.object(main.Prompt, "ask", side_effect=[*(f"Pessoa{i}" for i in range(1,count+1)), *([""] * count),"n"]):
             state = main.setup_ui()
             main.show_map(state)
         assert len(state.players) == count and all(len(p.hand) == 1 for p in state.players)

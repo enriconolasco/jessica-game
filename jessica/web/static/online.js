@@ -124,7 +124,8 @@ window.JessicaOnline = (() => {
       const line = document.createElement("li");
       const people = catalog.peoples.find(item => item.id === p.people);
       const hero = catalog.heroes.find(item => item.id === p.hero_id);
-      line.textContent = `J${p.player_id} ${p.name}${p.player_id === room.you ? " (você)" : ""} · ${people?.label || "povo não escolhido"}${hero ? ` · ${hero.name}` : ""} · ${p.ready ? "pronto" : "aguardando"}`;
+      const confirmed = room.setup_phase === "peoples" ? p.people_confirmed : p.ready;
+      line.textContent = `J${p.player_id} ${p.name}${p.player_id === room.you ? " (você)" : ""} · ${people?.label || "povo não escolhido"}${hero ? ` · ${hero.name}${room.status !== "playing" ? " (secreto)" : ""}` : room.setup_phase === "heroes" && room.status !== "playing" ? " · herói secreto" : ""} · ${confirmed ? "confirmado" : "aguardando"}`;
       node("onlinePlayers").appendChild(line);
     });
     const own = room.players.find(p => p.player_id === room.you);
@@ -132,13 +133,18 @@ window.JessicaOnline = (() => {
     if (own.people && (own.people !== previousOwn?.people || own.hero_id !== previousOwn?.hero_id)) {
       node("onlinePeople").value = own.people; heroOptions(own.hero_id);
     }
-    node("onlinePeople").disabled = own.ready;
-    node("onlineHero").disabled = own.ready || node("onlinePeople").value === "mortos_vivos";
-    node("onlineSelect").disabled = own.ready || operationBusy;
+    const peoplesStage = room.setup_phase === "peoples";
+    const confirmed = peoplesStage ? own.people_confirmed : own.ready;
+    node("onlineSetupStage").textContent = peoplesStage ? "1/2 — Povos públicos. Todos precisam confirmar antes de escolher heróis." : "2/2 — Heróis secretos. A última confirmação revela todos e inicia a partida.";
+    node("onlineHeroLabel").hidden = peoplesStage;
+    node("onlinePeople").disabled = !peoplesStage || confirmed;
+    node("onlineHero").disabled = peoplesStage || own.ready || node("onlinePeople").value === "mortos_vivos";
+    node("onlineSelect").disabled = confirmed || operationBusy;
+    node("onlineSelect").textContent = peoplesStage ? "Selecionar povo público" : "Salvar escolha secreta de herói";
     node("onlineRotate").disabled = operationBusy;
-    node("onlineReady").disabled = !own.people || operationBusy;
-    node("onlineReady").textContent = own.ready ? "Ainda não estou pronto" : "Estou pronto";
-    node("onlineStart").hidden = room.you !== room.host_id;
+    node("onlineReady").disabled = !own.people || !peoplesStage && own.people !== "mortos_vivos" && !own.hero_id || operationBusy;
+    node("onlineReady").textContent = confirmed ? "Desmarcar minha confirmação" : peoplesStage ? "Confirmar povo" : "Confirmar herói e aguardar revelação";
+    node("onlineStart").hidden = Boolean(room.setup_phase) || room.you !== room.host_id;
     node("onlineStart").disabled = operationBusy || room.players.length !== (room.capacity || 4) || !room.players.every(p => p.ready);
     const fingerprint = JSON.stringify([room.code, room.capacity || 4, room.initial_conditions || {}]);
     if (room.status === "lobby" && fingerprint !== initialFingerprint) {
@@ -318,8 +324,11 @@ window.JessicaOnline = (() => {
     node("onlineRules").onclick = () => showHelp();
     node("onlineCreate").onclick = () => operation("create", {name:node("onlineName").value, num_players:+node("onlineCapacity").value || 4});
     node("onlineJoin").onclick = () => operation("join", {name:node("onlineName").value});
-    node("onlineSelect").onclick = () => operation("select", {people:node("onlinePeople").value, hero_id:node("onlineHero").value});
-    node("onlineReady").onclick = () => operation("ready", {ready:!room.players.find(p => p.player_id === room.you).ready});
+    node("onlineSelect").onclick = () => operation("select", room.setup_phase === "peoples" ? {people:node("onlinePeople").value} : {hero_id:node("onlineHero").value});
+    node("onlineReady").onclick = () => {
+      const own = room.players.find(p => p.player_id === room.you);
+      return operation("ready", {ready:!(room.setup_phase === "peoples" ? own.people_confirmed : own.ready)});
+    };
     node("onlineStart").onclick = () => operation("start", {});
     node("onlineConfigure").onclick = () => operation("configure", {revision:room.revision,
       initial_conditions:Object.fromEntries(initialRows.map(({pid,inputs}) => [String(pid),

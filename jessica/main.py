@@ -1500,7 +1500,7 @@ def _get_actions(state, player) -> list[tuple[str, str, str]]:
     return r
 
 
-def pick_index(prompt: str, options: list[str]) -> int:
+def pick_index(prompt: str, options: list[str], secret: bool = False) -> int:
     table = Table(box=box.SIMPLE)
     table.add_column("#", justify="right", style="cyan")
     table.add_column("Opcao")
@@ -1509,7 +1509,7 @@ def pick_index(prompt: str, options: list[str]) -> int:
     console.print(table)
     while True:
         try:
-            n = IntPrompt.ask(prompt, default=1)
+            n = IntPrompt.ask(prompt, default=1, password=secret)
             if 1 <= n <= len(options):
                 return n - 1
         except Exception:
@@ -1628,6 +1628,11 @@ def setup_ui():
             console.print(f"[bold]{names[pid]}[/bold] (Mortos-Vivos): sem escolha de heroi.\n")
             choices[pid]["heroi"] = ""
             continue
+        console.clear()
+        console.print("[bold]Povos confirmados (públicos)[/bold]")
+        for other in povo_order:
+            console.print(f"{names[other]}: {choices[other]['povo']}")
+        Prompt.ask(f"Passe o terminal a {names[pid]}. Só essa pessoa deve ver a escolha. Enter para continuar", default="")
         # Ent permanece fora da selecao enquanto aguarda rework.
         herois = [name for name in HEROES_BY_PEOPLE[povo]
                   if name.strip().lower() != "ent"
@@ -1635,12 +1640,15 @@ def setup_ui():
         console.print(f"Vez de [bold]{names[pid]}[/bold] ({povo}).")
         while True:
             options = list(herois) + ["Consultar o que os heróis fazem"]
-            idx = pick_index("Heroi", options)
+            idx = pick_index("Heroi (escolha secreta)", options, secret=True)
             if idx < len(herois):
                 break
             _show_hero_selection_help(povo, herois)
         choices[pid]["heroi"] = herois[idx]
-        console.print(f"[green]{names[pid]} escolheu: {herois[idx]}[/green]\n")
+        console.clear()
+    console.print("[bold]Todos escolheram — revelação dos heróis[/bold]")
+    for pid in povo_order:
+        console.print(f"{names[pid]}: {choices[pid]['heroi'] or 'Mortos-Vivos: escolhe ao invocar'}")
     initial = {pid: {"artifacts": artifacts_start} if artifacts_start else {} for pid in names}
     if Prompt.ask("Personalizar condições por jogador?", choices=["s", "n"], default="n") == "s":
         for pid in names:

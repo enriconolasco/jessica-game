@@ -57,12 +57,18 @@ def lobby(base):
     return code, tokens
 
 
+def prepare(base, code, tokens, choices):
+    for token, (people, _) in zip(tokens, choices):
+        assert request(base, f"/rooms/{code}/select", {"people": people}, token)[0] == 200
+        assert request(base, f"/rooms/{code}/ready", {"ready": True}, token)[0] == 200
+    for token, (_, hero) in zip(tokens, choices):
+        assert request(base, f"/rooms/{code}/select", {"hero_id": hero}, token)[0] == 200
+        assert request(base, f"/rooms/{code}/ready", {"ready": True}, token)[0] == 200
+
+
 def started(base):
     code, tokens = lobby(base)
-    for token, (people, hero) in zip(tokens, [("humanos", "miyamoto"), ("anoes", "ori"),
-                                           ("orcs", "arken"), ("fadas", "luna")]):
-        assert request(base, f"/rooms/{code}/select", {"people": people, "hero_id": hero}, token)[0] == 200
-        assert request(base, f"/rooms/{code}/ready", {"ready": True}, token)[0] == 200
+    prepare(base, code, tokens, [("humanos", "miyamoto"), ("anoes", "ori"), ("orcs", "arken"), ("fadas", "luna")])
     assert request(base, f"/rooms/{code}/start", {}, tokens[0])[0] == 200
     return code, tokens, online_server.ROOMS.get(code)
 
@@ -90,11 +96,11 @@ def test_lobby_four_unique_sessions_and_host_start():
             assert all(t not in serialized for t in tokens)
             assert "credential_hash" not in serialized
             assert "seed" not in public
-        assert request(base, route + "/select", {"people": "humanos", "hero_id": "miyamoto"}, tokens[0])[0] == 200
-        assert request(base, route + "/select", {"people": "humanos", "hero_id": "besouro"}, tokens[1])[0] == 409
+        assert request(base, route + "/select", {"people": "humanos"}, tokens[0])[0] == 200
+        assert request(base, route + "/select", {"people": "humanos"}, tokens[1])[0] == 409
         assert request(base, route + "/select", {"people": "filhos_floresta", "hero_id": "ent"}, tokens[1])[0] == 422
         assert request(base, route + "/ready", {"ready": True}, tokens[0])[0] == 200
-        assert request(base, route + "/select", {"people": "orcs", "hero_id": "arken"}, tokens[0])[0] == 409
+        assert request(base, route + "/select", {"people": "orcs"}, tokens[0])[0] == 409
 
 
 def test_private_view_events_and_cross_room_credentials():
@@ -266,9 +272,7 @@ def test_variable_capacity_and_initial_configuration_http():
             route = f"/rooms/{code}/configure"
             assert request(base, route, config, tokens[1])[0] == 403
             assert request(base, route, config, tokens[0])[0] == 200
-            for token, row in zip(tokens, ROWS):
-                assert request(base, f"/rooms/{code}/select", {"people":row["people"],"hero_id":row["hero_id"]}, token)[0] == 200
-                assert request(base, f"/rooms/{code}/ready", {"ready":True}, token)[0] == 200
+            prepare(base, code, tokens, [(row["people"],row["hero_id"]) for row in ROWS[:count]])
             assert request(base, f"/rooms/{code}/start", {}, tokens[0])[0] == 200
             status, snapshot = request(base, f"/rooms/{code}/snapshot", token=tokens[1])
             assert status == 200 and len(snapshot["view"]["players"]) == count

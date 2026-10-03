@@ -689,12 +689,12 @@ function renderSetup() {
   defaults.forEach((defaultPeople, index) => {
     const row = document.createElement("section");
     row.className = "setup-player";
-    row.innerHTML = `<h3>Jogador ${index + 1}</h3><label>Nome <input class="setup-name" maxlength="40" value="Jogador ${index + 1}"></label><label>Povo <select class="setup-people"></select></label><label>Herói <select class="setup-hero"></select></label>`;
+    row.innerHTML = `<h3>Jogador ${index + 1}</h3><label>Nome <input class="setup-name" maxlength="40" value="Jogador ${index + 1}"></label><label>Povo público <select class="setup-people"></select></label><label hidden>Herói <select class="setup-hero"></select></label><label>Confirmo meu povo <input class="setup-confirm" type="checkbox"></label>`;
     const peopleSelect = row.querySelector(".setup-people");
     catalog.peoples.forEach(people => peopleSelect.appendChild(new Option(people.label, people.id)));
     peopleSelect.value = previous[index]?.people || defaultPeople;
     if (previous[index]) row.querySelector(".setup-name").value = previous[index].name;
-    peopleSelect.onchange = () => { updateHeroSelect(row, peopleSelect.value); updatePeopleAvailability(); };
+    peopleSelect.onchange = () => { row.querySelector(".setup-confirm").checked = false; updateHeroSelect(row, peopleSelect.value); updatePeopleAvailability(); };
     updateHeroSelect(row, peopleSelect.value);
     if (previous[index]?.hero) row.querySelector(".setup-hero").value = previous[index].hero;
     [["city_life","Vida da Base",1,100],["gold","Ouro",0,999],["magic","Magia",0,999],["artifacts","Artefatos na mão",0,24]].forEach(([key,title,min,max]) => {
@@ -729,6 +729,61 @@ function setupPayload() {
              artifacts:+$("artifactsStart").value,
              order_mode:$("orderMode").value},
   };
+}
+
+function chooseSecretHeroes(payload) {
+  return new Promise((resolve, reject) => {
+    const dialog = document.createElement("dialog");
+    dialog.setAttribute("aria-label", "Escolha secreta dos heróis");
+    document.body.appendChild(dialog);
+    let index = 0, submitting = false;
+    const render = () => {
+      dialog.replaceChildren();
+      const heading = document.createElement("h2"); heading.textContent = "Povos confirmados — conhecimento público";
+      const publicList = document.createElement("ul");
+      payload.players.forEach(player => {
+        const line = document.createElement("li"); line.textContent = `${player.name}: ${peopleName(player.people)}`;
+        publicList.appendChild(line);
+      });
+      const player = payload.players[index];
+      const message = document.createElement("p");
+      message.textContent = `Passe o aparelho a ${player.name}. Os demais não devem olhar a escolha. (${index+1}/${payload.players.length})`;
+      const ready = document.createElement("button"); ready.textContent = `Sou ${player.name} — escolher meu herói`;
+      const privateArea = document.createElement("div");
+      ready.onclick = () => {
+        ready.hidden = true;
+        const label = document.createElement("label"); label.textContent = "Meu herói secreto ";
+        const select = document.createElement("select");
+        const people = catalog.peoples.find(p => p.id === player.people);
+        if (player.people === "mortos_vivos") select.appendChild(new Option("Escolherei ao invocar", ""));
+        else people.heroes.forEach(hero => select.appendChild(new Option(`${hero.name} · ${hero.life} vida`, hero.id)));
+        label.appendChild(select);
+        const help = document.createElement("button"); help.textContent = "Consultar heróis";
+        help.onclick = () => showHelp(player.people);
+        const confirm = document.createElement("button"); confirm.textContent = "Confirmar meu herói secreto";
+        confirm.onclick = async () => {
+          player.hero_id = select.value;
+          privateArea.replaceChildren();
+          index++;
+          if (index < payload.players.length) { render(); return; }
+          submitting = true; cancel.disabled = true; ready.hidden = true;
+          message.textContent = "Todos confirmaram. Revelando heróis e iniciando a partida…";
+          try {
+            const result = await api("/matches", {method:"POST", body:JSON.stringify(payload)});
+            dialog.close(); resolve(result);
+          } catch (error) { dialog.close(); reject(error); }
+        };
+        privateArea.append(label, help, confirm); select.focus();
+      };
+      const cancel = document.createElement("button"); cancel.textContent = "Cancelar preparação";
+      cancel.onclick = () => dialog.close();
+      dialog.append(heading, publicList, message, ready, privateArea, cancel); ready.focus();
+    };
+    payload.players.forEach(player => { player.hero_id = ""; });
+    dialog.addEventListener("cancel", event => { if (submitting) event.preventDefault(); });
+    dialog.addEventListener("close", () => { dialog.remove(); if (!submitting) resolve(null); });
+    render(); dialog.showModal();
+  });
 }
 
 function showHelp(peopleId = null) {
@@ -894,11 +949,17 @@ function createGameplayControls() {
 $("create").onclick = async () => {
   try {
     $("setupMessage").textContent = "";
-    const created = await api("/matches", {method:"POST", body:JSON.stringify(setupPayload())});
+    const rows = [...document.querySelectorAll(".setup-player")];
+    if (!rows.every(row => row.querySelector(".setup-confirm").checked)) throw new Error("Todos os jogadores precisam confirmar seus povos públicos primeiro.");
+    const payload = setupPayload();
+    if (new Set(payload.players.map(p => p.people)).size !== payload.players.length) throw new Error("Os povos não podem se repetir.");
+    const created = await chooseSecretHeroes(payload);
+    if (!created) return;
     await enter(created.match_id);
     $("message").textContent = created.save_warning || "";
   } catch (error) { $("setupMessage").textContent = error.message; }
 };
+$("create").textContent = "Confirmar povos e escolher heróis em segredo";
 $("load").onclick = async () => {
   try {
     const loaded = await api("/matches/load", {method:"POST", body:JSON.stringify({save_id:$("saveId").value})});

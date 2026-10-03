@@ -7,9 +7,13 @@ Na branch `codex/online-rooms`: motor compartilhado e três clientes aceitam
 ao redor do centro; recompensa por eliminação conta vivos antes da morte.
 Saves e salas antigos de quatro jogadores mantêm compatibilidade.
 Especificação: [CONFIGURACAO_PARTIDA.md](CONFIGURACAO_PARTIDA.md).
-Verificação: suíte anterior executada; regressão do roteiro de ataque obrigatório
-corrigida e cenários afetados reexecutados. Total atualizado: 535 testes Python,
-sete testes Node, preparação terminal e navegador com 2–5 cidades verificados.
+Preparação: todos confirmam povos públicos antes de escolher heróis secretos;
+a última confirmação revela os heróis e inicia a partida. Online filtra as escolhas
+no servidor, inclusive para o anfitrião; terminal/hotseat usam passagem do aparelho.
+Salas antigas não iniciadas exigem nova confirmação dos povos.
+Verificação: 539 testes Python e oito testes Node aprovados; navegador verificado
+com passagem privada no hotseat e duas sessões online, sigilo e revelação conjunta.
+Preparação terminal e navegador com 2–5 cidades também verificados.
 Não comprova todas as combinações: partidas humanas completas por quantidade pendentes.
 Esta alteração de regras/configuração ainda não foi integrada à referência `main`.
 

@@ -50,9 +50,12 @@ class Member:
     people: str | None = None
     hero_id: str = ""
     ready: bool = False
+    people_confirmed: bool = False
 
-    def public(self):
-        return {k: getattr(self, k) for k in ("player_id", "name", "people", "hero_id", "ready")}
+    def public(self, reveal_hero=False):
+        result = {k: getattr(self, k) for k in ("player_id", "name", "people", "ready", "people_confirmed")}
+        result["hero_id"] = self.hero_id if reveal_hero else None
+        return result
 
 
 @dataclass
@@ -68,12 +71,14 @@ class Room:
     store: object = field(default=None, repr=False)
     capacity: int = 4
     initial_conditions: dict = field(default_factory=dict)
+    setup_phase: str = "peoples"
 
     def record(self):
         return {"version": 1, "save_version": SAVE_VERSION, "action_version": ACTION_VERSION,
                 "event_version": EVENT_VERSION, "code": self.code, "seed": self.seed,
                 "revision": self.revision, "members": [asdict(m) for m in self.members],
                 "capacity": self.capacity, "initial_conditions": self.initial_conditions,
+                "setup_phase": self.setup_phase,
                 "match": None if self.match is None else {
                     "state": state_to_dict(self.match["state"]), "events": self.match["events"]},
                 "commands": [{"player_id": pid, "command_id": cid, **entry}
@@ -89,6 +94,12 @@ class Room:
                     or type(record["revision"]) is not int or record["revision"] < 1):
                 raise ValueError("Formato incompatível")
             members = [Member(**item) for item in record["members"]]
+            phase = record.get("setup_phase", "heroes" if record["match"] else "peoples")
+            if "setup_phase" not in record:
+                for member in members:
+                    member.people_confirmed = bool(record["match"])
+                    if not record["match"]:
+                        member.hero_id, member.ready = "", False
             capacity = record.get("capacity", 4)
             initial = validate_config(capacity, record.get("initial_conditions", {}))
             if (not 1 <= len(members) <= capacity or any(type(m.player_id) is not int for m in members)
@@ -97,22 +108,27 @@ class Room:
             for member in members:
                 name(member.name)
                 if (not re.fullmatch(r"[a-f0-9]{64}", member.credential_hash)
-                        or type(member.ready) is not bool or member.people not in (None, *server.PEOPLES)
+                        or type(member.ready) is not bool or type(member.people_confirmed) is not bool
+                        or member.people not in (None, *server.PEOPLES)
                         or not isinstance(member.hero_id, str)):
                     raise ValueError("Sessão inválida")
                 if member.people is None:
-                    if member.hero_id or member.ready:
+                    if member.hero_id or member.ready or member.people_confirmed:
                         raise ValueError("Escolha incompleta")
                 elif member.people == "mortos_vivos":
                     if member.hero_id:
                         raise ValueError("Escolha de mortos-vivos inválida")
-                elif member.hero_id not in {h.hero_id for h in server.heroes.heroes_for_people(member.people)}:
+                elif (member.hero_id or member.ready) and member.hero_id not in {h.hero_id for h in server.heroes.heroes_for_people(member.people)}:
                     raise ValueError("Herói inválido")
             chosen = [m.people for m in members if m.people]
             if len(set(chosen)) != len(chosen):
                 raise ValueError("Povos duplicados")
+            if (phase not in ("peoples", "heroes")
+                    or phase == "peoples" and any(m.hero_id or m.ready for m in members)
+                    or phase == "heroes" and (len(members) != capacity or not all(m.people_confirmed for m in members))):
+                raise ValueError("Etapa de preparação inválida")
             room = cls(record["code"], record["seed"], members=members, revision=record["revision"], store=store,
-                       capacity=capacity, initial_conditions=initial)
+                       capacity=capacity, initial_conditions=initial, setup_phase=phase)
             if record["match"] is not None:
                 state, events, _ = saves.validate({"version": SAVE_VERSION, **record["match"], "name": "Sala online"})
                 if len(members) != capacity or len(state.players) != capacity or state.seed != room.seed:
@@ -134,13 +150,14 @@ class Room:
         except (KeyError, TypeError, ValueError, AttributeError) as exc:
             raise StorageError("Sala persistida incompatível ou danificada; banco preservado.") from exc
 
-    def _commit(self, *, members=None, match=None, commands=None, initial_conditions=None):
+    def _commit(self, *, members=None, match=None, commands=None, initial_conditions=None, setup_phase=None):
         candidate = Room(self.code, self.seed, revision=self.revision + 1,
                          members=self.members if members is None else members,
                          match=self.match if match is None else match,
                          commands=self.commands if commands is None else commands,
                          capacity=self.capacity,
-                         initial_conditions=self.initial_conditions if initial_conditions is None else initial_conditions)
+                         initial_conditions=self.initial_conditions if initial_conditions is None else initial_conditions,
+                         setup_phase=self.setup_phase if setup_phase is None else setup_phase)
         if self.store:
             try:
                 self.store.save(candidate.record(), self.revision)
@@ -154,13 +171,15 @@ class Room:
             self.members.append(stable)
         self.match, self.commands, self.revision = candidate.match, candidate.commands, candidate.revision
         self.initial_conditions = candidate.initial_conditions
+        self.setup_phase = candidate.setup_phase
         for notify in tuple(self.listeners):
             notify(self.revision)
 
     def public(self, member):
         return {"version": 1, "code": self.code, "revision": self.revision,
                 "status": "playing" if self.match else "lobby", "you": member.player_id,
-                "host_id": 1, "players": [m.public() for m in self.members],
+                "host_id": 1, "players": [m.public(bool(self.match) or m.player_id == member.player_id) for m in self.members],
+                "setup_phase": self.setup_phase,
                 "capacity": self.capacity, "initial_conditions": deepcopy(self.initial_conditions)}
 
     def authenticate(self, credential):
@@ -192,39 +211,60 @@ class Room:
             self._commit(members=members)
         return self.public(member)
 
-    def select(self, member, people, hero_id):
-        if self.match or member.ready:
-            raise RoomError(409, "Desmarque pronto antes de mudar sua escolha.")
+    def select(self, member, people=None, hero_id=None):
+        if self.match or member.ready or self.setup_phase == "peoples" and member.people_confirmed:
+            raise RoomError(409, "Desmarque a confirmação antes de mudar sua escolha.")
+        if self.setup_phase == "peoples":
+            if hero_id not in (None, ""):
+                raise RoomError(422, "Heróis só são escolhidos depois de todos confirmarem os povos.")
+        else:
+            if people not in (None, member.people):
+                raise RoomError(409, "Os povos já foram confirmados e não podem mudar.")
+            people = member.people
         choices = {h.hero_id for h in server.heroes.heroes_for_people(people)} if people in server.PEOPLES else set()
-        if people not in server.PEOPLES or (people != "mortos_vivos" and hero_id not in choices):
+        if people not in server.PEOPLES or (self.setup_phase == "heroes" and people != "mortos_vivos" and hero_id not in choices):
             raise RoomError(422, "Povo ou herói inválido.")
-        if people == "mortos_vivos" and hero_id != "":
+        if people == "mortos_vivos" and hero_id not in (None, ""):
             raise RoomError(422, "Mortos-vivos escolhem heróis durante a partida.")
         if any(m is not member and m.people == people for m in self.members):
             raise RoomError(409, "Povo já escolhido nesta sala.")
         members = deepcopy(self.members)
-        members[member.player_id - 1].people, members[member.player_id - 1].hero_id = people, hero_id
+        members[member.player_id - 1].people, members[member.player_id - 1].hero_id = people, hero_id or ""
         self._commit(members=members)
         return self.public(member)
 
     def mark_ready(self, member, ready):
         if self.match or type(ready) is not bool or not member.people:
             raise RoomError(422, "Escolha povo/herói antes de marcar pronto.")
-        if member.ready != ready:
+        if self.setup_phase == "peoples":
+            members = deepcopy(self.members)
+            members[member.player_id - 1].people_confirmed = ready
+            phase = "heroes" if len(members) == self.capacity and all(m.people_confirmed for m in members) else "peoples"
+            if member.people_confirmed != ready:
+                self._commit(members=members, setup_phase=phase)
+        elif member.ready != ready:
+            if ready and member.people != "mortos_vivos" and not member.hero_id:
+                raise RoomError(422, "Escolha seu herói antes de confirmá-lo.")
             members = deepcopy(self.members)
             members[member.player_id - 1].ready = ready
-            self._commit(members=members)
+            match = self._build_match(members) if all(m.ready for m in members) else None
+            self._commit(members=members, match=match)
         return self.public(member)
+
+    def _build_match(self, members):
+        rows = [{"name": m.name, "people": m.people, "hero_id": m.hero_id,
+                 "initial": self.initial_conditions.get(str(m.player_id), {})} for m in members]
+        state = server._new_state(self.seed, rows)
+        return {"state": state, "events": session.public_events(state)}
 
     def start(self, member):
         if member.player_id != 1:
             raise RoomError(403, "Somente o anfitrião inicia a partida.")
-        if self.match or len(self.members) != self.capacity or not all(m.ready for m in self.members):
+        if self.match:
+            return self.public(member)
+        if self.setup_phase != "heroes" or len(self.members) != self.capacity or not all(m.ready for m in self.members):
             raise RoomError(409, f"São necessários {self.capacity} jogadores prontos.")
-        rows = [{"name": m.name, "people": m.people, "hero_id": m.hero_id,
-                 "initial": self.initial_conditions.get(str(m.player_id), {})} for m in self.members]
-        state = server._new_state(self.seed, rows)
-        self._commit(match={"state": state, "events": session.public_events(state)})
+        self._commit(match=self._build_match(self.members))
         return self.public(member)
 
     def configure(self, member, revision, configs):
@@ -237,6 +277,8 @@ class Room:
             members = deepcopy(self.members)
             for participant in members:
                 participant.ready = False
+                if self.setup_phase == "peoples":
+                    participant.people_confirmed = False
             self._commit(members=members, initial_conditions=checked)
         return self.public(member)
 

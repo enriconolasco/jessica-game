@@ -168,8 +168,8 @@ class Handler(server.Handler):
                         raise RoomError(422, "Informe apenas o nome.")
                     return self._json(201, room.join(body["name"]))
                 member = room.authenticate(self._credential())
-                if operation == "select" and set(body) == {"people", "hero_id"}:
-                    result = room.select(member, body["people"], body["hero_id"])
+                if operation == "select" and set(body) in ({"people"}, {"hero_id"}, {"people", "hero_id"}):
+                    result = room.select(member, body.get("people"), body.get("hero_id"))
                 elif operation == "ready" and set(body) == {"ready"}:
                     result = room.mark_ready(member, body["ready"])
                 elif operation == "start" and not body:

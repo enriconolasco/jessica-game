@@ -37,7 +37,7 @@ def test_lobby_restart_and_only_hashed_credentials_on_disk():
             room = registry.get(code)
             with room.lock:
                 member = room.authenticate(token)
-                room.select(member, "humanos", "miyamoto")
+                room.select(member, "humanos")
                 room.mark_ready(member, True)
             before = room.public(member)
             assert token not in json.dumps(store.load())
@@ -119,7 +119,7 @@ def test_failed_lobby_write_is_atomic_and_creation_is_not_published():
         member = room.authenticate(created["credential"])
         before, disk = room.record(), store.load()
         with patch.object(store, "save", side_effect=StorageError("disk full")):
-            for operation in (lambda: room.select(member, "humanos", "miyamoto"), lambda: room.join("Beto"), lambda: registry.create("Cris")):
+            for operation in (lambda: room.select(member, "humanos"), lambda: room.join("Beto"), lambda: registry.create("Cris")):
                 try:
                     operation()
                     raise AssertionError("Falha de gravação ignorada")
@@ -252,11 +252,9 @@ def test_process_crash_and_restart_preserves_accepted_command():
         path = Path(folder) / "rooms.sqlite3"
         port = free_port_pair()
         with process_server(path, port) as base:
-            from test_online_rooms import lobby
+            from test_online_rooms import lobby, prepare
             code, tokens = lobby(base)
-            for token, (people, hero) in zip(tokens, [("humanos", "miyamoto"), ("anoes", "ori"), ("orcs", "arken"), ("fadas", "luna")]):
-                assert request(base, f"/rooms/{code}/select", {"people":people, "hero_id":hero}, token)[0] == 200
-                assert request(base, f"/rooms/{code}/ready", {"ready":True}, token)[0] == 200
+            prepare(base, code, tokens, [("humanos", "miyamoto"), ("anoes", "ori"), ("orcs", "arken"), ("fadas", "luna")])
             assert request(base, f"/rooms/{code}/start", {}, tokens[0])[0] == 200
             command = envelope(base, code, tokens[0])
             result = request(base, f"/rooms/{code}/actions", command, tokens[0])
