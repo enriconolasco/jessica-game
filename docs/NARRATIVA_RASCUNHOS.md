@@ -4,6 +4,8 @@ Não ativadas no jogo. Exemplo de três jogadores: Humanos/Miyamoto Musashi,
 Anões/Ori e Fadas/Luna. Seleções hipotéticas; não são eventos de uma partida real.
 Locais e motivos particulares abaixo são propostas.
 O usuário escolheu os exemplos 2 e 3; o exemplo 1 foi retirado.
+Adaptações sem os nomes fictícios dos locais estão no catálogo ativo v0.2;
+os textos literais abaixo continuam como referência editorial.
 
 ## 2. Várzea das Sete Voltas
 

@@ -1,0 +1,202 @@
+{
+  "version": "narrative-v0.2",
+  "entries": [
+    {
+      "id": "inicio.v2.serra",
+      "trigger": "match_started",
+      "conditions": {
+        "territory": "uma serra de pedra e mata"
+      },
+      "text": "Em {territory}, os regatos atravessavam o caminho. Era {season}; nas encostas, havia {atmosphere}. As cidades ficavam separadas por morros, mas dependiam das mesmas passagens. Ali se encontravam {peoples}.\n\n{hero_choices} Cada cidade tinha seu próprio comando. Os nomes estavam revelados; as decisões da disputa ainda estavam por tomar.",
+      "weight": 1
+    },
+    {
+      "id": "inicio.v2.varzea",
+      "trigger": "match_started",
+      "conditions": {
+        "territory": "uma várzea de rios largos"
+      },
+      "text": "Em {territory}, o rio demorava a deixar uma margem para tornar a encontrá-la mais adiante. Era {season}. Os barrancos apareciam, e o vento corria sobre o leito largo, trazendo cheiro de lodo e madeira úmida. As travessias eram o motivo da disputa entre {peoples}.\n\n{hero_choices} Conhecer um nome, contudo, não revelava os planos de quem comandava. Entre uma margem e outra, o rio continuava seu curso.",
+      "weight": 1
+    },
+    {
+      "id": "inicio.v2.chapada",
+      "trigger": "match_started",
+      "conditions": {
+        "territory": "um chapadão cercado de veredas"
+      },
+      "text": "Em {territory}, a distância enganava. Uma árvore parecia próxima até que se começasse a caminhar em sua direção. Nas baixadas, os buritis marcavam as veredas; fora delas, o chão seco aparecia entre as touceiras de capim. Os caminhos antigos levavam às cidades. Por eles começava a disputa entre {peoples}.\n\n{hero_choices} Em cada cidade, as decisões cabiam a quem a comandava. Sobre o chapadão, a poeira levantava e logo tornava a assentar.",
+      "weight": 1
+    },
+    {
+      "id": "turno.001",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "O turno {turn} se abre. {curuna} é o Curruna; a paisagem conserva {atmosphere}.",
+      "weight": 1
+    },
+    {
+      "id": "turno.002",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "Outra manhã na mesma terra. No turno {turn}, cabe a {curuna} o lugar de Curruna.",
+      "weight": 1
+    },
+    {
+      "id": "turno.003",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "Em {territory}, os caminhos continuam abertos. Começa o turno {turn}, com {curuna} como Curruna.",
+      "weight": 1
+    },
+    {
+      "id": "turno.004",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "O novo turno traz escolhas, não promessas. {curuna} é o Curruna do turno {turn}.",
+      "weight": 1
+    },
+    {
+      "id": "turno.005",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "A história avança uma manhã. Turno {turn}: {curuna} assume o lugar de Curruna.",
+      "weight": 1
+    },
+    {
+      "id": "turno.006",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "Ainda é {season} em {territory}. O turno {turn} começa; {curuna} é o Curruna.",
+      "weight": 1
+    },
+    {
+      "id": "turno.007",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "A mesma paisagem, outra rodada de decisões. No turno {turn}, o Curruna é {curuna}.",
+      "weight": 1
+    },
+    {
+      "id": "turno.008",
+      "trigger": "turn_started",
+      "conditions": {},
+      "text": "Há {atmosphere}, como havia no começo. O turno {turn} chega, e {curuna} é o Curruna.",
+      "weight": 1
+    },
+    {
+      "id": "passagem.001",
+      "trigger": "player_turn_ended",
+      "conditions": {},
+      "text": "{player} encerrou sua vez do dia. O próximo momento cabe a {next_player}.",
+      "weight": 1
+    },
+    {
+      "id": "passagem.002",
+      "trigger": "player_turn_ended",
+      "conditions": {},
+      "text": "As escolhas do dia de {player} estão feitas. A sequência segue para {next_player}.",
+      "weight": 1
+    },
+    {
+      "id": "passagem.003",
+      "trigger": "player_turn_ended",
+      "conditions": {},
+      "text": "{player} passa a vez. A história segue com {next_player}.",
+      "weight": 1
+    },
+    {
+      "id": "passagem.004",
+      "trigger": "player_turn_ended",
+      "conditions": {},
+      "text": "Fecha-se a vez de {player}, não a disputa. Agora vem {next_player}.",
+      "weight": 1
+    },
+    {
+      "id": "passagem.005",
+      "trigger": "player_turn_ended",
+      "conditions": {},
+      "text": "O dia de {player} chegou ao fim. É hora de acompanhar {next_player}.",
+      "weight": 1
+    },
+    {
+      "id": "passagem.006",
+      "trigger": "player_turn_ended",
+      "conditions": {},
+      "text": "{player} encerra este trecho da partida. O seguinte pertence a {next_player}.",
+      "weight": 1
+    },
+    {
+      "id": "fim.vitoria.001",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "victory"
+      },
+      "text": "{winner} venceu. Em {territory}, termina esta história de {motive}.",
+      "weight": 1
+    },
+    {
+      "id": "fim.vitoria.002",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "victory"
+      },
+      "text": "A disputa terminou: {winner} é o vencedor. A paisagem que recebeu os povos permanece.",
+      "weight": 1
+    },
+    {
+      "id": "fim.vitoria.003",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "victory"
+      },
+      "text": "Os caminhos desta partida chegam ao fim. A vitória pertence a {winner}.",
+      "weight": 1
+    },
+    {
+      "id": "fim.vitoria.004",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "victory"
+      },
+      "text": "Em {territory}, o resultado tem um nome: {winner}. A partida está encerrada.",
+      "weight": 1
+    },
+    {
+      "id": "fim.empate.001",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "draw"
+      },
+      "text": "Nenhuma cidade sobreviveu. Em {territory}, a disputa terminou em empate.",
+      "weight": 1
+    },
+    {
+      "id": "fim.empate.002",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "draw"
+      },
+      "text": "Esta história termina sem vencedor: nenhuma cidade permaneceu viva.",
+      "weight": 1
+    },
+    {
+      "id": "fim.empate.003",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "draw"
+      },
+      "text": "A paisagem permanece, mas nenhuma cidade sobreviveu à partida. Empate.",
+      "weight": 1
+    },
+    {
+      "id": "fim.empate.004",
+      "trigger": "match_ended",
+      "conditions": {
+        "outcome": "draw"
+      },
+      "text": "O resultado é empate. Nenhuma cidade resistiu até o encerramento desta disputa.",
+      "weight": 1
+    }
+  ]
+}

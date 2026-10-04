@@ -1,7 +1,8 @@
 # Narrativa v0.1 — piloto terminal
 
 Direção editorial confirmada: [NARRATIVA.md](NARRATIVA.md).
-Novas introduções permanecem em revisão, fora do catálogo ativo.
+Adaptações do estilo aprovado estão ativas no catálogo v0.2, com territórios
+genéricos e heróis públicos escolhidos. Novos nomes de locais continuam em revisão.
 
 Base auditada: `3dc7035`, branch `codex/online-rooms`. Sem mudança de regras.
 
@@ -36,12 +37,19 @@ resultado entre clientes. `public_roll` parcialmente extraído de frases em
 
 ## Contrato e seleção
 
-Catálogo: `content/narrative/pilot-v0.1.json`, envelope `version: narrative-v0.1`,
-`entries`. São 30 entradas: 8 introduções, 8 turnos, 6 passagens, 4 vitórias e 4 empates.
+Catálogo ativo: `content/narrative/pilot-v0.2.json`, versão `narrative-v0.2`.
+São 25 entradas: 3 introduções (uma por perfil), 8 turnos, 6 passagens,
+4 vitórias e 4 empates. O catálogo v0.1 é referência histórica, não carregado
+por padrão. Envelopes e sessões v0.1 continuam legíveis.
 Cada entrada tem exatamente `id`, `trigger`, `conditions`, `text`, `weight`.
 ID único em `[a-z][a-z0-9_.-]{0,99}`; peso inteiro 1–100; texto de até 600 caracteres.
 Variáveis simples: `territory`, `season`, `atmosphere`, `motive`, `peoples`, `turn`,
-`curuna`, `player`, `next_player`, `winner`. Sem atributos, formatos ou código.
+`curuna`, `player`, `next_player`, `winner`, `hero_choices`.
+`hero_choices` resolve somente `view.players[].chosen_hero_id` pelo catálogo público
+de nomes dos heróis; não lê unidades para pressupor invocação, nem escolhas privadas.
+Inclui todos os heróis escolhidos, de 2–5 jogadores, sem atribuir comando geral.
+Mortos-Vivos sem escolha inicial são mencionados entre os povos, sem herói fictício.
+IDs desconhecidos são omitidos, não impressos como nomes. Sem formatos ou código.
 Condições: igualdade nos atributos dos perfis; `outcome: victory|draw`.
 Entradas inválidas/duplicadas são omitidas e diagnosticadas. Catálogo ausente ou
 incompatível não interrompe o jogo; ausência de entrada compatível omite a prosa.
@@ -94,9 +102,11 @@ argumento; use nomes distintos para conservar partidas. Sem seleção de load na
 
 ## Verificações e pendências
 
-`tests/test_narrative.py`: 13 testes de catálogo, determinismo, sigilo, repetição,
+`tests/test_narrative.py`: 16 testes de catálogo, determinismo, sigilo, repetição,
 save/load, replay, refazer, falhas de conteúdo, Rich literal, checkpoint e fluxo
 terminal simulado; igualdade de estado mecânico/RNG/vencedor com modo ligado/desligado.
-Revisados os 30 textos: variáveis, perfis e ausência de efeitos cosméticos.
+Adicionados casos de todos os povos, 2–5 participantes e migração de sessão v0.1:
+introdução antiga e RNG preservados, sem reapresentação; registros novos usam v0.2.
+Revisadas as três aberturas adaptadas: variáveis, perfis e ausência de efeitos cosméticos.
 Partida humana completa para avaliar ritmo ainda pendente.
 Depois: normalizar combate, ampliar famílias e integrar web; crônica final pendente.

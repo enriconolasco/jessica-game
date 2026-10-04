@@ -7,11 +7,13 @@ from pathlib import Path
 from string import Formatter
 
 from ..core.rng import DeterministicRNG
+from ..core.heroes import HERO_CATALOG
 
-VERSION = "narrative-v0.1"
+VERSION = "narrative-v0.2"
+SUPPORTED_VERSIONS = {"narrative-v0.1", VERSION}
 TRIGGERS = {"match_started", "turn_started", "player_turn_ended", "match_ended"}
 FIELDS = {"territory", "season", "atmosphere", "motive", "peoples", "turn",
-          "curuna", "player", "next_player", "winner"}
+          "curuna", "player", "next_player", "winner", "hero_choices"}
 PROFILES = (
     {"territory": "uma serra de pedra e mata", "season": "tempo das chuvas",
      "atmosphere": "névoa entre os morros", "motive": "a disputa pelas passagens"},
@@ -25,12 +27,12 @@ PEOPLES = dict(zip(
      "mortos_vivos", "filhos_floresta", "gnomos_duendes", "dragoes", "demonios"),
     ("Humanos", "Anões", "Orcs", "Fadas", "Vampiros", "Lobisomens", "Gigantes",
      "Mortos-Vivos", "Filhos da Floresta", "Gnomos e Duendes", "Dragões", "Demônios")))
-CATALOG = Path(__file__).resolve().parents[2] / "content/narrative/pilot-v0.1.json"
+CATALOG = Path(__file__).resolve().parents[2] / "content/narrative/pilot-v0.2.json"
 
 
 def validate_catalog(payload):
     """Entradas inválidas são omitidas; diagnósticos ficam disponíveis à revisão."""
-    if not isinstance(payload, dict) or payload.get("version") != VERSION or not isinstance(payload.get("entries"), list):
+    if not isinstance(payload, dict) or not isinstance(payload.get("version"), str) or payload["version"] not in SUPPORTED_VERSIONS or not isinstance(payload.get("entries"), list):
         return [], ["Envelope narrativo incompatível"]
     entries, errors = [], []
     ids = Counter(e.get("id") for e in payload["entries"]
@@ -72,7 +74,7 @@ def restore_session(value):
     if not value:
         return {}
     try:
-        if (not isinstance(value, dict) or value.get("version") != VERSION
+        if (not isinstance(value, dict) or not isinstance(value.get("version"), str) or value["version"] not in SUPPORTED_VERSIONS
                 or value.get("profile") not in PROFILES
                 or not isinstance(value.get("rng"), dict)
                 or type(value["rng"].get("state")) is not int
@@ -110,6 +112,21 @@ def lifecycle_event(trigger, view, player_id=None, next_player_id=None):
             "data": {"player_id": player_id, "next_player_id": next_player_id}}
 
 
+def _hero_choices(players):
+    clauses = []
+    for player in players:
+        hero_id = player.get("chosen_hero_id")
+        hero = HERO_CATALOG.get(hero_id) if isinstance(hero_id, str) else None
+        if hero is None:
+            continue
+        article = "As" if player["people"] == "fadas" else "Os"
+        if clauses:
+            clauses.append(f"{article.lower()} {PEOPLES.get(player['people'], 'habitantes')}, {hero.name}")
+        else:
+            clauses.append(f"{article} {PEOPLES.get(player['people'], 'habitantes')} haviam escolhido {hero.name}")
+    return "; ".join(clauses) + "." if clauses else ""
+
+
 def observe(seed, session, event, view, mode="breve", entries=None):
     """Só recebe projeção pública. Retorna metadados novos e texto opcional."""
     if (mode != "breve" or not isinstance(event, dict)
@@ -144,10 +161,12 @@ def observe(seed, session, event, view, mode="breve", entries=None):
                     "rng": rng.to_dict(), "history": []}
     if any(r["event_id"] == event["id"] for r in restored["history"]):
         return restored, None
+    restored["version"] = VERSION
     names = {p["id"]: p["name"] for p in view["players"]}
     data = event.get("data", {})
     fields = {**restored["profile"], "turn": event["turn"],
               "peoples": ", ".join(PEOPLES.get(p["people"], p["people"]) for p in view["players"]),
+              "hero_choices": _hero_choices(view["players"]),
               "curuna": names.get(view.get("curuna_id"), "o Curruna"),
               "player": names.get(data.get("player_id"), "o jogador"),
               "next_player": names.get(data.get("next_player_id"), "a noite"),

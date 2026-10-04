@@ -32,7 +32,7 @@ def mechanical(state):
 
 def test_pilot_complete_and_valid():
     entries, errors = load_catalog()
-    assert len(entries) == 30 and not errors
+    assert len(entries) == 25 and not errors
     assert {e["trigger"] for e in entries} == TRIGGERS
     for seed in range(30):
         state = make_state(); state.seed = seed
@@ -49,6 +49,62 @@ def test_catalog_validation():
         entries, errors = validate_catalog({"version":VERSION,"entries":[{**entry, **changes}]})
         assert not entries and errors, changes
     assert not validate_catalog({"version":VERSION,"entries":[entry,entry]})[0]
+
+
+def test_hero_choices_cover_two_to_five_players_without_invoking():
+    from jessica.core.state import create_empty_state
+    from jessica.core.heroes import HERO_CATALOG
+    people_ids = ["fadas","mortos_vivos","humanos","anoes","orcs"]
+    for count in range(2,6):
+        state = create_empty_state(num_players=count,seed=42)
+        expected = []
+        for player, people in zip(state.players,people_ids):
+            player.people = people
+            hero = next((h for h in HERO_CATALOG.values() if h.people == people),None)
+            player.chosen_hero_id = None if people == "mortos_vivos" else hero.hero_id
+            if player.chosen_hero_id: expected.append(hero.name)
+        before = mechanical(state)
+        session, text = emit(state,"match_started")
+        assert all(name in text for name in expected), text
+        assert "Mortos-Vivos" in text and "Cobra" not in text
+        assert text.count("haviam escolhido") == 1 and "As Fadas" in text
+        assert all(not p.units for p in state.players) and mechanical(state) == before
+        assert session["history"][-1]["fields"]["hero_choices"]
+
+
+def test_each_people_uses_public_catalog_names():
+    from jessica.core.heroes import HERO_CATALOG
+    from jessica.narrative.engine import PEOPLES
+    for people in PEOPLES:
+        if people == "mortos_vivos": continue
+        state = make_state()
+        player = state.players[0]; player.people = people
+        hero = next(h for h in HERO_CATALOG.values() if h.people == people)
+        player.chosen_hero_id = hero.hero_id
+        _, text = emit(state,"match_started")
+        assert hero.name in text and PEOPLES[people] in text
+    state.players[0].chosen_hero_id = "UNKNOWN_SECRET"
+    _, text = emit(state,"match_started")
+    assert "UNKNOWN_SECRET" not in text
+
+
+def test_old_introduction_and_rng_survive_catalog_upgrade():
+    from jessica.narrative.engine import CATALOG
+    state = make_state(); view = view_for_player(state,1)
+    event = lifecycle_event("match_started",view)
+    old_entries, errors = load_catalog(CATALOG.with_name("pilot-v0.1.json"))
+    assert len(old_entries) == 30 and not errors
+    old, text = observe(state.seed,{},event,view,entries=old_entries)
+    old["version"] = "narrative-v0.1"
+    for record in old["history"]: record["fields"].pop("hero_choices",None)
+    state.narrative = old
+    restored = state_from_dict(state_to_dict(state))
+    unchanged, new_text = emit(restored,"match_started",restored.narrative)
+    assert new_text is None and unchanged == old
+    assert replay(unchanged)[0]["text"] == text
+    upgraded, _ = emit(restored,"turn_started",unchanged)
+    assert upgraded["version"] == VERSION and upgraded["profile"] == old["profile"]
+    assert replay(upgraded)[0] == replay(old)[0]
 
 
 def test_determinism_and_no_mechanical_mutation():

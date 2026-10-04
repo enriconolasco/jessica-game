@@ -53,6 +53,8 @@ Motivos particulares usados nos exemplos também são propostas, não regras.
 Novas figuras e artefatos serão discutidos quando necessários, sem produção em massa.
 
 Primeiro lote de revisão: [NARRATIVA_RASCUNHOS.md](NARRATIVA_RASCUNHOS.md).
-Os 30 textos do piloto técnico ainda não foram substituídos. Antes de ativar
-essas introduções, estender o contrato para nomes públicos dos heróis escolhidos,
-incluindo zero herói inicial dos Mortos-Vivos e quantidade variável de jogadores.
+O catálogo ativo v0.2 adapta esse estilo a três territórios genéricos já definidos,
+com povos e heróis públicos escolhidos. O contrato inclui `hero_choices`, quantidade
+variável de jogadores e ausência de herói inicial dos Mortos-Vivos. Os nomes
+geográficos propostos ainda não estão no catálogo ativo. Não ampliar antes de
+confirmar novos locais, figuras, artefatos e motivos quando necessários.
