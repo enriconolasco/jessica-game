@@ -1,5 +1,16 @@
 # Estado do projeto — 04/10/2026
 
+## Catálogo-base do mundo
+
+Produção de novos textos pausada por decisão do usuário. Base editorial estruturada:
+dois locais com nomes aprovados, 12 povos, 43 definições de heróis, 13 tipos de
+artefato, quatro itens de Rogue, 12 feitiços e seis pactos. Não há história,
+fronteiras, biografias ou culturas preenchidas por inferência. Cinco resumos de
+heróis na UI sinalizados; nenhum patch mecânico aplicado nesta etapa.
+Índice/fichas e perguntas: [CATALOGO_MUNDO.md](CATALOGO_MUNDO.md).
+Próximo marco: definir escala geral e relação das cidades da partida com a geografia.
+Quatro testes do catálogo e 16 narrativos passaram; somente dados/documentos adicionados.
+
 ## Piloto narrativo terminal
 
 Na mesma branch `codex/online-rooms`: 25 textos ativos v0.2, introdução/transições/encerramento

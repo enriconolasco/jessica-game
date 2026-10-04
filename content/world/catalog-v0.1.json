@@ -1,0 +1,1951 @@
+{
+  "version": "world-catalog-v0.1",
+  "source": {
+    "engine_commit": "823a111",
+    "reviewed_at": "2026-10-04",
+    "mechanical_sources": [
+      "jessica/core/heroes.py",
+      "jessica/core/artifacts.py",
+      "jessica/core/spells.py",
+      "jessica/core/peoples.py"
+    ],
+    "ui_source": "jessica/main.py::HERO_ABILITY_DESC"
+  },
+  "runtime_integration": false,
+  "principles": [
+    "O jogador comanda cidade, exército e recursos; heróis não são comandantes gerais por padrão.",
+    "Geografia real não importa história real.",
+    "Nome e habilidade mecânica não confirmam biografia, aparência, personalidade, religião ou origem.",
+    "Separar cânone confirmado, referência mecânica e proposta."
+  ],
+  "world_structure": {
+    "name": "Jéssica",
+    "continents": [],
+    "macroregions": [],
+    "connections": [],
+    "political_boundaries": [],
+    "status": "not_defined"
+  },
+  "places": [
+    {
+      "id": "place.varzea_sete_voltas",
+      "name": "Várzea das Sete Voltas",
+      "canon_status": "name_approved_by_user",
+      "parent_region_id": null,
+      "real_world_location": null,
+      "setting_proposal": "Várzea fluvial; águas baixas, barrancos e travessias.",
+      "setting_status": "draft_context_not_geography_confirmed"
+    },
+    {
+      "id": "place.sertao_pedra_miuda",
+      "name": "Sertão da Pedra Miúda",
+      "canon_status": "name_approved_by_user",
+      "parent_region_id": null,
+      "real_world_location": null,
+      "setting_proposal": "Chapadão e veredas com buritis; paisagem seca.",
+      "setting_status": "draft_context_not_geography_confirmed"
+    }
+  ],
+  "real_world_references": [
+    {
+      "name": "Minas Gerais",
+      "status": "example_allowed_not_located_in_world",
+      "imports_real_history": false
+    }
+  ],
+  "peoples": [
+    {
+      "id": "humanos",
+      "name": "Humanos",
+      "hero_options": [
+        "miyamoto",
+        "besouro",
+        "iuna"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "anoes",
+      "name": "Anões",
+      "hero_options": [
+        "barbadourada",
+        "ori",
+        "seven_dwarves"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "orcs",
+      "name": "Orcs",
+      "hero_options": [
+        "garoche",
+        "arken",
+        "vovo_gamba"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "fadas",
+      "name": "Fadas",
+      "hero_options": [
+        "ainai",
+        "valendar",
+        "luna"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "vampiros",
+      "name": "Vampiros",
+      "hero_options": [
+        "dracula",
+        "dandara",
+        "luide_vampa"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "lobisomens",
+      "name": "Lobisomens",
+      "hero_options": [
+        "lupa_lider",
+        "cigana",
+        "luarado"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "gigantes",
+      "name": "Gigantes",
+      "hero_options": [
+        "joao_grandao",
+        "pe_descalco",
+        "caroco"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "mortos_vivos",
+      "name": "Mortos-Vivos",
+      "hero_options": [
+        "cobra",
+        "zoia",
+        "cova_rasa"
+      ],
+      "initial_hero_selection": false,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "filhos_floresta",
+      "name": "Filhos da Floresta",
+      "hero_options": [
+        "guarari",
+        "aiquara",
+        "baoba_ba"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "gnomos_duendes",
+      "name": "Gnomos e Duendes",
+      "hero_options": [
+        "bimbo_do_mal",
+        "sao_tome",
+        "zebum"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "dragoes",
+      "name": "Dragões",
+      "hero_options": [
+        "barba_negra",
+        "purpura",
+        "valtherion"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    },
+    {
+      "id": "demonios",
+      "name": "Demônios",
+      "hero_options": [
+        "belial",
+        "tuza",
+        "rogue_devil"
+      ],
+      "initial_hero_selection": true,
+      "culture": null,
+      "homeland_place_id": null,
+      "canon_status": "name_and_game_affiliation_only"
+    }
+  ],
+  "heroes": [
+    {
+      "id": "hero.miyamoto",
+      "game_id": "miyamoto",
+      "name": "Miyamoto Musashi",
+      "people_id": "humanos",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 4,
+        "ability_keys": [
+          "attack_during_day",
+          "gain_max_life_on_kill",
+          "double_attack_if_stronger"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Invencivel sob o Sol: ataca de Dia. +vida max ao matar. 2 ataques se for o mais forte.",
+        "status": "incomplete_or_outdated",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[miyamoto]"
+      },
+      "verified_runtime_note": {
+        "description": "O ganho de vida máxima usa life_at_death da vítima, registrado antes do dano fatal, e persiste no dono para reinvocação.",
+        "source": "jessica/core/peoples.py::on_unit_killed_by, jessica/core/combat.py",
+        "note": "A UI não informa o valor do ganho; não pressupor +1 fixo."
+      },
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.besouro",
+      "game_id": "besouro",
+      "name": "Besouro Mangangá",
+      "people_id": "humanos",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 4,
+        "ability_keys": [
+          "double_damage_and_resist_vs_stronger",
+          "mandinga_artifact_at_night"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "o Maioral: dobro + resistencia vs >=. Mandinga: artefato na Noite.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[besouro]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.iuna",
+      "game_id": "iuna",
+      "name": "Iúna",
+      "people_id": "humanos",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "takes_1_damage_when_attacked",
+          "deals_1_to_4_damage",
+          "adds_penas_once"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Aguia Negra: 1 de dano fixo recebido. 1D4 ao atacar. Adiciona 4 Penas.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[iuna]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.barbadourada",
+      "game_id": "barbadourada",
+      "name": "Barbadourada",
+      "people_id": "anoes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 6,
+        "ability_keys": [
+          "magic_per_artifact_morning"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Filho das Cachoeiras: +1 Magia por artefato na mao.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[barbadourada]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.ori",
+      "game_id": "ori",
+      "name": "Ori, Velho Mestre Ferreiro",
+      "people_id": "anoes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "resistance_aura"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Velho Mestre Ferreiro: ele + aliados na casa ganham Resistencia.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[ori]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.seven_dwarves",
+      "game_id": "seven_dwarves",
+      "name": "Os 7 Anoes",
+      "people_id": "anoes",
+      "entry_kind": "group_option",
+      "mechanical_reference": {
+        "base_life": 1,
+        "ability_keys": [
+          "seven_dwarves"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Os 7 Anoes: 7 herois em corrente. Sem Tropas.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[seven_dwarves]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.dain",
+      "game_id": "dain",
+      "name": "Atim",
+      "people_id": "anoes",
+      "entry_kind": "individual_dwarf",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "kill_attacker_at_night_end"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Atim: quem declara combate contra ele morre no fim da Noite.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[dain]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.buin",
+      "game_id": "buin",
+      "name": "Dengoso",
+      "people_id": "anoes",
+      "entry_kind": "individual_dwarf",
+      "mechanical_reference": {
+        "base_life": 1,
+        "ability_keys": [
+          "invulnerable_vs_heroes"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Dengoso: Invulneravel contra Herois.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[buin]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.bein",
+      "game_id": "bein",
+      "name": "Soneca",
+      "people_id": "anoes",
+      "entry_kind": "individual_dwarf",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "temporary_impale_on_kill"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Soneca: mortos por ele ficam empalados ate os Anoes serem Curuna.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[bein]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.boin",
+      "game_id": "boin",
+      "name": "Feliz",
+      "people_id": "anoes",
+      "entry_kind": "individual_dwarf",
+      "mechanical_reference": {
+        "base_life": 4,
+        "ability_keys": [
+          "see_2_pick_1_artifact"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Feliz: ve 2, escolhe 1 ao comprar/transmutar.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[boin]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.tintin",
+      "game_id": "tintin",
+      "name": "Dunga",
+      "people_id": "anoes",
+      "entry_kind": "individual_dwarf",
+      "mechanical_reference": {
+        "base_life": 5,
+        "ability_keys": [
+          "can_be_invisible"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Dunga: fica Invisivel (recarga 1 turno).",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[tintin]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.don",
+      "game_id": "don",
+      "name": "Zangado",
+      "people_id": "anoes",
+      "entry_kind": "individual_dwarf",
+      "mechanical_reference": {
+        "base_life": 6,
+        "ability_keys": [
+          "extra_attacks_per_dwarf"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Zangado: 1 ataque extra por Anao proximo.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[don]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.din",
+      "game_id": "din",
+      "name": "Mestre",
+      "people_id": "anoes",
+      "entry_kind": "individual_dwarf",
+      "mechanical_reference": {
+        "base_life": 7,
+        "ability_keys": [
+          "dwarves_can_attack_cities"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Mestre: Anoes proximos atacam Cidades.",
+        "status": "incomplete_or_outdated",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[din]"
+      },
+      "verified_runtime_note": {
+        "description": "Heróis aliados na mesma casa podem atacar Cidades; a checagem não se limita a heróis anões.",
+        "source": "jessica/core/combat.py::resolve_attack",
+        "note": "A UI ainda resume como Anões próximos."
+      },
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.garoche",
+      "game_id": "garoche",
+      "name": "Ga'Roche, Rei do Sertao",
+      "people_id": "orcs",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "execute_weak_targets",
+          "grow_per_execute"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Rei do Sertao: executa sem aliados proximos. +1 vida por execucao.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[garoche]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.arken",
+      "game_id": "arken",
+      "name": "Arken, Cacador de Uma So Flecha",
+      "people_id": "orcs",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 4,
+        "ability_keys": [
+          "espolia_daily"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Cacador: Espoliar todo Dia.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[arken]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.vovo_gamba",
+      "game_id": "vovo_gamba",
+      "name": "Vovo Gamba, Protetora dos Espiritos",
+      "people_id": "orcs",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "tropa_bonus_damage",
+          "choose_attack_time"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Protetora: tropas na casa dela +1 dano. Escolhe posicao no local.",
+        "status": "incomplete_or_outdated",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[vovo_gamba]"
+      },
+      "verified_runtime_note": {
+        "description": "A checagem do bônus em combate vale para unidades do jogador Orc com Vovó viva, independentemente da casa; não há filtro de Tropa nessa função.",
+        "source": "jessica/core/peoples.py::has_vovo_bonus",
+        "note": "A UI ainda diz tropas na casa dela."
+      },
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.ainai",
+      "game_id": "ainai",
+      "name": "Ainai, Fada da Vinganca",
+      "people_id": "fadas",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 5,
+        "ability_keys": [
+          "move_to_fallen_fae"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Fada da Vinganca: teleporta para onde Fada/Elfo morreu. +1 Magia.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[ainai]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.valendar",
+      "game_id": "valendar",
+      "name": "Valendar, Rainha Maga",
+      "people_id": "fadas",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 5,
+        "ability_keys": [
+          "substitutes_spell"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Rainha Maga: substitui Sonho Lucido por bonus de naipe.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[valendar]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.luna",
+      "game_id": "luna",
+      "name": "Luna, Sonhadora de Realidades",
+      "people_id": "fadas",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "spell_multi_artifact",
+          "return_move"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Sonhadora: Sonho Lucido multi. Retorna ao local de origem.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[luna]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.dracula",
+      "game_id": "dracula",
+      "name": "Dracula",
+      "people_id": "vampiros",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 7,
+        "ability_keys": [
+          "empala_on_kill",
+          "reset_spell_on_kill"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Dracula: mata -> empala. Mata -> feitico sai da recarga.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[dracula]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.dandara",
+      "game_id": "dandara",
+      "name": "Dandara, Cacadora de Burgueses",
+      "people_id": "vampiros",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 5,
+        "ability_keys": [
+          "invisibilidade_grupo"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Dandara: torna ela + aliados da casa invisiveis.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[dandara]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.luide_vampa",
+      "game_id": "luide_vampa",
+      "name": "Luide Vampa, Lider dos Bandidos",
+      "people_id": "vampiros",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 5,
+        "ability_keys": [
+          "move_aliados_noturno"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Luide Vampa: ativa movimento noturno para aliados.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[luide_vampa]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.lupa_lider",
+      "game_id": "lupa_lider",
+      "name": "Lupa, Lider da Matilha",
+      "people_id": "lobisomens",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 7,
+        "ability_keys": [
+          "resistencia_lua_cheia"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Lupa Lider: em Lua Cheia, +Resistencia a todos os Lobisomens.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[lupa_lider]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.cigana",
+      "game_id": "cigana",
+      "name": "Cigana, Caminhante da Nevoa",
+      "people_id": "lobisomens",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "veu_da_lua"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Cigana: em Lua Cheia, ataca Cidades e torna todos invisiveis.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[cigana]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.luarado",
+      "game_id": "luarado",
+      "name": "Luarado, Filhote da Mare",
+      "people_id": "lobisomens",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 1,
+        "ability_keys": [
+          "cacada_infecciosa"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Luarado: em Lua Cheia/transformado, anda 2x e infecta por dano.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[luarado]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.joao_grandao",
+      "game_id": "joao_grandao",
+      "name": "Joao Grandao, Protetor do Pe Desenterrado",
+      "people_id": "gigantes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 10,
+        "ability_keys": [
+          "presenca_magnetica"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Joao Grandao: Presenca Magnetica forca ataques inimigos.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[joao_grandao]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.pe_descalco",
+      "game_id": "pe_descalco",
+      "name": "Pe Descalco, Aquela que Treme a Terra",
+      "people_id": "gigantes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 4,
+        "ability_keys": [
+          "ataque_extra",
+          "grito_de_guerra"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Pe Descalco: +1 ataque sempre. Grito de Guerra: aliados x2 dano.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[pe_descalco]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.caroco",
+      "game_id": "caroco",
+      "name": "Caroco, o Dende Teimoso",
+      "people_id": "gigantes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "caroco_geracional",
+          "cabaca_cheia"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Caroco: gratis no turno 1. Multiplos Carocos gerados. Cabaca Cheia.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[caroco]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.cobra",
+      "game_id": "cobra",
+      "name": "Cobra, o Paje Caido",
+      "people_id": "mortos_vivos",
+      "entry_kind": "summoned_during_match",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "espectro_hook"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Cobra: herois mortos retornam como Espectros por 1 turno.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[cobra]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.zoia",
+      "game_id": "zoia",
+      "name": "Zoia Bulbo Negro, Pressagio da Peste",
+      "people_id": "mortos_vivos",
+      "entry_kind": "summoned_during_match",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "tropas_extras"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Zoia: 2 tropas extras (Ghoul e Esqueleto com 1 vida).",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[zoia]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.cova_rasa",
+      "game_id": "cova_rasa",
+      "name": "Cova Rasa da Terra Funda",
+      "people_id": "mortos_vivos",
+      "entry_kind": "summoned_during_match",
+      "mechanical_reference": {
+        "base_life": 1,
+        "ability_keys": [
+          "amaldicoar_proximos"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Cova Rasa: amaldicoa inimigos proximos no inicio da Noite.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[cova_rasa]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.guarari",
+      "game_id": "guarari",
+      "name": "Guarari, Centauro Guardiao da Floresta",
+      "people_id": "filhos_floresta",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 5,
+        "ability_keys": [
+          "transformar_centauro"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Centauro permanente: anda 2x (1x ao ser invocado). Transforma aliado por 1 Magia.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[guarari]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.aiquara",
+      "game_id": "aiquara",
+      "name": "Aiquara, Ninfa da Baia Doce",
+      "people_id": "filhos_floresta",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "controlar_inimigo"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Ninfa: controla inimigo da casa (mover no Dia, atacar na Noite).",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[aiquara]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.baoba_ba",
+      "game_id": "baoba_ba",
+      "name": "Baoba-ba, Anciao Milenar",
+      "people_id": "filhos_floresta",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 10,
+        "ability_keys": [
+          "invocacao_multi_turno"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Anciao: 1 Magia x 3 turnos para invocar. Tropas aliadas na casa dele.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[baoba_ba]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.bimbo_do_mal",
+      "game_id": "bimbo_do_mal",
+      "name": "Bimbo do Mal",
+      "people_id": "gnomos_duendes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 2,
+        "ability_keys": [
+          "gastar_aposta"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Gastar aposta: invisivel (1) ou artefato da Loja (5).",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[bimbo_do_mal]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.sao_tome",
+      "game_id": "sao_tome",
+      "name": "Sao Tome, Morador de Piramide",
+      "people_id": "gnomos_duendes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 4,
+        "ability_keys": [
+          "passivas_dos_alvos",
+          "rerrolar_feitico_copiado"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Herda passivas dos jogadores apostados e pode rerrolar o feitico copiado.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[sao_tome]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.zebum",
+      "game_id": "zebum",
+      "name": "Zebum, o Mistico Viajante",
+      "people_id": "gnomos_duendes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "invocar_heroi_estrangeiro"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Mistico: apostas corretas compram herois estrangeiros.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[zebum]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.barba_negra",
+      "game_id": "barba_negra",
+      "name": "Barba Negra, o Rei do Mundo",
+      "people_id": "dragoes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "dragon_base",
+          "mar_de_chamas"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Base movel. Mar de Chamas e modo Heroi por uma Noite.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[barba_negra]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.purpura",
+      "game_id": "purpura",
+      "name": "Purpura, Filhote de Nebula",
+      "people_id": "dragoes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 3,
+        "ability_keys": [
+          "crescimento_matinhas_pares",
+          "invisibilidade"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Cresce conforme manhas pares passadas. Pode ficar Invisivel.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[purpura]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.valtherion",
+      "game_id": "valtherion",
+      "name": "Valtherion, o Pai da Primeira Aurora",
+      "people_id": "dragoes",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 20,
+        "ability_keys": [
+          "dragon_base",
+          "chamado"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Base movel que combate como Heroi. Chamado invoca Tropas Dragao.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[valtherion]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.belial",
+      "game_id": "belial",
+      "name": "Belial, Senhor das Chamas",
+      "people_id": "demonios",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 1,
+        "ability_keys": [
+          "chamas_noturnas",
+          "pacto_por_duelo_de_herois"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Chamas: 1 dano em inimigos e cura 1 em aliados proximos no inicio da Noite.",
+        "status": "incomplete_or_outdated",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[belial]"
+      },
+      "verified_runtime_note": {
+        "description": "No início da Noite, Belial vivo ganha +1 vida atual/máxima, cura outros aliados próximos e causa dano em área; não exige inimigos presentes.",
+        "source": "jessica/core/peoples.py::apply_belial_night_start",
+        "note": "O resumo da UI omite o crescimento próprio e as exceções."
+      },
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.tuza",
+      "game_id": "tuza",
+      "name": "Tuza, o Espectro Imortal",
+      "people_id": "demonios",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 6,
+        "ability_keys": [
+          "resistencia_permanente",
+          "pactos_no_turno_curuna"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Tem Resistencia. Inimigos podem firmar pactos no turno Curuna dos Demonios.",
+        "status": "not_independently_verified",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[tuza]"
+      },
+      "verified_runtime_note": null,
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "hero.rogue_devil",
+      "game_id": "rogue_devil",
+      "name": "Rogue Devil do Inferno",
+      "people_id": "demonios",
+      "entry_kind": "initial_option",
+      "mechanical_reference": {
+        "base_life": 0,
+        "ability_keys": [
+          "pacto_na_invocacao"
+        ],
+        "source": "jessica/core/heroes.py",
+        "not_full_rules_audit": true
+      },
+      "ui_reference": {
+        "text": "Vida 0. Ao firmar/completar pactos, conquista Capa, Adaga, Relogio e Bracelete; com os 4 ataca Bases.",
+        "status": "incomplete_or_outdated",
+        "source": "jessica/main.py::HERO_ABILITY_DESC[rogue_devil]"
+      },
+      "verified_runtime_note": {
+        "description": "No pacto de Rogue, a recompensa é concedida ao firmar, inclusive se for quest; concluir a quest não concede nova recompensa.",
+        "source": "jessica/core/peoples.py::make_demon_pact, _demon_pact_reward",
+        "note": "A UI ainda diz firmar/completar."
+      },
+      "lore": {
+        "appearance": null,
+        "personality": null,
+        "biography": null,
+        "home_place_id": null,
+        "relationships": [],
+        "status": "not_defined"
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "artifact.J_H",
+      "game_id": "J_H",
+      "name": "Memórias Ancestrais",
+      "mechanical_reference": {
+        "rank": "J",
+        "suit": "H",
+        "declared_effect": "Invoque outro Herói do seu povo.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.Q_H",
+      "game_id": "Q_H",
+      "name": "Bênção da Natureza",
+      "mechanical_reference": {
+        "rank": "Q",
+        "suit": "H",
+        "declared_effect": "Aliados e Cidade invulneráveis neste turno; sem ataques a Cidades.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.K_H",
+      "game_id": "K_H",
+      "name": "Aquilombar",
+      "mechanical_reference": {
+        "rank": "K",
+        "suit": "H",
+        "declared_effect": "+1 Vida e +1 Vida máxima toda manhã.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.J_D",
+      "game_id": "J_D",
+      "name": "Tabaréu que Vem do Sertão",
+      "mechanical_reference": {
+        "rank": "J",
+        "suit": "D",
+        "declared_effect": "Daqui a 3 Dias, veja 3 e escolha 2.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.Q_D",
+      "game_id": "Q_D",
+      "name": "Mel de Ouro Encantado",
+      "mechanical_reference": {
+        "rank": "Q",
+        "suit": "D",
+        "declared_effect": "Escolha unidade. Você e o matador ganham vida máx. dela em Ouro/Magia.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.K_D",
+      "game_id": "K_D",
+      "name": "Balança que Pesa Ouro",
+      "mechanical_reference": {
+        "rank": "K",
+        "suit": "D",
+        "declared_effect": "+2 Ouro e +1 Magia toda manhã até o fim do jogo.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.J_S",
+      "game_id": "J_S",
+      "name": "Chamado da Lua",
+      "mechanical_reference": {
+        "rank": "J",
+        "suit": "S",
+        "declared_effect": "Invoque Tropa de 5 em qualquer lugar.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.Q_S",
+      "game_id": "Q_S",
+      "name": "Chama Eterna da Revolução",
+      "mechanical_reference": {
+        "rank": "Q",
+        "suit": "S",
+        "declared_effect": "Aliados dão o dobro de dano à Noite.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.K_S",
+      "game_id": "K_S",
+      "name": "Véu das Caçadoras",
+      "mechanical_reference": {
+        "rank": "K",
+        "suit": "S",
+        "declared_effect": "Heróis atacam Cidades. Aliados próximos a Herói batem 2 vezes.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.J_C",
+      "game_id": "J_C",
+      "name": "Travessura Gnômica",
+      "mechanical_reference": {
+        "rank": "J",
+        "suit": "C",
+        "declared_effect": "Pule o próximo Dia e Noite de um jogador.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.Q_C",
+      "game_id": "Q_C",
+      "name": "Maldição das Almas Acorrentadas",
+      "mechanical_reference": {
+        "rank": "Q",
+        "suit": "C",
+        "declared_effect": "Controle um Inimigo neste turno.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.K_C",
+      "game_id": "K_C",
+      "name": "Pacto de Salomão",
+      "mechanical_reference": {
+        "rank": "K",
+        "suit": "C",
+        "declared_effect": "Um aliado: dobro de dano e Resistência até morrer.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "artifact.PENA",
+      "game_id": "PENA",
+      "name": "Pena do Manto Sagrado",
+      "mechanical_reference": {
+        "rank": "",
+        "suit": "",
+        "declared_effect": "Humano: +1 dado na Roça permanentemente. Não-humano: dê à Iúna para ganhar outro artefato.",
+        "source": "jessica/core/artifacts.py",
+        "not_full_rules_audit": true
+      },
+      "lore": {
+        "physical_form": null,
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "item.rogue.capa",
+      "game_id": "capa",
+      "name": "Capa",
+      "related_hero_id": "hero.rogue_devil",
+      "lore": {
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "item.rogue.adaga",
+      "game_id": "adaga",
+      "name": "Adaga",
+      "related_hero_id": "hero.rogue_devil",
+      "lore": {
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "item.rogue.relogio",
+      "game_id": "relogio",
+      "name": "Relógio de bolso",
+      "related_hero_id": "hero.rogue_devil",
+      "lore": {
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    },
+    {
+      "id": "item.rogue.bracelete",
+      "game_id": "bracelete",
+      "name": "Bracelete",
+      "related_hero_id": "hero.rogue_devil",
+      "lore": {
+        "origin": null,
+        "creator": null,
+        "status": "not_defined"
+      }
+    }
+  ],
+  "spells": [
+    {
+      "id": "spell.resistencia",
+      "game_id": "resistencia",
+      "name": "Resistencia",
+      "people_id": "humanos",
+      "declared_effect": "De Resistencia a um aliado ate o fim do turno.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.armadura_de_ouro",
+      "game_id": "armadura_de_ouro",
+      "name": "Armadura de Ouro",
+      "people_id": "anoes",
+      "declared_effect": "Pague X Ouro para anular ate X dano por hit.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.espoliar",
+      "game_id": "espoliar",
+      "name": "Espoliar",
+      "people_id": "orcs",
+      "declared_effect": "+2 Ouro por Cidade inimiga ocupada.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.sonho_lucido",
+      "game_id": "sonho_lucido",
+      "name": "Sonho Lucido",
+      "people_id": "fadas",
+      "declared_effect": "Troca naipe do proximo artefato.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.transformar_morcego",
+      "game_id": "transformar_morcego",
+      "name": "Transformar em Morcego",
+      "people_id": "vampiros",
+      "declared_effect": "1 aliado anda 2x ou 1x se recem-invocado.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.licantropo",
+      "game_id": "licantropo",
+      "name": "Licantropo",
+      "people_id": "lobisomens",
+      "declared_effect": "1 unidade sua vira Lobisomem ate fim do turno.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.linhagem_ancestral",
+      "game_id": "linhagem_ancestral",
+      "name": "Linhagem Ancestral",
+      "people_id": "gigantes",
+      "declared_effect": "Ativa o feitico de 1 heroi Gigante vivo.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.levantar_mortos",
+      "game_id": "levantar_mortos",
+      "name": "Levantar os Mortos",
+      "people_id": "mortos_vivos",
+      "declared_effect": "Escolha 2 tropas (mortas ou nao invocadas) e invoque com 1 de vida.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.decompor",
+      "game_id": "decompor",
+      "name": "Decompor",
+      "people_id": "filhos_floresta",
+      "declared_effect": "Sacrifica um elemento seu por Magia (Heroi +4, Tropa vida+2, Muralha -1 vida +3 Magia).",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.imitacao_gnomerica",
+      "game_id": "imitacao_gnomerica",
+      "name": "Imitacao Gnomerica",
+      "people_id": "gnomos_duendes",
+      "declared_effect": "Copia o feitico de outro povo participante (sorteado por dia).",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.ressonancia_magica",
+      "game_id": "ressonancia_magica",
+      "name": "Ressonancia Magica",
+      "people_id": "dragoes",
+      "declared_effect": "Adiciona, remove ou troca Artefato da Canastra.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    },
+    {
+      "id": "spell.sacrificio_de_demonio",
+      "game_id": "sacrificio_de_demonio",
+      "name": "Sacrificio de Demonio",
+      "people_id": "demonios",
+      "declared_effect": "Sacrifique seu Heroi e reembaralhe Artefatos escolhidos.",
+      "description_status": "definition_not_full_rules_audit",
+      "lore_origin": null
+    }
+  ],
+  "pacts": [
+    {
+      "id": "pact.sacrifique_futuro",
+      "game_id": "sacrifique_futuro",
+      "name": "Sacrifique seu Futuro",
+      "lore_origin": null
+    },
+    {
+      "id": "pact.sacrifique_militar",
+      "game_id": "sacrifique_militar",
+      "name": "Sacrifique sua capacidade Militar",
+      "lore_origin": null
+    },
+    {
+      "id": "pact.sacrifique_mente",
+      "game_id": "sacrifique_mente",
+      "name": "Sacrifique a Mente de suas Tropas",
+      "lore_origin": null
+    },
+    {
+      "id": "pact.cabecas_herois",
+      "game_id": "cabecas_herois",
+      "name": "Ofereca cabecas de herois de cada povo",
+      "lore_origin": null
+    },
+    {
+      "id": "pact.banho_sangue",
+      "game_id": "banho_sangue",
+      "name": "Ofereca um banho de sangue",
+      "lore_origin": null
+    },
+    {
+      "id": "pact.vida_lider",
+      "game_id": "vida_lider",
+      "name": "Ofereca a vida de um lider",
+      "lore_origin": null
+    }
+  ],
+  "historical_events": [],
+  "unresolved_references": [
+    {
+      "name": "Salomão",
+      "source_artifact_id": "artifact.K_C",
+      "status": "name_in_artifact_only",
+      "question": "Existe uma figura própria de Jéssica com esse nome? Não importar a figura histórica/religiosa automaticamente."
+    }
+  ],
+  "excluded_content": [
+    {
+      "name": "Ent",
+      "status": "not_in_active_hero_catalog_rework_pending"
+    }
+  ],
+  "open_questions": [
+    "Qual a divisão continental/regional geral e como os dois locais aprovados se relacionam?",
+    "As cidades de cada partida são sedes locais variáveis ou lugares permanentes do mapa do mundo?",
+    "Quais títulos e descrições dos heróis são literais e quais são epítetos?",
+    "Qual povo priorizar para fichas de personalidade, aparência e origem?"
+  ]
+}

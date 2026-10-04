@@ -47,8 +47,10 @@ ou histórica um fato canônico automaticamente.
 
 ## Ainda proposto, não canônico
 
-Várzea das Sete Voltas e Sertão da Pedra Miúda são nomes de
-rascunho. Sua existência, localização e relação com regiões reais aguardam revisão.
+Várzea das Sete Voltas e Sertão da Pedra Miúda foram aprovados pelo usuário como
+locais oficiais. Localização, escala e relação com regiões reais aguardam definição.
+Catálogo-base: [CATALOGO_MUNDO.md](CATALOGO_MUNDO.md).
+Expansão de textos pausada: primeiro organizar geografia, figuras, objetos e acontecimentos.
 Motivos particulares usados nos exemplos também são propostas, não regras.
 Novas figuras e artefatos serão discutidos quando necessários, sem produção em massa.
 
@@ -56,5 +58,5 @@ Primeiro lote de revisão: [NARRATIVA_RASCUNHOS.md](NARRATIVA_RASCUNHOS.md).
 O catálogo ativo v0.2 adapta esse estilo a três territórios genéricos já definidos,
 com povos e heróis públicos escolhidos. O contrato inclui `hero_choices`, quantidade
 variável de jogadores e ausência de herói inicial dos Mortos-Vivos. Os nomes
-geográficos propostos ainda não estão no catálogo ativo. Não ampliar antes de
+geográficos aprovados ainda não estão no catálogo narrativo ativo. Não ampliar antes de
 confirmar novos locais, figuras, artefatos e motivos quando necessários.
