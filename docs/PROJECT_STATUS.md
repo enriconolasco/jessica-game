@@ -8,7 +8,8 @@ artefato, quatro itens de Rogue, 12 feitiços e seis pactos. Não há história,
 fronteiras, biografias ou culturas preenchidas por inferência. Cinco resumos de
 heróis na UI sinalizados; nenhum patch mecânico aplicado nesta etapa.
 Índice/fichas e perguntas: [CATALOGO_MUNDO.md](CATALOGO_MUNDO.md).
-Próximo marco: definir escala geral e relação das cidades da partida com a geografia.
+Confirmado: mundo conectado e cidades variáveis por partida.
+Próximo marco: aprovar grandes famílias de regiões e posicionar os dois locais.
 Quatro testes do catálogo e 16 narrativos passaram; somente dados/documentos adicionados.
 
 ## Piloto narrativo terminal

@@ -56,11 +56,20 @@ Vovó Gamba, Mestre, Belial e Rogue. Nenhuma correção de regras ou UI foi apli
 
 ## Próxima definição, antes de novas descrições
 
-1. Escala do mundo: uma terra conectada com grandes regiões ou terras separadas?
-2. Relação partida/geografia: cidades locais variáveis ou cidades permanentes?
-3. Posicionar os dois locais aprovados nesse esqueleto, sem desenhar dezenas de lugares.
-4. Escolher um povo para validar fichas de identidade dos seus heróis, em lote pequeno.
-5. Só após isso, aprovar figuras secundárias, origem dos artefatos e acontecimentos.
+Confirmado pelo usuário: mundo conectado; cidades variáveis por partida.
+Isso não define número de continentes, fronteiras, distâncias ou desaparecimento
+das cidades após a partida. Nem toda cidade de gameplay precisa virar local fixo
+do catálogo. Conexão geográfica não cria regras novas de movimento.
+
+Proposta inicial, ainda não aprovada, de quatro famílias de grandes regiões:
+serras e matas; sertões e chapadas; rios e várzeas; costa e manguezais.
+Sem nomes próprios novos, posição no mapa ou exclusividade de povos por enquanto.
+
+1. Aprovar/ajustar essas famílias e então nomear poucas regiões.
+2. Posicionar os dois locais aprovados nesse esqueleto.
+3. Definir convivência e vínculos dos povos, sem deduzir territórios por raça.
+4. Escolher um povo para validar identidade dos heróis em lote pequeno.
+5. Depois aprovar figuras secundárias, origem dos artefatos e acontecimentos.
 
 Os nomes reais permitidos, como Minas Gerais, não trazem a história real para
 Jéssica. Não conectar lugares pela geografia real sem confirmação.

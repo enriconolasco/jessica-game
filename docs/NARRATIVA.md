@@ -5,6 +5,8 @@ Implementação técnica: [NARRATIVA_V0_1.md](NARRATIVA_V0_1.md).
 
 ## Confirmado
 
+- Mundo conectado e cidades variáveis por partida. Fronteiras, continentes e
+  permanência dessas cidades fora da partida ainda não definidos.
 - Geografia mistura nomes reais do Brasil/América Latina e locais fictícios.
   Usar Minas Gerais, por exemplo, não importa colonização, fronteiras políticas,
   história ou acontecimentos do mundo real para Jéssica.

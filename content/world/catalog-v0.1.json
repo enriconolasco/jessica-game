@@ -20,11 +20,14 @@
   ],
   "world_structure": {
     "name": "Jéssica",
+    "connectivity": "connected",
+    "match_city_model": "variable_per_match",
+    "city_permanence_outside_match": "not_defined",
     "continents": [],
     "macroregions": [],
     "connections": [],
     "political_boundaries": [],
-    "status": "not_defined"
+    "status": "partially_confirmed_by_user"
   },
   "places": [
     {

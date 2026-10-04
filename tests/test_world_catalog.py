@@ -19,6 +19,8 @@ def test_ids_and_approved_places():
     assert all(p["parent_region_id"] is None for p in CATALOG["places"])
     assert not CATALOG["historical_events"] and not CATALOG["world_structure"]["macroregions"]
     assert CATALOG["runtime_integration"] is False
+    assert CATALOG["world_structure"]["connectivity"] == "connected"
+    assert CATALOG["world_structure"]["match_city_model"] == "variable_per_match"
 
 
 def test_hero_inventory_matches_core_without_lore_invention():
