@@ -8,4 +8,5 @@ venv/
 vendor/font-build/
 saves/web/
 saves/online/
+saves/terminal/
 tools/runtime/

@@ -213,6 +213,7 @@ def player_from_dict(d: dict) -> Player:
 
 def state_to_dict(s: GameState) -> dict:
     return {
+        **({"narrative": deepcopy(s.narrative)} if s.narrative else {}),
         "seed": s.seed, "rng": s.rng.to_dict(),
         "players": [player_to_dict(p) for p in s.players],
         "turn_order": list(s.turn_order),
@@ -273,6 +274,8 @@ def state_from_dict(d: dict) -> GameState:
     state.demon_pacts = [dict(e) for e in d.get("demon_pacts", [])]
     state.web_night = deepcopy(d.get("web_night", {}))
     state.web_reaction = deepcopy(d.get("web_reaction", {}))
+    from ..narrative.engine import restore_session
+    state.narrative = restore_session(d.get("narrative", {}))
     # Compatibilidade com saves produzidos pelos patches v5v9 antigos.
     for pid_s, value in d.get("miyamoto_bonus", {}).items():
         player = next((p for p in state.players if str(p.id) == str(pid_s)), None)

@@ -46,6 +46,7 @@ from .core.artifacts import card_display, get_definition, ARTIFACT_CATALOG
 from .core.serialize import state_to_dict, state_from_dict
 from .core.headless import apply_action as apply_engine_action, legal_actions
 from .core import artifacts_effects, peoples, heroes, spells as spells_mod
+from .narrative.terminal import narrate, read_checkpoint, write_checkpoint
 
 
 console = Console()
@@ -3025,9 +3026,18 @@ def show_victory(state) -> None:
         console.print(Panel.fit("[bold red]Empate![/bold red]", border_style="red"))
 
 
-def _run_one_game() -> None:
+def _run_one_game(state=None, narrative_mode="desligada", checkpoint=None) -> None:
     console.clear()
-    state = setup_ui()
+    state = setup_ui() if state is None else state
+    def save_boundary():
+        if checkpoint:
+            try:
+                write_checkpoint(state, checkpoint)
+            except (OSError, ValueError) as error:
+                console.print(f"Checkpoint não salvo: {error}", markup=False)
+    if not state.game_over:
+        narrate(console, state, "match_started", narrative_mode)
+        save_boundary()
     while not state.game_over:
         before_turn = _visible_state_snapshot(state)
         interest = start_turn(state)
@@ -3035,6 +3045,7 @@ def _run_one_game() -> None:
         console.rule(f"[bold yellow]TURNO {state.turn} - DIA[/bold yellow]")
         curuna = get_player(state, state.curuna_id)
         console.print(f"[bold yellow]* Curuna: {curuna.name}[/bold yellow]\n")
+        narrate(console, state, "turn_started", narrative_mode)
         _gnomos_bets_inicio_turno(state)
         if interest or state.morning_gains:
             by_pid: dict[int, list[dict]] = {}
@@ -3100,6 +3111,9 @@ def _run_one_game() -> None:
                 state = state_from_dict(snapshots[prev])
                 console.print(f"[yellow]Mola: {get_player(state, prev).name} refaz.[/yellow]")
                 continue
+            if not state.game_over:
+                narrate(console, state, "player_turn_ended", narrative_mode, pid,
+                        day_players[i + 1] if i + 1 < len(day_players) else None)
             i += 1
         state.active_player_id = None
         end_day(state)
@@ -3114,17 +3128,34 @@ def _run_one_game() -> None:
             break
         end_turn(state)
         if not state.game_over:
+            save_boundary()
             console.input("\n[dim]Enter...[/dim] ")
             console.clear()
     show_victory(state)
+    narrate(console, state, "match_ended", narrative_mode)
+    save_boundary()
 
 
-def main() -> None:
+def main(argv=None) -> None:
+    import argparse
+    parser = argparse.ArgumentParser(description="Jéssica — terminal")
+    parser.add_argument("--narrativa", choices=["desligada", "breve"], default="desligada")
+    parser.add_argument("--salvar", metavar="ARQUIVO", help="Checkpoint automático entre turnos completos")
+    parser.add_argument("--carregar", metavar="ARQUIVO", help="Retomar um checkpoint do terminal")
+    options = parser.parse_args(argv)
+    loaded = None
+    if options.carregar:
+        try:
+            loaded = read_checkpoint(options.carregar)
+        except (OSError, ValueError) as error:
+            parser.error(str(error))
     _combat_mod.set_armor_choice_fn(_armor_choice_prompt)
     while True:
         try:
-            _run_one_game()
+            _run_one_game(loaded, options.narrativa, options.salvar)
+            loaded = None
         except RestartGame:
+            loaded = None
             console.print("[yellow]Reiniciando...[/yellow]\n")
             continue
         except KeyboardInterrupt:

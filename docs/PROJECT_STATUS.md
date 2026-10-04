@@ -1,4 +1,16 @@
-# Estado do projeto — 03/10/2026
+# Estado do projeto — 04/10/2026
+
+## Piloto narrativo terminal
+
+Na mesma branch `codex/online-rooms`: 30 textos, introdução/transições/encerramento
+opcionais, RNG separado, perfil persistente e reprodução de escolhas. Rich literal;
+sem combate narrado ou alteração de regras. Checkpoints CLI entre turnos completos,
+com retomada sem repetir introdução. Web ainda não renderiza narrativa.
+Contrato/voz/comandos: [NARRATIVA_V0_1.md](NARRATIVA_V0_1.md).
+13 testes novos aprovados; suíte completa executada: 549 aprovados e três testes
+do atualizador impedidos por permissões; os três aprovados na reexecução autorizada
+(552 no conjunto). Oito testes Node aprovados. Playtest humano do ritmo pendente.
+`main` e instalação Downloads não alterados.
 
 ## Atualização de configuração pré-jogo
 

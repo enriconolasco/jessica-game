@@ -14,7 +14,7 @@ if /i "%~1"=="web" goto web
 if /i "%~1"=="online" goto online
 if /i "%~1"=="rede" goto online
 if /i "%~1"=="amigos" goto online
-".venv\Scripts\python.exe" -m jessica.main
+".venv\Scripts\python.exe" -m jessica.main %*
 if errorlevel 1 goto erro
 exit /b 0
 :web

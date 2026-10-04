@@ -1,5 +1,11 @@
 # Contratos headless v0.1
 
+Piloto narrativo terminal: [NARRATIVA_V0_1.md](NARRATIVA_V0_1.md). Metadado opcional
+`state.narrative` preserva perfil/RNG/histórico de apresentação, sem mudar versões
+de ações, visão ou save web. Eventos de ciclo são produzidos pelo adaptador narrativo,
+não adicionados automaticamente ao histórico da API. Nenhuma informação privada
+é incluída no piloto. Checkpoints de terminal têm envelope próprio separado.
+
 Especificação experimental para provar a arquitetura com uma ação real. Não é um
 formato definitivo nem substitui ainda os saves e logs existentes.
 
