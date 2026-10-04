@@ -1,19 +1,9 @@
-# Introduções para revisão — 04/10/2026
+# Introduções — referências de estilo aprovadas em 04/10/2026
 
 Não ativadas no jogo. Exemplo de três jogadores: Humanos/Miyamoto Musashi,
 Anões/Ori e Fadas/Luna. Seleções hipotéticas; não são eventos de uma partida real.
 Locais e motivos particulares abaixo são propostas.
-
-## 1. Minas Gerais — Serra do Candeal
-
-Em Minas Gerais, a Serra do Candeal se erguia por trás das últimas árvores.
-A chuva escurecia a pedra; nas encostas, a neblina escondia trechos inteiros
-do caminho. As cidades ficavam separadas por morros, mas dependiam das mesmas passagens.
-
-Os Humanos haviam escolhido Miyamoto Musashi. Pelos Anões, o nome era Ori,
-Velho Mestre Ferreiro; entre as Fadas, Luna, Sonhadora de Realidades.
-Em cada cidade, as decisões cabiam a quem a comandava. Os nomes dos heróis
-estavam revelados; as primeiras escolhas da disputa ainda estavam por fazer.
+O usuário escolheu os exemplos 2 e 3; o exemplo 1 foi retirado.
 
 ## 2. Várzea das Sete Voltas
 

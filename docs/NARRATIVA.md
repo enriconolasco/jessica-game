@@ -37,9 +37,17 @@ genéricas e narrador que conhece segredos. Paisagem concreta antes de ornamento
 Clima/território não concedem efeitos mecânicos. Não inventar alianças, traumas,
 juramentos, história ou intenções para dar dramaticidade.
 
+## Referências de estilo aprovadas — 04/10/2026
+
+O usuário aprovou os exemplos 2 (Várzea das Sete Voltas) e 3 (Sertão da Pedra
+Miúda); o exemplo 1 foi cortado. Priorizar paisagem concreta, observação sensorial,
+ritmo contido e tensão sugerida, com heróis integrados sem transformar a abertura
+em explicação das regras. Aprovação de estilo não torna toda proposta geográfica
+ou histórica um fato canônico automaticamente.
+
 ## Ainda proposto, não canônico
 
-Serra do Candeal, Várzea das Sete Voltas e Sertão da Pedra Miúda são nomes de
+Várzea das Sete Voltas e Sertão da Pedra Miúda são nomes de
 rascunho. Sua existência, localização e relação com regiões reais aguardam revisão.
 Motivos particulares usados nos exemplos também são propostas, não regras.
 Novas figuras e artefatos serão discutidos quando necessários, sem produção em massa.
