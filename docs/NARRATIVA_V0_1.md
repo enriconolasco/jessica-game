@@ -1,5 +1,8 @@
 # Narrativa v0.1 — piloto terminal
 
+Direção editorial confirmada: [NARRATIVA.md](NARRATIVA.md).
+Novas introduções permanecem em revisão, fora do catálogo ativo.
+
 Base auditada: `3dc7035`, branch `codex/online-rooms`. Sem mudança de regras.
 
 ## Voz PT-BR
