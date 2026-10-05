@@ -25,6 +25,12 @@
     "city_permanence_outside_match": "not_defined",
     "continents": [],
     "macroregions": [],
+    "region_families": [
+      {"id": "family.serras_matas", "name": "Serras e matas", "status": "approved_by_user"},
+      {"id": "family.sertoes_chapadas", "name": "Sertões e chapadas", "status": "approved_by_user"},
+      {"id": "family.rios_varzeas", "name": "Rios e várzeas", "status": "approved_by_user"},
+      {"id": "family.costa_manguezais", "name": "Costa e manguezais", "status": "approved_by_user"}
+    ],
     "connections": [],
     "political_boundaries": [],
     "status": "partially_confirmed_by_user"
@@ -33,6 +39,7 @@
     {
       "id": "place.varzea_sete_voltas",
       "name": "Várzea das Sete Voltas",
+      "region_family_id": "family.rios_varzeas",
       "canon_status": "name_approved_by_user",
       "parent_region_id": null,
       "real_world_location": null,
@@ -42,6 +49,7 @@
     {
       "id": "place.sertao_pedra_miuda",
       "name": "Sertão da Pedra Miúda",
+      "region_family_id": "family.sertoes_chapadas",
       "canon_status": "name_approved_by_user",
       "parent_region_id": null,
       "real_world_location": null,
@@ -1947,7 +1955,7 @@
   ],
   "open_questions": [
     "Qual a divisão continental/regional geral e como os dois locais aprovados se relacionam?",
-    "As cidades de cada partida são sedes locais variáveis ou lugares permanentes do mapa do mundo?",
+    "Quais nomes próprios e conexões definir para as grandes regiões, sem exclusividade de povos?",
     "Quais títulos e descrições dos heróis são literais e quais são epítetos?",
     "Qual povo priorizar para fichas de personalidade, aparência e origem?"
   ]

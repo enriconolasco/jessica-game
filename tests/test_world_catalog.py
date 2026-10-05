@@ -21,6 +21,9 @@ def test_ids_and_approved_places():
     assert CATALOG["runtime_integration"] is False
     assert CATALOG["world_structure"]["connectivity"] == "connected"
     assert CATALOG["world_structure"]["match_city_model"] == "variable_per_match"
+    families = {f["id"] for f in CATALOG["world_structure"]["region_families"]}
+    assert len(families) == 4
+    assert all(p["region_family_id"] in families for p in CATALOG["places"])
 
 
 def test_hero_inventory_matches_core_without_lore_invention():

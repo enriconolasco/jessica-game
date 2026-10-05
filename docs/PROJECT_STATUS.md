@@ -9,7 +9,8 @@ fronteiras, biografias ou culturas preenchidas por inferência. Cinco resumos de
 heróis na UI sinalizados; nenhum patch mecânico aplicado nesta etapa.
 Índice/fichas e perguntas: [CATALOGO_MUNDO.md](CATALOGO_MUNDO.md).
 Confirmado: mundo conectado e cidades variáveis por partida.
-Próximo marco: aprovar grandes famílias de regiões e posicionar os dois locais.
+Quatro famílias geográficas aprovadas; dois locais enquadrados nas famílias.
+Próximo marco: validar identidade dos heróis e nomear poucas regiões quando necessário.
 Quatro testes do catálogo e 16 narrativos passaram; somente dados/documentos adicionados.
 
 ## Piloto narrativo terminal

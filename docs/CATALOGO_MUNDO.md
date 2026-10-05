@@ -61,12 +61,14 @@ Isso não define número de continentes, fronteiras, distâncias ou desaparecime
 das cidades após a partida. Nem toda cidade de gameplay precisa virar local fixo
 do catálogo. Conexão geográfica não cria regras novas de movimento.
 
-Proposta inicial, ainda não aprovada, de quatro famílias de grandes regiões:
+Quatro famílias de grandes regiões aprovadas pelo usuário:
 serras e matas; sertões e chapadas; rios e várzeas; costa e manguezais.
 Sem nomes próprios novos, posição no mapa ou exclusividade de povos por enquanto.
+Várzea das Sete Voltas enquadrada em rios/várzeas; Sertão da Pedra Miúda em
+sertões/chapadas. Esse enquadramento não fixa coordenadas ou fronteiras.
 
-1. Aprovar/ajustar essas famílias e então nomear poucas regiões.
-2. Posicionar os dois locais aprovados nesse esqueleto.
+1. Nomear poucas regiões e definir ligações geográficas quando necessário.
+2. Posicionar os locais no mapa; suas famílias já estão definidas.
 3. Definir convivência e vínculos dos povos, sem deduzir territórios por raça.
 4. Escolher um povo para validar identidade dos heróis em lote pequeno.
 5. Depois aprovar figuras secundárias, origem dos artefatos e acontecimentos.
